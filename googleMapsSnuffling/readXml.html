@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+    <head> 
+        <style type="text/css">
+           .labels {
+             color: black;
+             background-color: white;
+             font-family: "Lucida Grande", "Arial", sans-serif;
+             font-size: 12px !important;
+             font-weight: bold !important;
+             border: 1px solid black;
+             padding-left: 2px;
+             padding-right: 2px;
+             white-space: nowrap;
+           }
+         </style>
+        <script src="http://maps.googleapis.com/maps/api/js?key=AIzaSyDY0kkJiTPVd2U7aTOAwhc9ySH6oHxOIYM&sensor=false">
+        </script>
+        <script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/tags/markerwithlabel/1.0.1/src/markerwithlabel.js"></script>
+        <script type="text/javascript" src="loadxmldoc.js"></script>
+        <script>
+            try
+            {
+                xmlDoc = loadXMLDoc("dumpedPyrockoMarker.xml")
+            }
+            catch(err)
+            {
+                txt="An error occurred while trying to read dumped pyrocko marker.\n\n";
+                txt+="Probably, your browser does not allow to open that document\n\n";
+                txt+="due to the \"Same-Origin-Policy\".\n\n";
+                txt+="A solution might be to change your default browser.\n\n";
+                alert(txt);
+            }
+
+            var gmarkers = [];
+            var marker = new Array;
+            var magnitudeCircle = {};
+
+            // == print something to console (for debugging)==
+            function log(msg) {
+                setTimeout(function() {
+                 throw new Error(msg);
+                }, 0);
+            }
+
+            // == Create event locations ==
+            deb=xmlDoc.getElementsByTagName("event")
+            for (i=0; i<deb.length; i++)
+                {
+                    var lat = deb[i].childNodes[3].firstChild.data;
+                    var lon = deb[i].childNodes[5].firstChild.data;
+                    var time= deb[i].childNodes[7].firstChild.data;
+                    try {
+                        var mag = deb[i].childNodes[9].firstChild.data;
+                    }
+                    catch (e) {
+                        var mag = 0;
+                    }
+
+                    var epicenterlocation = new google.maps.LatLng(lat, lon )
+
+                    marker[i]=new google.maps.Marker({
+                          position: epicenterlocation,
+                          icon: { path: google.maps.SymbolPath.CIRCLE,
+                                  scale: 2,
+                                  strokeColor: 'red'},
+                              title: 'origin time: '+time+
+                              '\n magnitude: '+mag
+                          });
+                    if (deb[i].attributes.getNamedItem("active").value == 'yes'){
+                        filling='#0000FF'}
+                    else {
+                        filling='#FF0000'}
+
+                    magnitudeCircle[i] = {
+                        center: epicenterlocation,
+                        magnitude: mag,
+                        fillcolor: filling};
+                }
+
+
+            // == Create station locations ==
+            var stationMarker = new Array
+            stationElements=xmlDoc.getElementsByTagName("station")
+            for (i=0; i<stationElements.length; i++)
+                {
+                    var nsl = stationElements[i].childNodes[1].firstChild.data;
+                    var lat = stationElements[i].childNodes[3].firstChild.data;
+                    var lon = stationElements[i].childNodes[5].firstChild.data;
+
+                    stationMarker[i]= new MarkerWithLabel({
+                       position: new google.maps.LatLng(lat, lon ),
+                       icon: { path: google.maps.SymbolPath.CIRCLE,
+                              scale: 4,
+                              strokeColor: 'black'},
+                       labelContent: nsl,
+                       labelAnchor: new google.maps.Point(-5, 25),
+                       labelClass: "labels", // the CSS class for the label
+                       labelStyle: {opacity: 0.75}
+                   });
+                   stationMarker[i].category = 'stationmarker'
+                   gmarkers.push(stationMarker[i]); 
+                } 
+
+
+            function hide(category) {
+                for (i=0; i<gmarkers.length; i++) {
+                    if (gmarkers[i].category == category)
+                        gmarkers[i].setVisible(false);
+                }
+            }
+
+            function show(category) {
+                for (i=0; i<gmarkers.length; i++) {
+                    if (gmarkers[i].category == category)
+                        gmarkers[i].setVisible(true);
+                }
+            }
+            
+            function boxclick(box, category) {
+                if (box.checked) {
+                    show(category);
+                } else {
+                    hide(category);
+                }
+            }
+
+            function initialize() {
+                var myCenter=new google.maps.LatLng(lat, lon);
+                var mapProp = {
+                  center:myCenter,
+                  zoom:8,
+                  mapTypeId:google.maps.MapTypeId.TERRAIN
+                  };
+
+                map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
+
+                for (i=0; i<marker.length; i++)
+                    {
+                        marker[i].setMap(map);
+                    }
+                for (i=0; i<stationMarker.length; i++)
+                    {
+                        stationMarker[i].setMap(map);
+                    }
+                for (i in magnitudeCircle) {
+                        var circleOptions = {
+                        strokeColor: '#FF0000',
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        fillColor: magnitudeCircle[i].fillcolor,
+                        fillOpacity: 0.35,
+                        map: map,
+                        center: magnitudeCircle[i].center,
+                        radius: magnitudeCircle[i].magnitude*1000 };
+                    magnitude_circle = new google.maps.Circle(circleOptions);
+                    magnitude_circle.category = 'magnitudecircle'
+                    gmarkers.push(magnitude_circle);
+                    }
+            }
+
+            google.maps.event.addDomListener(window, 'load', initialize);
+        </script>
+    </head>
+
+    <body style="font-family: sans-serif;">
+        <div id="googleMap" style="position: absolute; left: 0px; right:0px; bottom: 0px; top: 0px;"></div>
+
+        <div style="position: absolute; left: 10px; right:10px; bottom: 15px; text-align:center;">
+        <form action="readXml.html">
+            Stations: <input type='checkbox' id='stationbox' onclick="boxclick(this, 'stationmarker')" checked="checked"/> &nbsp;&nbsp;
+            Magnitude Circles: <input type='checkbox' id='magnitudebox' onclick="boxclick(this, 'magnitudecircle')" checked="checked" /> <br />
+        </form>
+
+            <noscript><b>JavaScript must be enabled in order for you to use Google Maps.</b> 
+         enable JavaScript by changing your browser settings, and then 
+          try again.
+        </noscript>
+    </div>
+    </body>
+</html>
