@@ -1,7 +1,23 @@
 contrib-snufflings
 ==================
 
-User contributed snufflings collection
+This is a repository of user contributed snufflings. 
+
+Snufflings are plugins for the
+[Snuffler](http://emolch.github.io/pyrocko/v0.3/snuffler.html) application
+which is part of [Pyrocko](http://emolch.github.io/pyrocko/). 
+
+To use any of these snufflings, simply put the respective file or directory
+into the `$HOME/.snufflings` directory. 
+
+If you want to modify, develop, or keep up to date on any of these, it is
+preferable to clone the whole repos somewhere in your filesystem and just make
+symbolic links in the `$HOME/.snufflings` directory for each snuffling to be
+used.
+
+To add your own creation, simply clone this repos, add your stuff and a
+screenshot and send a pull request. 
+
 
 Create Map in GoogleMaps
 ------------------------
@@ -13,8 +29,8 @@ directory: [googleMapsSnuffling](googleMapsSnuffling)
 ![screenshot](screenshots/googleMapsSnuffling.png)
 
 
-psd.py: Plot PSD
-----------------
+Plot PSD
+--------
 
 Plot power spectral densities
 
