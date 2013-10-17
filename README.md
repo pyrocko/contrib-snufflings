@@ -45,3 +45,13 @@ Relocate events by cross correlating waveforms
 file: [cc\_relocation.py](cc_relocation.py)
 
 ![screenshot](screenshots/cc_relocation.png)
+
+Cake Phase
+----------
+
+Add markers for synthetic arrivals
+
+file: [cake\_phase.py](cake_phase.py)
+
+![screenshot](screenshots/cake_phase.png)
+
