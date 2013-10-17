@@ -12,8 +12,7 @@ into the `$HOME/.snufflings` directory.
 
 If you want to modify, develop, or keep up to date on any of these, it is
 preferable to clone the whole repos somewhere in your filesystem and just make
-symbolic links in the `$HOME/.snufflings` directory for each snuffling to be
-used.
+symbolic links in `$HOME/.snufflings` for each snuffling to be used.
 
 To add your own creation, simply clone this repos, add your stuff and a
 screenshot and send a pull request. 
