@@ -55,3 +55,12 @@ file: [cake\_phase.py](cake_phase.py)
 
 ![screenshot](screenshots/cake_phase.png)
 
+Cross correlation search
+------------------------
+
+Find repeating events
+
+file: [corrsearch.py](corrsearch.py)
+
+![screenshot](screenshots/corrsearch.png)
+
