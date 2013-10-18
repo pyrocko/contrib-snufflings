@@ -3,7 +3,7 @@ from pyrocko import util, gui_util
 from xmlMarker import *
 from PyQt4.QtCore import QUrl 
 from PyQt4.QtGui import QDesktopServices
-import subprocess, os, guts
+import subprocess, os, guts, tempfile, shutil
 
 class MapMaker(Snuffling):
     '''
@@ -77,16 +77,21 @@ class MapMaker(Snuffling):
                 continue
 
             ev_marker_list.append(xmleventmarker)
+
         event_list=EventMarkerList(events= ev_marker_list)
         event_station_list = MarkerLists(station_marker_list=active_station_list,
                                          event_marker_list=event_list)
         event_station_list.validate()
 
-        f=open(os.getenv("HOME")+'/.snufflings/googleMapsSnuffling/dumpedPyrockoMarker.xml', 'w')
-        f.write(event_station_list.dump_xml())
-        f.close()
+        tempdir = tempfile.mkdtemp(prefix='googleMapsSnuffling-')
 
-        QDesktopServices.openUrl(QUrl('file://'+ os.getenv("HOME") + "/.snufflings/googleMapsSnuffling/readXml.html"))
+        for entry in ['loadxmldoc.js', 'map.html']:
+            shutil.copy(os.path.join(self.module_dir(), entry), os.path.join(tempdir, entry))
+
+        markers_fn = os.path.join(tempdir, 'markers.xml')
+        dump_xml(event_station_list, filename=markers_fn)
+
+        QDesktopServices.openUrl(QUrl('file://' + os.path.join(tempdir, 'map.html')))
 
 def __snufflings__():
     return [ MapMaker() ]
