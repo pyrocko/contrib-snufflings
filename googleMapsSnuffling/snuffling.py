@@ -29,6 +29,10 @@ class MapMaker(Snuffling):
                 active_event, active_stations = self.get_active_event_and_stations()
                 break
             except AttributeError:
+                if only_active == True:
+                    self.fail('No active event found.')
+                    self.set_parameter('only_active', False)
+
                 active_stations = []
                 active_event = None
                 print 'Presumably no active event set'
@@ -64,6 +68,8 @@ class MapMaker(Snuffling):
             ev_marker_list.append(xml_active_event_marker)    
 
         for m in markers:
+            if only_active == True:
+                break
             if isinstance(m, gui_util.EventMarker):
                 ev = m.get_event()
                 try:
