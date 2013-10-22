@@ -43,10 +43,13 @@ class MapMaker(Snuffling):
                                             latitude = stat.lat,
                                             active = 'yes')
             else:
-                xml_station_marker = XMLStationMarker(nsl='%s.%s'%(str(NS[0]), str(NS[1])),
-                                            longitude=stat.lon,
-                                            latitude=stat.lat,
-                                            active='no')
+                if only_active == True:
+                    continue
+                else:
+                    xml_station_marker = XMLStationMarker(nsl='%s.%s'%(str(NS[0]), str(NS[1])),
+                                                longitude=stat.lon,
+                                                latitude=stat.lat,
+                                                active='no')
             station_list.append(xml_station_marker)
         active_station_list = StationMarkerList(stations=station_list)
 
