@@ -29,6 +29,10 @@ class MapMaker(Snuffling):
                 active_event, active_stations = self.get_active_event_and_stations()
                 break
             except AttributeError:
+                if self.only_active == True:
+                    self.set_parameter('only_active', False)
+                    self.fail('No active event found.')
+
                 active_stations = []
                 active_event = None
                 print 'Presumably no active event set'
@@ -42,7 +46,10 @@ class MapMaker(Snuffling):
                                             longitude = stat.lon,
                                             latitude = stat.lat,
                                             active = 'yes')
+            
             else:
+                if self.only_active == True:
+                    continue
                 xml_station_marker = XMLStationMarker(nsl='%s.%s'%(str(NS[0]), str(NS[1])),
                                             longitude=stat.lon,
                                             latitude=stat.lat,
@@ -61,6 +68,8 @@ class MapMaker(Snuffling):
             ev_marker_list.append(xml_active_event_marker)    
 
         for m in markers:
+            if self.only_active == True:
+                break
             if isinstance(m, gui_util.EventMarker):
                 ev = m.get_event()
                 try:
