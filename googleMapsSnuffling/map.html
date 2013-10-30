@@ -133,16 +133,22 @@
                   mapTypeId:google.maps.MapTypeId.TERRAIN
                   };
 
+                var latlngbounds = new google.maps.LatLngBounds();
                 map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
 
                 for (i=0; i<marker.length; i++)
                     {
                         marker[i].setMap(map);
+                        latlngbounds.extend(marker[i].getPosition());
                     }
+
                 for (i=0; i<stationMarker.length; i++)
                     {
                         stationMarker[i].setMap(map);
+                        latlngbounds.extend(stationMarker[i].getPosition());
                     }
+                map.fitBounds(latlngbounds);
+                
                 for (i in magnitudeCircle) {
                         var circleOptions = {
                         strokeColor: '#FF0000',
