@@ -1,9 +1,8 @@
 from pyrocko.snuffling import Snuffling, Param, Switch, Choice
-from pyrocko.pile_viewer import Marker, EventMarker, PhaseMarker
+from pyrocko.pile_viewer import PhaseMarker
 from pyrocko import orthodrome
 
 from pyrocko import cake
-import os
 
 
 class CakePhase(Snuffling):
@@ -18,10 +17,15 @@ class CakePhase(Snuffling):
     <h1 align="center">Theoretical Phase Arrivals</h1>
     <p>
     This snuffling uses pyrocko's <a href="http://emolch.github.io/pyrocko/v0.3/cake_doc.html">Cake</a>
-module to calculate seismic rays for layered earth models. </p>
+    module to calculate seismic rays for layered earth models. </p>
     <p>
     <b>Parameters:</b><br />
         <b>&middot; Global shift</b>  -  Add time onset to phases. <br />
+        <b>&middot; Add Model</b>  -  Add a model to drop down menu. (GUI reset required)<br />
+        <b>&middot; Add Phase</b>  -  Add a phase definition. (GUI reset required)<br />
+    </p>
+    <p>
+    Instructions and information on Cake's syntax of seismic rays can be found in the <a href="http://emolch.github.io/pyrocko/v0.3/cake_doc.html#cmdoption-cake--phase">Cake documentation</a>.
     </p>
     </body>
     </html>
@@ -36,9 +40,11 @@ module to calculate seismic rays for layered earth models. </p>
 
         for iphase, name in enumerate(self._phase_names):
             self.add_parameter(Switch(name, 'wantphase_%i' % iphase, iphase==0))
-        self.add_parameter(Choice('Model', 'chosen_model', cake.builtin_models()[0], (cake.builtin_models())))
+        self.model_choice = Choice('Model', 'chosen_model', cake.builtin_models()[0], (cake.builtin_models()))
+        self.add_parameter(self.model_choice)
         self.add_parameter(Param('Global shift', 'tshift', 0., -20., 20.))
-
+        self.add_trigger('Add Phase', self.add_phase_definition)
+        self.add_trigger('Add Model', self.add_model_to_choice)
         self._phases = {}
         self._model = None
 
@@ -98,6 +104,25 @@ module to calculate seismic rays for layered earth models. </p>
                 m = PhaseMarker([ (station.network, station.station, '*', '*') ], time, time, 2, phasename=name, event=event, incidence_angle=incidence_angle, takeoff_angle=takeoff_angle)
                 self.add_marker(m)
 
+    def add_model_to_choice(self):
+        '''
+        Called from trigger 'Add Model'.
+        Adds another choice to the drop down choice menu.
+        Requires a reset of the GUI.
+        '''
+        in_model = self.input_filename('Load Model')
+        self.model_choice.choices.append(in_model)
+        self.reset_gui()
+
+    def add_phase_definition(self):
+        '''
+        Called from trigger 'Add Phase Definition'.
+        Adds another phase option.
+        Requires a reset of the GUI.
+        '''
+        phase_def = self.input_dialog('Add New Phase' , 'Enter Phase Definition')
+        self.add_parameter(Switch(phase_def, 'wantphase_%s'%str(len(self._phases)+1), True))
+        self.reset_gui()
 
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
