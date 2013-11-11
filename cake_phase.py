@@ -51,10 +51,8 @@ class CakePhase(Snuffling):
         viewer = self.get_viewer()
         pile = self.get_pile()
         event = viewer.get_active_event()
-        if event is None:
-            self.fail('No active event is marked.')
-        
-        stations = [ s for s in viewer.stations.values() if s.station in pile.stations ]
+
+        event, stations = self.get_active_event_and_stations()
         
         if not stations:
             self.fail('No station information available.')
