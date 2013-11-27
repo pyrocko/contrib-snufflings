@@ -163,7 +163,6 @@ class CakePhase(Snuffling):
         phase_def = str(self.input_dialog('Add New Phase' , 'Enter Phase Definition'))
         self._phase_names.append(phase_def)
 
-        print len(self._phase_names) - 1
         self.add_parameter(Switch(phase_def, 'wantphase_%s'%str(len(self._phase_names)-1), True))
         self.reset_gui(reloaded=True)
         self.call()
