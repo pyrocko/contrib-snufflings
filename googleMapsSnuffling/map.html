@@ -88,7 +88,7 @@
                     var lat = stationElements[i].childNodes[3].firstChild.data;
                     var lon = stationElements[i].childNodes[5].firstChild.data;
 
-                    var standard_label = {
+                    stationMarker[i]= new MarkerWithLabel({
                        position: new google.maps.LatLng(lat, lon ),
                        icon: { path: google.maps.SymbolPath.CIRCLE,
                               scale: 4,
@@ -96,15 +96,10 @@
                        labelContent: nsl,
                        labelAnchor: new google.maps.Point(-5, 25),
                        labelClass: "labels", // the CSS class for the label
-                       labelStyle: {opacity: 0.75} };
-                    var extended_label = {standard_label.labelContent="more content to come..."}
-                   
-                    stationMarker[i]= new MarkerWithLabel(standard_label);
-  
-                    //google.maps.event.addListener(stationMarker[i], 
-                    //         'click', extendMarkerInfo());
-                    stationMarker[i].category = 'stationmarker'
-                    gmarkers.push(stationMarker[i]); 
+                       labelStyle: {opacity: 0.75}
+                   });
+                   stationMarker[i].category = 'stationmarker'
+                   gmarkers.push(stationMarker[i]); 
                 } 
 
 
@@ -135,11 +130,6 @@
                 var mapProp = {
                   center:myCenter,
                   zoom:8,
-                  scaleControl: true,
-                  scaleControlOptions: {
-                        position: google.maps.ControlPosition.TOP_RIGHT
-                    },
-
                   mapTypeId:google.maps.MapTypeId.TERRAIN
                   };
 
@@ -174,8 +164,6 @@
                     gmarkers.push(magnitude_circle);
                     }
             }
-
-             
 
             google.maps.event.addDomListener(window, 'load', initialize);
         </script>

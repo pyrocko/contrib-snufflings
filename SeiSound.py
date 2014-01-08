@@ -1,5 +1,4 @@
 from pyrocko.snuffling import Snuffling, Param, Choice, Switch
-from pyrocko.trace import CosFader
 from scipy.io.wavfile import write
 from scipy.signal import resample
 import numpy as np
@@ -20,8 +19,6 @@ The lowpass and highpass filter of the main controls will be applied before savi
 
 Click *Apply Main Control Filter* if you simply want to accept the main control filter settings, or choose a different setting using the scroll bars. 
 
-Avoid crackling sounds by using the *Time Fader*. Also, this speeds up the resampling, considerably. 
-
     '''
     
     def setup(self):
@@ -33,8 +30,7 @@ Avoid crackling sounds by using the *Time Fader*. Also, this speeds up the resam
         self.add_parameter(Param('Highpass [Hz]', 'corner_highpass', 1.0,
         0.001, 50., low_is_none=True))
         self.add_parameter(Param('Lowpass [Hz]', 'corner_lowpass', 4.0,
-        0.001, 2., high_is_none=True))
-        self.add_parameter(Param('Time Fader [s]', 'tfade', 1.0, 0.001, 5.))
+        0.001, 50., high_is_none=True))
         self.add_trigger('Apply Main Control Filter', self.set_from_main)
 
         self.set_live_update(False)
@@ -46,7 +42,6 @@ Avoid crackling sounds by using the *Time Fader*. Also, this speeds up the resam
         ttotal = trange[1]-trange[0]
         for tr in self.chopper_selected_traces():
             t = tr[0].copy()
-            t.taper(CosFader(xfade=self.tfade))
             if self.corner_lowpass:
                 t.lowpass(4, self.corner_lowpass)
             if self.corner_highpass:
