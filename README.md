@@ -71,3 +71,12 @@ file: [SeiSound.py](SeiSound.py)
 
 ![screenshot](screenshots/SeiSound.png)
 
+Seismosizer
+-----------
+
+Calculate and show synthetic seismograms. The [Kiwi Tools](http://kinherd.org/kiwitools/) package must be installed for this to work.
+
+file: [seismosizer.py](seismosizer.py)
+
+![screenshot](screenshots/seismosizer.png)
+

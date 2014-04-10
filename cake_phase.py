@@ -3,6 +3,7 @@ from pyrocko.pile_viewer import PhaseMarker
 from pyrocko import orthodrome
 
 from pyrocko import cake
+import numpy as num
 
 
 class CakePhase(Snuffling):
@@ -21,7 +22,7 @@ class CakePhase(Snuffling):
     <p>
     <b>Parameters:</b><br />
         <b>&middot; Global shift</b>  -  Add time onset to phases. <br />
-        <b>&middot; Add Model</b>  -  Add a model to drop down menu. (GUI reset required)<br />
+        <b>&middot; Add Model</b>  -  Add a model to drop down menu. <br />
         <b>&middot; Add Phase</b>  -  Add a phase definition. (GUI reset required)<br />
     </p>
     <p>
@@ -40,59 +41,75 @@ class CakePhase(Snuffling):
 
         for iphase, name in enumerate(self._phase_names):
             self.add_parameter(Switch(name, 'wantphase_%i' % iphase, iphase==0))
-        self.model_choice = Choice('Model', 'chosen_model', cake.builtin_models()[0], (cake.builtin_models()))
+
+        self._models = cake.builtin_models()
+
+        self.model_choice = Choice('Model', 'chosen_model', 
+                'ak135-f-continental.m', self._models)
+
         self.add_parameter(self.model_choice)
         self.add_parameter(Param('Global shift', 'tshift', 0., -20., 20.))
         self.add_trigger('Add Phase', self.add_phase_definition)
         self.add_trigger('Add Model', self.add_model_to_choice)
+        self.add_trigger('Plot Model', self.plot_model)
+        self.add_trigger('Plot Rays', self.plot_rays)
         self._phases = {}
         self._model = None
 
-    def call(self):
+    def wanted_phases(self):
+        try:
+            wanted = []
+            for iphase, name in enumerate(self._phase_names):
+                if getattr(self, 'wantphase_%i' % iphase):
+                    if name in self._phases:
+                        phases = self._phases[name]
+                    else:
+                        if name.startswith('~'):
+                            phases = [ cake.PhaseDef(name[1:]) ]
+                        else:
+                            phases = cake.PhaseDef.classic(name)
+
+                        self._phases[name] = phases
+                        for pha in phases:
+                            pha.name = name
+
+                    wanted.extend(phases)
+        except (cake.UnknownClassicPhase, 
+                cake.PhaseDefParseError), e:
+            self.fail(str(e))
+
+        return wanted
+
+    def call(self, plot_rays=False):
 
         self.cleanup()
-
-        wanted = []
-        for iphase, name in enumerate(self._phase_names):
-            if getattr(self, 'wantphase_%i' % iphase):
-                if name in self._phases:
-                    phases = self._phases[name]
-                else:
-                    if name.startswith('~'):
-                        phases = [ cake.PhaseDef(name[1:]) ]
-                    else:
-                        phases = cake.PhaseDef.classic(name)
-
-                    self._phases[name] = phases
-                    for pha in phases:
-                        pha.name = name
-
-                wanted.extend(phases)
+        wanted = self.wanted_phases()
 
         if not wanted:
             return
 
         viewer = self.get_viewer()
         pile = self.get_pile()
-        event = viewer.get_active_event()
-        if event is None:
-            self.fail('No active event is marked.')
 
-        stations = [ s for s in viewer.stations.values() if s.station in pile.stations ]
-
+        event, stations = self.get_active_event_and_stations()
+        
         if not stations:
             self.fail('No station information available.')
 
-        if not self._model:
-            self._model = cake.load_model(self.chosen_model)
+        self.update_model()
+        model = self._model[1]
 
+        depth = event.depth
+        if depth is None:
+            depth = 0.0
+
+        allrays = []
+        alldists = []
         for station in stations:
             dist = orthodrome.distance_accurate50m(event, station)
-            depth = event.depth
-            if depth is None:
-                depth = 0.0
+            alldists.append(dist)
 
-            rays = self._model.arrivals(phases=wanted, distances=[dist*cake.m2d], zstart=depth)
+            rays = model.arrivals(phases=wanted, distances=[dist*cake.m2d], zstart=depth)
 
             for ray in rays:
                 time = ray.t
@@ -104,25 +121,66 @@ class CakePhase(Snuffling):
                 m = PhaseMarker([ (station.network, station.station, '*', '*') ], time, time, 2, phasename=name, event=event, incidence_angle=incidence_angle, takeoff_angle=takeoff_angle)
                 self.add_marker(m)
 
+            allrays.extend(rays)
+
+        if plot_rays:
+            fig = self.figure(name='Ray Paths')
+            from pyrocko import cake_plot
+            cake_plot.my_rays_plot(model, None, allrays, depth, 0.0, 
+                    num.array(alldists)*cake.m2d, axes=fig.gca())
+            
+            fig.canvas.draw()
+
+
+    def update_model(self):
+        if not self._model or self._model[0] != self.chosen_model:
+            self._model = (self.chosen_model, 
+                           cake.load_model(self.chosen_model))
+
+    def update_model_choices(self):
+        self.set_parameter_choices('chosen_model', self._models)
+
     def add_model_to_choice(self):
+        '''Called from trigger 'Add Model'.
+
+        Adds another choice to the drop down 'Model' menu.
         '''
-        Called from trigger 'Add Model'.
-        Adds another choice to the drop down choice menu.
-        Requires a reset of the GUI.
-        '''
+
         in_model = self.input_filename('Load Model')
-        self.model_choice.choices.append(in_model)
-        self.reset_gui()
+        if in_model not in self._models:
+            self._models.append(in_model)
+            self.update_model_choices()
+            
+        self.set_parameter('chosen_model', in_model)
+        self.call()
 
     def add_phase_definition(self):
-        '''
-        Called from trigger 'Add Phase Definition'.
+        ''' Called from trigger 'Add Phase Definition'.
+
         Adds another phase option.
         Requires a reset of the GUI.
         '''
-        phase_def = self.input_dialog('Add New Phase' , 'Enter Phase Definition')
-        self.add_parameter(Switch(phase_def, 'wantphase_%s'%str(len(self._phases)+1), True))
-        self.reset_gui()
+        phase_def = str(self.input_dialog('Add New Phase' , 'Enter Phase Definition'))
+        self._phase_names.append(phase_def)
+
+        self.add_parameter(Switch(phase_def, 'wantphase_%s'%str(len(self._phase_names)-1), True))
+        self.reset_gui(reloaded=True)
+        self.call()
+
+
+    def plot_model(self):
+        self.update_model()
+
+        from pyrocko import cake_plot
+        
+        fig = self.figure(name='Model: %s' % self._model[0])
+
+        cake_plot.my_model_plot(self._model[1], axes=fig.gca())
+
+        fig.canvas.draw()
+
+    def plot_rays(self):
+        self.call(plot_rays=True)
 
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
