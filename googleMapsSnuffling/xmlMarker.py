@@ -1,4 +1,4 @@
-from guts import *
+from pyrocko.guts import *
 
 class XMLEventMarker(Object):
     xmltagname='eventmarker'

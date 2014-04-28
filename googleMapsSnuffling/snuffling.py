@@ -1,9 +1,12 @@
+import subprocess
+import os
+import tempfile
+import shutil
 from pyrocko.snuffling import Snuffling, Param, Switch
-from pyrocko import util, gui_util
+from pyrocko import util, gui_util, guts
 from xmlMarker import *
 from PyQt4.QtCore import QUrl 
 from PyQt4.QtGui import QDesktopServices
-import subprocess, os, guts, tempfile, shutil
 
 class MapMaker(Snuffling):
     '''
