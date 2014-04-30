@@ -125,6 +125,16 @@
                 }
             }
 
+            function lat_lon_mouse_position(map)
+            {
+                google.maps.event.addListener(map,'mousemove',function(event) {
+                document.getElementById('latlong').innerHTML = 
+                                        event.latLng.lat().toFixed(3)
+                                            + ', ' 
+                                            + event.latLng.lng().toFixed(3)
+                });
+            }
+
             function initialize() {
                 var myCenter=new google.maps.LatLng(lat, lon);
                 var mapProp = {
@@ -163,6 +173,7 @@
                     magnitude_circle.category = 'magnitudecircle'
                     gmarkers.push(magnitude_circle);
                     }
+                lat_lon_mouse_position(map)
             }
 
             google.maps.event.addDomListener(window, 'load', initialize);
@@ -170,18 +181,36 @@
     </head>
 
     <body style="font-family: sans-serif;">
-        <div id="googleMap" style="position: absolute; left: 0px; right:0px; bottom: 0px; top: 0px;"></div>
+        <div id="googleMap" style="position: absolute; 
+                                    left: 0px; 
+                                    right:0px; 
+                                    bottom: 0px; 
+                                    top: 0px;">
+        </div>
+        <div style="background-color: white; 
+                    opacity: 0.8; 
+                    position: absolute; 
+                    left: 0px; 
+                    right:0px; 
+                    bottom: 0px; 
+                    text-align:center; ">
+            <form action="readXml.html">
+                Stations: <input type='checkbox' 
+                                id='stationbox' 
+                                onclick="boxclick(this, 'stationmarker')" 
+                                checked="checked"/> &nbsp;&nbsp;
+                Magnitude Circles: <input type='checkbox' 
+                                id='magnitudebox' 
+                                onclick="boxclick(this, 'magnitudecircle')" 
+                                checked="checked" /> 
+                lat lon: <span id="latlong"></span>
+            </form>
 
-        <div style="background-color: white; opacity: 0.8; position: absolute; left: 0px; right:0px; bottom: 0px; text-align:center; ">
-        <form action="readXml.html">
-            Stations: <input type='checkbox' id='stationbox' onclick="boxclick(this, 'stationmarker')" checked="checked"/> &nbsp;&nbsp;
-            Magnitude Circles: <input type='checkbox' id='magnitudebox' onclick="boxclick(this, 'magnitudecircle')" checked="checked" /> <br />
-        </form>
 
             <noscript><b>JavaScript must be enabled in order for you to use Google Maps.</b> 
-         enable JavaScript by changing your browser settings, and then 
-          try again.
-        </noscript>
-    </div>
+             enable JavaScript by changing your browser settings, and then 
+              try again.
+            </noscript>
+        </div>
     </body>
 </html>
