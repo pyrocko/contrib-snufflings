@@ -17,6 +17,8 @@ class MapMaker(Snuffling):
     In that case you need to reset your standard browser.
     I.e.: Firefox on Linux do:
         xdg-settings set default-web-browser firefox.desktop
+
+
     '''
     def setup(self):
         self.set_name('Create Map in GoogleMaps')
@@ -29,7 +31,8 @@ class MapMaker(Snuffling):
         markers = viewer.get_markers()
         while True:
             try:
-                active_event, active_stations = self.get_active_event_and_stations()
+                active_event, active_stations = \
+                        self.get_active_event_and_stations()
                 break
             except AttributeError:
                 if self.only_active == True:
@@ -42,27 +45,22 @@ class MapMaker(Snuffling):
                 break
 
         station_list=[]
-        stations= viewer.stations
-        for NS, stat in stations.items():
-            if '%s.%s.'%(str(NS[0]),str(NS[1])) in map(lambda x: x.nsl_string(), active_stations):
-                xml_station_marker = XMLStationMarker(nsl = '%s.%s'%(str(NS[0]), str(NS[1])),
-                                            longitude = stat.lon,
-                                            latitude = stat.lat,
-                                            active = 'yes')
-            
-            else:
-                if self.only_active == True:
-                    continue
-                xml_station_marker = XMLStationMarker(nsl='%s.%s'%(str(NS[0]), str(NS[1])),
-                                            longitude=stat.lon,
-                                            latitude=stat.lat,
-                                            active='no')
+        stats = active_stations if self.only_active else viewer.stations.values() 
+
+        for stat in stats:
+            if not util.match_nslc(viewer.blacklist, stat.nsl()):
+                xml_station_marker = XMLStationMarker(nsl = '.'.join(stat.nsl()),
+                                                longitude = stat.lon,
+                                                latitude = stat.lat,
+                                                active = 'yes')
+
             station_list.append(xml_station_marker)
         active_station_list = StationMarkerList(stations=station_list)
 
         ev_marker_list = []
         if active_event is not None:
-            xml_active_event_marker = XMLEventMarker(eventname = active_event.name,
+            xml_active_event_marker = XMLEventMarker(eventname = \
+                    active_event.name,
                 latitude=active_event.lat,
                 longitude=active_event.lon,
                 origintime=util.time_to_str(active_event.time),
@@ -71,7 +69,7 @@ class MapMaker(Snuffling):
             ev_marker_list.append(xml_active_event_marker)    
 
         for m in markers:
-            if self.only_active == True:
+            if self.only_active:
                 break
             if isinstance(m, gui_util.EventMarker):
                 ev = m.get_event()
@@ -98,12 +96,14 @@ class MapMaker(Snuffling):
         tempdir = tempfile.mkdtemp(prefix='googleMapsSnuffling-')
 
         for entry in ['loadxmldoc.js', 'map.html']:
-            shutil.copy(os.path.join(self.module_dir(), entry), os.path.join(tempdir, entry))
+            shutil.copy(os.path.join(self.module_dir(), entry), os.path.join(\
+                    tempdir, entry))
 
         markers_fn = os.path.join(tempdir, 'markers.xml')
         dump_xml(event_station_list, filename=markers_fn)
 
-        QDesktopServices.openUrl(QUrl('file://' + os.path.join(tempdir, 'map.html')))
+        QDesktopServices.openUrl(QUrl('file://' + os.path.join(tempdir, \
+                'map.html')))
 
 def __snufflings__():
     return [ MapMaker() ]
