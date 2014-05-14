@@ -49,7 +49,8 @@
                 {
                     var lat = deb[i].childNodes[3].firstChild.data;
                     var lon = deb[i].childNodes[5].firstChild.data;
-                    var time= deb[i].childNodes[7].firstChild.data;
+                    var time = deb[i].childNodes[7].firstChild.data;
+                    var depth = deb[i].childNodes[11].firstChild.data;
                     try {
                         var mag = deb[i].childNodes[9].firstChild.data;
                     }
@@ -65,6 +66,7 @@
                                   scale: 2,
                                   strokeColor: 'red'},
                               title: 'origin time: '+time+
+                              '\n depth: '+depth+
                               '\n magnitude: '+mag
                           });
                     if (deb[i].attributes.getNamedItem("active").value == 'yes'){

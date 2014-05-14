@@ -17,8 +17,6 @@ class MapMaker(Snuffling):
     In that case you need to reset your standard browser.
     I.e.: Firefox on Linux do:
         xdg-settings set default-web-browser firefox.desktop
-
-
     '''
     def setup(self):
         self.set_name('Create Map in GoogleMaps')
@@ -64,6 +62,7 @@ class MapMaker(Snuffling):
                 latitude=active_event.lat,
                 longitude=active_event.lon,
                 origintime=util.time_to_str(active_event.time),
+                depth=active_event.depth,
                 magnitude=active_event.magnitude,
                 active='yes')
             ev_marker_list.append(xml_active_event_marker)    
@@ -78,6 +77,7 @@ class MapMaker(Snuffling):
                                             longitude=ev.lon, 
                                             latitude=ev.lat, 
                                             origintime=util.time_to_str(ev.time), 
+                                            depth=ev.depth,
                                             magnitude=ev.magnitude,
                                             active='no')
                 except guts.ValidationError:
@@ -104,6 +104,7 @@ class MapMaker(Snuffling):
 
         QDesktopServices.openUrl(QUrl('file://' + os.path.join(tempdir, \
                 'map.html')))
+
 
 def __snufflings__():
     return [ MapMaker() ]
