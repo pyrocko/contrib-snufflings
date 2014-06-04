@@ -64,6 +64,13 @@ file: [corrsearch.py](corrsearch.py)
 
 ![screenshot](screenshots/corrsearch.png)
 
+Export wav Files 
+----------------
+
+file: [SeiSound.py](SeiSound.py)
+
+![screenshot](screenshots/SeiSound.png)
+
 Seismosizer
 -----------
 

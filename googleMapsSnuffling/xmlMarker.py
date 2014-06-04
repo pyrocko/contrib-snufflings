@@ -1,4 +1,4 @@
-from guts import *
+from pyrocko.guts import *
 
 class XMLEventMarker(Object):
     xmltagname='eventmarker'
@@ -8,6 +8,7 @@ class XMLEventMarker(Object):
     longitude = Float.T(optional=False)
     origintime= String.T(default='')
     magnitude = Float.T(optional=True)
+    depth = Float.T(optional=True)
 
 
 class EventMarkerList(Object):
