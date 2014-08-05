@@ -133,6 +133,14 @@
                     hide(category);
                 }
             }
+ 
+            function toggle_plates(box) {
+                if (box.checked) {
+                    tect_layer.setMap(map);
+                } else {
+                    tect_layer.setMap(none);
+                }
+            }
 
             function lat_lon_mouse_position(map)
             {
@@ -154,6 +162,9 @@
 
                 var latlngbounds = new google.maps.LatLngBounds();
                 map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
+                
+                tect_layer = new google.maps.KmlLayer({
+                    url: 'https://maps.google.com/maps/ms?ie=UTF8&authuser=0&msa=0&output=kml&msid=203588031002144064615.00000111e885db7ebf9ba'});
 
                 for (i=0; i<marker.length; i++)
                     {
@@ -186,6 +197,7 @@
             }
 
             google.maps.event.addDomListener(window, 'load', initialize);
+            document.getElementById("plateboundaries").checked=false;
         </script>
     </head>
 
@@ -211,6 +223,10 @@
                 Magnitude Circles: <input type='checkbox' 
                                 id='magnitudebox' 
                                 onclick="boxclick(this, 'magnitudecircle')" 
+                                checked="checked" /> &nbsp;&nbsp;
+                Plate Boundaries: <input type='checkbox' 
+                                id='plateboundariesbox' 
+                                onclick="toggle_plates(this, 'dummy')" 
                                 checked="checked" /> 
                 lat lon: <span id="latlong"></span>
             </form>
