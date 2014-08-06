@@ -34,6 +34,13 @@
                 alert(txt);
             }
 
+            var stationSymbol= {
+                  path: 'M -8,0 8,0 0,-16 z',
+                  strokeColor: 'black',
+                  fillColor: 'black',
+                  fillOpacity: 1
+                }
+
             var gmarkers = [];
             var marker = new Array;
             var magnitudeCircle = {};
@@ -94,9 +101,7 @@
 
                     stationMarker[i]= new MarkerWithLabel({
                        position: new google.maps.LatLng(lat, lon ),
-                       icon: { path: google.maps.SymbolPath.CIRCLE,
-                              scale: 4,
-                              strokeColor: 'black'},
+                       icon: stationSymbol,
                        labelContent: nsl,
                        labelAnchor: new google.maps.Point(-5, 25),
                        labelClass: "labels", // the CSS class for the label
