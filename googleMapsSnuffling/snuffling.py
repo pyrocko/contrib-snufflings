@@ -63,7 +63,7 @@ class MapMaker(Snuffling):
                 longitude=active_event.lon,
                 origintime=util.time_to_str(active_event.time),
                 depth=active_event.depth,
-                magnitude=active_event.magnitude,
+                magnitude=active_event.magnitude if active_event.magnitude else 0.,
                 active='yes')
             ev_marker_list.append(xml_active_event_marker)    
 
@@ -78,7 +78,8 @@ class MapMaker(Snuffling):
                                             latitude=ev.lat, 
                                             origintime=util.time_to_str(ev.time), 
                                             depth=ev.depth,
-                                            magnitude=ev.magnitude,
+                                            magnitude=ev.magnitude if ev.magnitude\
+                                                    else 0.,
                                             active='no')
                 except guts.ValidationError:
                     print 'invalid format'
@@ -100,6 +101,7 @@ class MapMaker(Snuffling):
                     tempdir, entry))
 
         markers_fn = os.path.join(tempdir, 'markers.xml')
+        print markers_fn
         dump_xml(event_station_list, filename=markers_fn)
 
         QDesktopServices.openUrl(QUrl('file://' + os.path.join(tempdir, \

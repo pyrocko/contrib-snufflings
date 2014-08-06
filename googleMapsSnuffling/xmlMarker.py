@@ -7,8 +7,8 @@ class XMLEventMarker(Object):
     latitude = Float.T(optional=False)
     longitude = Float.T(optional=False)
     origintime= String.T(default='')
-    magnitude = Float.T(optional=True)
-    depth = Float.T(optional=True)
+    magnitude = Float.T(optional=False, default=0.0)
+    depth = Float.T(optional=False)
 
 
 class EventMarkerList(Object):
