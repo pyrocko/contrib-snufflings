@@ -8,6 +8,15 @@ from xmlMarker import *
 from PyQt4.QtCore import QUrl 
 from PyQt4.QtGui import QDesktopServices
 
+def get_magnitude(event):
+    if event.magnitude:
+        mag = event.magnitude
+    elif event.moment_tensor:
+        mag = event.moment_tensor.magnitude
+    else:
+        mag = 0.
+    return mag
+
 class MapMaker(Snuffling):
     '''
     <h1>Create a map containing event and station locations using googlemaps.</h1>
@@ -57,13 +66,14 @@ class MapMaker(Snuffling):
 
         ev_marker_list = []
         if active_event is not None:
+
             xml_active_event_marker = XMLEventMarker(eventname = \
                     active_event.name,
                 latitude=active_event.lat,
                 longitude=active_event.lon,
                 origintime=util.time_to_str(active_event.time),
                 depth=active_event.depth,
-                magnitude=active_event.magnitude,
+                magnitude=get_magnitude(active_event),
                 active='yes')
             ev_marker_list.append(xml_active_event_marker)    
 
@@ -78,7 +88,7 @@ class MapMaker(Snuffling):
                                             latitude=ev.lat, 
                                             origintime=util.time_to_str(ev.time), 
                                             depth=ev.depth,
-                                            magnitude=ev.magnitude,
+                                            magnitude=get_magnitude(ev),
                                             active='no')
                 except guts.ValidationError:
                     print 'invalid format'
