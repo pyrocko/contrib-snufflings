@@ -67,12 +67,16 @@ class MapMaker(Snuffling):
         ev_marker_list = []
         if active_event is not None:
 
+            depth = active_event.depth
+            if depth is None:
+                depth = 0.0
+
             xml_active_event_marker = XMLEventMarker(eventname = \
                     active_event.name,
                 latitude=active_event.lat,
                 longitude=active_event.lon,
                 origintime=util.time_to_str(active_event.time),
-                depth=active_event.depth,
+                depth=depth,
                 magnitude=get_magnitude(active_event),
                 active='yes')
             ev_marker_list.append(xml_active_event_marker)    
@@ -83,11 +87,15 @@ class MapMaker(Snuffling):
             if isinstance(m, gui_util.EventMarker):
                 ev = m.get_event()
                 try:
+                    depth = ev.depth
+                    if depth is None:
+                        depth = 0.0
+
                     xmleventmarker = XMLEventMarker(eventname=ev.name,
                                             longitude=ev.lon, 
                                             latitude=ev.lat, 
                                             origintime=util.time_to_str(ev.time), 
-                                            depth=ev.depth,
+                                            depth=depth,
                                             magnitude=get_magnitude(ev),
                                             active='no')
                 except guts.ValidationError:
