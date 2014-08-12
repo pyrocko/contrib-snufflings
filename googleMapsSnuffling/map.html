@@ -115,14 +115,26 @@
             function hide(category) {
                 for (i=0; i<gmarkers.length; i++) {
                     if (gmarkers[i].category == category)
-                        gmarkers[i].setVisible(false);
+                    {
+                        try{
+                            gmarkers[i].setVisible(false);
+                        } catch(e) {
+                            gmarkers[i].setMap(null);
+                        }
+                    }
                 }
             }
 
             function show(category) {
                 for (i=0; i<gmarkers.length; i++) {
                     if (gmarkers[i].category == category)
-                        gmarkers[i].setVisible(true);
+                    {
+                        try{
+                            gmarkers[i].setVisible(true);
+                        } catch(e) {
+                            gmarkers[i].setMap(map);
+                        }
+                    }
                 }
             }
             
@@ -133,7 +145,7 @@
                     hide(category);
                 }
             }
-
+ 
             function lat_lon_mouse_position(map)
             {
                 google.maps.event.addListener(map,'mousemove',function(event) {
@@ -154,7 +166,15 @@
 
                 var latlngbounds = new google.maps.LatLngBounds();
                 map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
-
+                var platekml = 'https://raw.githubusercontent.com/HerrMuellerluedenscheid/contrib-snufflings/plates/googleMapsSnuffling/plates.kml'
+                kmloptions = {suppressInfoWindows: false,
+                              preserveViewport:true,
+                              map: map};
+                 
+                boundaries = new google.maps.KmlLayer(platekml, kmloptions);
+                boundaries.category = 'plateboundaries';
+                gmarkers.push(boundaries);
+                
                 for (i=0; i<marker.length; i++)
                     {
                         marker[i].setMap(map);
@@ -166,7 +186,6 @@
                         stationMarker[i].setMap(map);
                         latlngbounds.extend(stationMarker[i].getPosition());
                     }
-                map.fitBounds(latlngbounds);
                 
                 for (i in magnitudeCircle) {
                         var circleOptions = {
@@ -183,6 +202,7 @@
                     gmarkers.push(magnitude_circle);
                     }
                 lat_lon_mouse_position(map)
+                map.fitBounds(latlngbounds);
             }
 
             google.maps.event.addDomListener(window, 'load', initialize);
@@ -211,7 +231,11 @@
                 Magnitude Circles: <input type='checkbox' 
                                 id='magnitudebox' 
                                 onclick="boxclick(this, 'magnitudecircle')" 
-                                checked="checked" /> 
+                                checked="checked" /> &nbsp;&nbsp;
+                Plate Boundaries: <input type='checkbox' 
+                                id='platebox' 
+                                onclick="boxclick(this, 'plateboundaries')" 
+                                checked="checked" /> &nbsp;&nbsp;
                 lat lon: <span id="latlong"></span>
             </form>
 
