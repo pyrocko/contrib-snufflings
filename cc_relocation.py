@@ -54,6 +54,9 @@ class CorrelateEvents(Snuffling):
         stations = list(viewer.stations.values())
         stations.sort(key=lambda s: (s.network,s.station))
 
+        if not stations:
+            self.fail('no station information available')
+
         # gather events to be processed
 
         events = []
@@ -86,7 +89,8 @@ class CorrelateEvents(Snuffling):
             self.model_key = model_key
 
         phases = { 
-                'P': [ cake.PhaseDef(x) for x in 'P p'.split() ] ,
+                'P': ([ cake.PhaseDef(x) for x in 'P p'.split() ], 'Z'),
+                'S': ([ cake.PhaseDef(x) for x in 'S s'.split() ], 'NE'),
             }
 
         phasenames = phases.keys()
@@ -105,7 +109,7 @@ class CorrelateEvents(Snuffling):
                 azi = orthodrome.azimuth(master, station)
 
                 arrivals = self.model.arrivals(
-                        phases=phases[phasename], 
+                        phases=phases[phasename][0], 
                         distances=[ dist*cake.m2d ],
                         zstart = master_depth,
                         zstop = 0.0)
@@ -181,10 +185,10 @@ class CorrelateEvents(Snuffling):
 
         print 'timing stats'
 
-        for ev in events:
-            iev = event_to_number[ev]
+        for iphasename, phasename in enumerate(phasenames):
             data = []
-            for iphasename, phasename in enumerate(phasenames):
+            for ev in events:
+                iev = event_to_number[ev]
                 for istation, station in enumerate(stations):
                     nsp = station.network, station.station, phasename
                     if nsp in tt and nsp in ev.picks: 
@@ -310,8 +314,9 @@ class CorrelateEvents(Snuffling):
                         channels = list(set([ tr.channel for tr in wa + wb ]))
                         channels.sort()
 
+                        tccs = []
                         for cha in channels:
-                            if not cha.endswith('Z'):
+                            if cha[-1] not in phases[phasename][1]:
                                 continue
 
                             ta = get_channel(wa, cha)
@@ -319,27 +324,49 @@ class CorrelateEvents(Snuffling):
                             if ta is None or tb is None:
                                 continue
 
-                            tc = trace.correlate(ta,tb, mode='full', normalization='normal',
+                            tcc = trace.correlate(ta,tb, mode='full', normalization='normal',
                                     use_fft=True)
-                            tmid = tc.tmin*0.5 + tc.tmax*0.5
-                            tlen = (tc.tmax - tc.tmin)*0.5
-                            tc_cut = tc.chop(tmid-tlen*0.5, tmid+tlen*0.5, inplace=False)
+                            
+                            tccs.append(tcc)
+                        
+                        if not tccs:
+                            continue
 
-                            tshift, coef = tc_cut.max()
+                        tc = None
+                        for tcc in tccs:
+                            if tc is None:
+                                tc = tcc
+                            else:
+                                tc.add(tcc)
 
-                            if (tshift < tc.tmin + 0.5*tc.deltat or
-                                    tc.tmax - 0.5*tc.deltat < tshift):
-                                continue
+                        tc.ydata *= 1./len(tccs)
 
-                            coefs[iphase,istation,ia,ib] = coef
-                            tshifts[iphase,istation,ia,ib] = tshift
+                        tmid = tc.tmin*0.5 + tc.tmax*0.5
+                        tlen = (tc.tmax - tc.tmin)*0.5
+                        tc_cut = tc.chop(tmid-tlen*0.5, tmid+tlen*0.5, inplace=False)
 
-                            if self.show_correlation_traces:
-                                tc.shift(master.time - (tc.tmax + tc.tmin)/2.)
-                                self.add_trace(tc)
+                        tshift, coef = tc_cut.max()
+
+                        if (tshift < tc.tmin + 0.5*tc.deltat or
+                                tc.tmax - 0.5*tc.deltat < tshift):
+                            continue
+
+                        coefs[iphase,istation,ia,ib] = coef
+                        tshifts[iphase,istation,ia,ib] = tshift
+
+                        if self.show_correlation_traces:
+                            tc.shift(master.time - (tc.tmax + tc.tmin)/2.)
+                            self.add_trace(tc)
 
 
         #tshifts = tshifts_picked
+
+        coefssum_sta = num.nansum(coefs, axis=2) / num.sum(num.isfinite(coefs), axis=2)
+        csum_sta = num.nansum(coefssum_sta, axis=2) / num.sum(num.isfinite(coefssum_sta), axis=2)
+
+        for iphase, phasename in enumerate(phasenames):
+            for istation, station in enumerate(stations):
+                print 'station %-5s %s %15.2g' % (station.station, phasename, csum_sta[iphase,istation])
 
         coefssum = num.nansum(coefs, axis=1) / num.sum(num.isfinite(coefs), axis=1)
         csumevent = num.nansum(coefssum, axis=2) / num.sum(num.isfinite(coefssum), axis=2)
@@ -446,7 +473,7 @@ class CorrelateEvents(Snuffling):
 
         # distorted solutions
 
-        npermutations = 500
+        npermutations = 100
         noiseamount = mean_abs_residual
         xdistorteds = []
         for i in range(npermutations):
@@ -464,6 +491,13 @@ class CorrelateEvents(Snuffling):
         down = x[2::4] 
         etime = x[3::4] + tmean
 
+        def plot_range(x):
+            mi, ma = num.percentile(x, [10., 90.])
+            ext = (ma-mi)/5.
+            mi -= ext
+            ma += ext
+            return mi, ma
+
         lat, lon = orthodrome.ne_to_latlon(master.lat, master.lon, north, east)
 
         events_out = []
@@ -476,6 +510,9 @@ class CorrelateEvents(Snuffling):
 
             mark = EventMarker(event_out, kind=4)
             self.add_marker(mark)
+            events_out.append(event_out)
+
+        model.Event.dump_catalog(events_out, 'events.relocated.txt')
 
         # plot results
 
@@ -509,17 +546,22 @@ class CorrelateEvents(Snuffling):
         else:
             p = fig.add_subplot(1,1,1, aspect=1.0)
 
+        mi_north, ma_north = plot_range(north)
+        mi_east, ma_east = plot_range(east)
+        mi_down, ma_down = plot_range(down)
+
         p.set_xlabel(d+'East [km]')
         p.set_ylabel(d+'North [km]')
         p.plot(east2/km, north2/km, '.', color=color_scat, markersize=2)
         p.plot(east/km, north/km, '+', color=color_sym)
         p.plot(east0/km, north0/km, 'x', color=color_sym)
+        p0 = p
+
         for i,ev in enumerate(events):
             p.text(east[i]/km, north[i]/km, ev.name, clip_on=True)
 
         if not self.fix_depth:
 
-            p0 = p
 
             p = fig.add_subplot(2,2,2, sharey=p0, aspect=1.0)
             p.set_xlabel(d+'Depth [km]')
@@ -528,6 +570,7 @@ class CorrelateEvents(Snuffling):
             p.plot(down/km, north/km, '+', color=color_sym)
             for i,ev in enumerate(events):
                 p.text(down[i]/km, north[i]/km, ev.name, clip_on=True)
+
 
             p1 = p
 
@@ -539,9 +582,17 @@ class CorrelateEvents(Snuffling):
             for i,ev in enumerate(events):
                 p.text(east[i]/km, down[i]/km, ev.name, clip_on=True)
 
+
             p.invert_yaxis()
+            p2 = p
 
+        p0.set_xlim(mi_east/km, ma_east/km)
+        p0.set_ylim(mi_north/km, ma_north/km)
 
+        if not self.fix_depth:
+            p1.set_xlim(mi_down/km, ma_down/km)
+            p2.set_ylim(mi_down/km, ma_down/km)
+            
         if self.save:
             fig.savefig(self.output_filename(dir='locations.pdf'))
 
