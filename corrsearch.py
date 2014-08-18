@@ -66,9 +66,8 @@ class CorrsearchSnuffling(Snuffling):
   
         tmaster = master_tmax-master_tmin
         tinc = min(20*tmaster, max(tmaster, tmax-tmin))
-        tinc = 3000.
 
-        for traces in pile.chopper(tmin=tmin-1000., tmax=tmax, tinc=tinc, tpad=tmaster+tpad, want_incomplete=False):
+        for traces in pile.chopper(tmin=tmin, tmax=tmax, tinc=tinc, tpad=tmaster+tpad, want_incomplete=False):
             scc = None
             sccn = 0
             for b in traces:
