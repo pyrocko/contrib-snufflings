@@ -18,11 +18,18 @@
           alert(txt);
       }
 
-      function station(lat, lon, icon_data){
+      function Station(lat, lon, nsl, icon_data){
           this.lat = lat;
           this.lon = lon;
-          this.base(lat, lon, icon_data)
+          this.nsl = nsl;
+          this.icon_data = icon_data || get_standard_station_icon();
       };
+
+      function get_standard_station_icon(){
+          var size = new OpenLayers.Size(21,25);
+          var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
+          var icon = new OpenLayers.Icon('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAbUlEQVQ4ja3OOwrAMAwDUN0rHXzzHK1dQnGJ68gfgTYhHsDlAjDILZW52hIBcK9Kx+FUh2WlqLMWpdaVlZaupLR0aaWnSyk9XVjJ6EJKRkcrIzpKGdEdlRmdq8zofpUVnams6DZlh+6j7NC9ygd+w8cw2AIG3AAAAABJRU5ErkJggg==', size, offset);
+          return icon}
 
       function Event(lat, lon, time, depth, magnitude, icon_data){
           this.lat = lat;
@@ -30,7 +37,7 @@
           this.time = time || 0;
           this.depth = depth || 0;
           this.magnitude = magnitude || 0;
-          this.icon_data = icon_data || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAbUlEQVQ4ja3OOwrAMAwDUN0rHXzzHK1dQnGJ68gfgTYhHsDlAjDILZW52hIBcK9Kx+FUh2WlqLMWpdaVlZaupLR0aaWnSyk9XVjJ6EJKRkcrIzpKGdEdlRmdq8zofpUVnams6DZlh+6j7NC9ygd+w8cw2AIG3AAAAABJRU5ErkJggg==';
+          this.icon_data = icon_data || magnitude_circle(this);
       };
 
       function myxmlExtractor(xmlDoc){
@@ -64,30 +71,52 @@
               var nsl = stationElements[i].childNodes[1].firstChild.data;
               var lat = stationElements[i].childNodes[3].firstChild.data;
               var lon = stationElements[i].childNodes[5].firstChild.data;
-              var station = {lat:lat,
-                             lon:lon, 
-                             nsl:nsl,
-                             icon_data:null};
-
-              stations[stations.length] = station;
+              stations[stations.length] = new Station(lat, lon, nsl);
           } 
-          return [stations, events]
+          return [stations, events];
       };
 
-      function add_markers(map, items){
+      function magnitude_circle(ev){
+          var lonlat = get_transformed_lonlat(ev)
+          var p = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
+          var circ = OpenLayers.Geometry.Polygon.createRegularPolygon(p,
+                                                5000,
+                                                40,
+                                                0);
+          return circ;
+      }
+
+      function get_transformed_lonlat(item){
+          var lonLat = new OpenLayers.LonLat(item.lon, item.lat);
+          lonLat.transform(new OpenLayers.Projection("EPSG:4326"),
+                           map.getProjectionObject());
+          return lonLat 
+      }
+
+      function add_station_markers(map, items){
           var markers = new OpenLayers.Layer.Markers( "Markers" );
-          var size = new OpenLayers.Size(21,25);
-          var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
           for (i=0; i<items.length; i++){
-              var ev = items[i];
-              var icon = new OpenLayers.Icon(ev.icon_data, size, offset);
-              var lonLat = new OpenLayers.LonLat(ev.lon, ev.lat);
-              lonLat.transform(new OpenLayers.Projection("EPSG:4326"),
-                               map.getProjectionObject());
+              var item = items[i];
+              var icon = item.icon_data;
+              var lonLat = get_transformed_lonlat(item);
               markers.addMarker(new OpenLayers.Marker(lonLat, icon.clone()));
           };
           map.addLayer(markers);
-          return markers;
+          return markers
+      }
+
+      function add_event_markers(map, items){
+          var vectorLayer = new OpenLayers.Layer.Vector("Events");
+          circles = [];
+          for (i=0; i<items.length; i++){
+              var item = items[i];
+              var icon = item.icon_data;
+              var circle = new OpenLayers.Feature.Vector(icon); 
+              circles[i] = circle;
+          };
+          vectorLayer.addFeatures(circles);
+          map.addLayer(vectorLayer);
+          return vectorLayer
       }
 
       function zoomToExtent(map, layers) {
@@ -107,8 +136,8 @@
           var stations_events = myxmlExtractor(xmlDoc);
           var stations = stations_events[0];
           var events = stations_events[1];
-          var event_makers = add_markers(map, events);
-          var station_markers = add_markers(map, stations);
+          var event_makers = add_event_markers(map, events);
+          var station_markers = add_station_markers(map, stations);
           zoomToExtent(map, [station_markers, event_makers])
       }
 
