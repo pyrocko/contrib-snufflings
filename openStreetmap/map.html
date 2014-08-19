@@ -26,7 +26,7 @@
       };
 
       function get_standard_station_icon(){
-          var size = new OpenLayers.Size(21,25);
+          var size = new OpenLayers.Size(15,15);
           var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
           var icon = new OpenLayers.Icon('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAbUlEQVQ4ja3OOwrAMAwDUN0rHXzzHK1dQnGJ68gfgTYhHsDlAjDILZW52hIBcK9Kx+FUh2WlqLMWpdaVlZaupLR0aaWnSyk9XVjJ6EJKRkcrIzpKGdEdlRmdq8zofpUVnams6DZlh+6j7NC9ygd+w8cw2AIG3AAAAABJRU5ErkJggg==', size, offset);
           return icon}
@@ -39,6 +39,22 @@
           this.magnitude = magnitude || 0;
           this.icon_data = icon_data || magnitude_circle(this);
       };
+        
+      function add_kml_layer(map, url){
+          var plates = new OpenLayers.Layer.Vector("KML", {
+                      projection: map.displayProjection,
+                      strategies: [new OpenLayers.Strategy.Fixed()],
+                      protocol: new OpenLayers.Protocol.HTTP({
+                          url: url,
+                          format: new OpenLayers.Format.KML({
+                              extractStyles: true, 
+                              extractAttributes: true,
+                              maxDepth: 2
+                          })
+                      })
+                  })
+          map.addLayer(plates)
+      }
 
       function myxmlExtractor(xmlDoc){
           deb = xmlDoc.getElementsByTagName("event")
@@ -138,6 +154,7 @@
           var events = stations_events[1];
           var event_makers = add_event_markers(map, events);
           var station_markers = add_station_markers(map, stations);
+          add_kml_layer(map, './plates.kml');
           zoomToExtent(map, [station_markers, event_makers])
       }
 
