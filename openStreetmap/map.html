@@ -59,6 +59,8 @@
       function myxmlExtractor(xmlDoc){
           deb = xmlDoc.getElementsByTagName("event")
           var events = [];
+          magnitude_max = -999;
+          magnitude_min = 999;
           for (i=0; i<deb.length; i++)
           {
               var lat = deb[i].childNodes[3].firstChild.data;
@@ -67,9 +69,16 @@
               var depth = deb[i].childNodes[11].firstChild.data;
               try {
                   var mag = deb[i].childNodes[9].firstChild.data;
+                  var mag = parseFloat(mag) 
+                  if (mag>magnitude_max){
+                    magnitude_max=mag;
+                  }
+                  if (mag<magnitude_min){
+                    magnitude_min=mag;
+                  }
               }
               catch (e) {
-                  var mag = 0;
+                  var mag = null;
               }
               var event = new Event(lat,
                                     lon,
@@ -95,8 +104,16 @@
       function magnitude_circle(ev){
           var lonlat = get_transformed_lonlat(ev)
           var p = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
+          if (ev.magnitude!=null){
+              //var style = new OpenLayers.Style({fillColor : "red"});
+              var size = 4000*(1+4*((ev.magnitude-magnitude_min)/(magnitude_max-magnitude_min)))}
+          else{
+              //context definition: var style = new OpenLayers.Style({fillColor : "blue"});
+              var size = 2000
+          };
+
           var circ = OpenLayers.Geometry.Polygon.createRegularPolygon(p,
-                                                5000,
+                                                size,
                                                 40,
                                                 0);
           return circ;
