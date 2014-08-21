@@ -1,0 +1,181 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <div id="mapdiv"></div>
+  <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+  <script type="text/javascript" src="http://maplib.khtml.org/khtml.maplib/khtml_all.js"> </script>
+  <script type="text/javascript" src="loadxmldoc.js"></script>
+  <script>
+      try{
+          xmlDoc = loadXMLDoc("markers.xml")
+      }
+      catch(err)
+      {
+          txt="An error occurred while trying to read dumped pyrocko marker.\n\n";
+          txt+="Probably, your browser does not allow to open that document\n\n";
+          txt+="due to the \"Same-Origin-Policy\".\n\n";
+          txt+="A solution might be to change your default browser.\n\n";
+          alert(txt);
+      }
+
+      function Station(lat, lon, nsl, icon_data){
+          this.lat = lat;
+          this.lon = lon;
+          this.nsl = nsl;
+          this.icon_data = icon_data || get_standard_station_icon();
+      };
+
+      function get_standard_station_icon(){
+          var size = new OpenLayers.Size(15,15);
+          var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
+          var icon = new OpenLayers.Icon('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAbUlEQVQ4ja3OOwrAMAwDUN0rHXzzHK1dQnGJ68gfgTYhHsDlAjDILZW52hIBcK9Kx+FUh2WlqLMWpdaVlZaupLR0aaWnSyk9XVjJ6EJKRkcrIzpKGdEdlRmdq8zofpUVnams6DZlh+6j7NC9ygd+w8cw2AIG3AAAAABJRU5ErkJggg==', size, offset);
+          return icon}
+
+      function Event(lat, lon, time, depth, magnitude, icon_data){
+          this.lat = lat;
+          this.lon = lon;
+          this.time = time || 0;
+          this.depth = depth || 0;
+          this.magnitude = magnitude || 0;
+          this.icon_data = icon_data || magnitude_circle(this);
+      };
+        
+      function add_kml_layer(map, url){
+          var plates = new OpenLayers.Layer.Vector("KML", {
+                      projection: map.displayProjection,
+                      strategies: [new OpenLayers.Strategy.Fixed()],
+                      protocol: new OpenLayers.Protocol.HTTP({
+                          url: url,
+                          format: new OpenLayers.Format.KML({
+                              extractStyles: true, 
+                              extractAttributes: true,
+                              maxDepth: 2
+                          })
+                      })
+                  })
+          map.addLayer(plates)
+      }
+
+      function myxmlExtractor(xmlDoc){
+          deb = xmlDoc.getElementsByTagName("event")
+          var events = [];
+          magnitude_max = -999;
+          magnitude_min = 999;
+          for (i=0; i<deb.length; i++)
+          {
+              var lat = deb[i].childNodes[3].firstChild.data;
+              var lon = deb[i].childNodes[5].firstChild.data;
+              var time = deb[i].childNodes[7].firstChild.data;
+              var depth = deb[i].childNodes[11].firstChild.data;
+              try {
+                  var mag = deb[i].childNodes[9].firstChild.data;
+                  var mag = parseFloat(mag) 
+                  if (mag>magnitude_max){
+                    magnitude_max=mag;
+                  }
+                  if (mag<magnitude_min){
+                    magnitude_min=mag;
+                  }
+              }
+              catch (e) {
+                  var mag = null;
+              }
+              var event = new Event(lat,
+                                    lon,
+                                    time,
+                                    depth,
+                                    mag);
+
+              events[events.length] = event;
+          };
+
+          var stations = [];
+          stationElements=xmlDoc.getElementsByTagName("station")
+          for (i=0; i<stationElements.length; i++)
+          {
+              var nsl = stationElements[i].childNodes[1].firstChild.data;
+              var lat = stationElements[i].childNodes[3].firstChild.data;
+              var lon = stationElements[i].childNodes[5].firstChild.data;
+              stations[stations.length] = new Station(lat, lon, nsl);
+          } 
+          return [stations, events];
+      };
+
+      function magnitude_circle(ev){
+          var lonlat = get_transformed_lonlat(ev)
+          var p = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
+          if (ev.magnitude!=null){
+              //var style = new OpenLayers.Style({fillColor : "red"});
+              var size = 4000*(1+4*((ev.magnitude-magnitude_min)/(magnitude_max-magnitude_min)))}
+          else{
+              //context definition: var style = new OpenLayers.Style({fillColor : "blue"});
+              var size = 2000
+          };
+
+          var circ = OpenLayers.Geometry.Polygon.createRegularPolygon(p,
+                                                size,
+                                                40,
+                                                0);
+          return circ;
+      }
+
+      function get_transformed_lonlat(item){
+          var lonLat = new OpenLayers.LonLat(item.lon, item.lat);
+          lonLat.transform(new OpenLayers.Projection("EPSG:4326"),
+                           map.getProjectionObject());
+          return lonLat 
+      }
+
+      function add_station_markers(map, items){
+          var markers = new OpenLayers.Layer.Markers( "Markers" );
+          for (i=0; i<items.length; i++){
+              var item = items[i];
+              var icon = item.icon_data;
+              var lonLat = get_transformed_lonlat(item);
+              markers.addMarker(new OpenLayers.Marker(lonLat, icon.clone()));
+          };
+          map.addLayer(markers);
+          return markers
+      }
+
+      function add_event_markers(map, items){
+          var vectorLayer = new OpenLayers.Layer.Vector("Events");
+          circles = [];
+          for (i=0; i<items.length; i++){
+              var item = items[i];
+              var icon = item.icon_data;
+              var circle = new OpenLayers.Feature.Vector(icon); 
+              circles[i] = circle;
+          };
+          vectorLayer.addFeatures(circles);
+          map.addLayer(vectorLayer);
+          return vectorLayer
+      }
+
+      function zoomToExtent(map, layers) {
+          bounds = new OpenLayers.Bounds();
+          for (i=0; i<layers.length; i++){
+              bounds.extend(layers[i].getDataExtent());
+          }
+          map.zoomToExtent(bounds);
+      }
+
+
+      function init() {
+          map = new OpenLayers.Map("mapdiv");
+          map.addLayer(new OpenLayers.Layer.OSM());
+          epsg4326 = new OpenLayers.Projection("EPSG:4326");
+          projectTo = map.getProjectionObject();
+          var stations_events = myxmlExtractor(xmlDoc);
+          var stations = stations_events[0];
+          var events = stations_events[1];
+          var event_makers = add_event_markers(map, events);
+          var station_markers = add_station_markers(map, stations);
+          add_kml_layer(map, './plates.kml');
+          zoomToExtent(map, [station_markers, event_makers])
+      }
+
+</script>
+</head>
+<body onload="init()">
+</body></html>
