@@ -15,10 +15,10 @@ def get_magnitude(event):
     if event.magnitude:
         mag = event.magnitude
     elif event.moment_tensor:
-        mag = event.moment_tensor.magnitude
+        mag = event.moment_tensor.moment_magnitude()
     else:
         mag = 0.
-    return mag
+    return float(mag)
 
 def convert_event_marker(marker):
     ev = marker.get_event()
