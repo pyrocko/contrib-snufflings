@@ -2,9 +2,10 @@ import subprocess
 import os
 import tempfile
 import shutil
-from pyrocko.snuffling import Snuffling, Param, Switch
+from pyrocko.snuffling import Snuffling, Param, Switch, Choice
 from pyrocko import util, gui_util, guts
-from xmlMarker import *
+from xmlMarker import (XMLEventMarker, EventMarkerList, XMLStationMarker,
+    StationMarkerList, MarkerLists, dump_xml)
 from PyQt4.QtCore import QUrl 
 from PyQt4.QtGui import QDesktopServices
 
@@ -66,10 +67,12 @@ class MapMaker(Snuffling):
     </html>
     '''
     def setup(self):
-        self.set_name('Create Map in GoogleMaps')
+        self.set_name('Map')
         self.add_parameter(Switch('Only active event', 'only_active', False))
         self.add_parameter(Switch('Open in external browser',
                                   'open_external', False))
+        self.add_parameter(Choice('Provider', 'map_kind', 'OpenStreetMap',
+                                  ['OpenStreetMap', 'Google Maps']))
 
         self.set_live_update(False)
 
@@ -119,20 +122,28 @@ class MapMaker(Snuffling):
 
         tempdir = tempfile.mkdtemp(dir=self.tempdir())
 
-        for entry in ['loadxmldoc.js', 'map.html']:
+        if self.map_kind == 'Google Maps':
+            map_fn = 'map_googlemaps.html'
+        elif self.map_kind == 'OpenStreetMap':
+            map_fn = 'map_osm.html'
+
+        url = 'file://' + tempdir + '/' + map_fn
+
+        for entry in ['loadxmldoc.js', map_fn]:
             shutil.copy(os.path.join(self.module_dir(), entry),
                         os.path.join(tempdir, entry))
 
         markers_fn = os.path.join(tempdir, 'markers.xml')
         dump_xml(event_station_list, filename=markers_fn)
 
-        url = 'file://' + tempdir + '/map.html'
         if self.open_external:
             QDesktopServices.openUrl(QUrl(url))
         else:
             global g_counter
             g_counter += 1
-            self.web_frame(url, name='GoogleMaps %i' % g_counter)
+            self.web_frame(
+                url,
+                name='Map %i (%s)' % (g_counter, self.map_kind))
 
 
 def __snufflings__():
