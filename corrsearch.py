@@ -14,7 +14,7 @@ class CorrsearchSnuffling(Snuffling):
         '''Customization of the snuffling.'''
         
         self.set_name('Cross Correlation Search')
-        self.add_parameter(Param('Downsample to [Hz]', 'downsample', 200., 0.1, 200., high_is_none=True))
+        self.add_parameter(Param('Downsample to [Hz]', 'downsample', None, 0.1, 200., high_is_none=True))
         self.add_parameter(Param('Highpass [Hz]', 'corner_highpass', 1., 0.001, 50.))
         self.add_parameter(Param('Lowpass [Hz]', 'corner_lowpass', 1., 0.001, 50.))
         self.add_parameter(Switch('Apply to full dataset', 'apply_to_all', False))
@@ -77,6 +77,7 @@ class CorrsearchSnuffling(Snuffling):
                     if self.downsample is not None:
                         b.downsample_to(1./self.downsample)
                     b.highpass(4, self.corner_highpass)
+                    tr.lowpass(4, self.corner_lowpass)
                     normalization = {'Off': None, 'Normal': 'normal', 'Gliding': 'gliding'}[self.normalization]
                     c = trace.correlate(a,b, mode='valid', normalization=normalization)
                     c.shift(-c.tmin + b.tmin)
