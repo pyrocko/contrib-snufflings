@@ -78,7 +78,7 @@
                   }
               }
               catch (e) {
-                  var mag = null;
+                  var mag = 0;
               }
               var event = new Event(lat,
                                     lon,
@@ -101,16 +101,21 @@
           return [stations, events];
       };
 
+
       function magnitude_circle(ev){
           var lonlat = get_transformed_lonlat(ev)
           var p = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
-          if (ev.magnitude!=null){
+          //if (ev.magnitude!=0.){
               //var style = new OpenLayers.Style({fillColor : "red"});
-              var size = 4000*(1+4*((ev.magnitude-magnitude_min)/(magnitude_max-magnitude_min)))}
+          if (magnitude_min==magnitude_max){
+              var size = 2000;}
           else{
+              var size = 4000*(1+4*((ev.magnitude-magnitude_min)/(magnitude_max-magnitude_min)));
+          }
+          //else{
               //context definition: var style = new OpenLayers.Style({fillColor : "blue"});
-              var size = 2000
-          };
+          //    var size = 2000
+          //};
 
           var circ = OpenLayers.Geometry.Polygon.createRegularPolygon(p,
                                                 size,
@@ -171,7 +176,7 @@
           var events = stations_events[1];
           var event_makers = add_event_markers(map, events);
           var station_markers = add_station_markers(map, stations);
-          add_kml_layer(map, './plates.kml');
+          //add_kml_layer(map, './plates.kml');
           zoomToExtent(map, [station_markers, event_makers])
       }
 
