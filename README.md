@@ -18,14 +18,14 @@ To add your own creation, simply clone this repos, add your stuff and a
 screenshot and send a pull request. 
 
 
-Create Map in GoogleMaps
-------------------------
+Create Map in OpenStreetMap or Google Maps
+------------------------------------------
 
-Plot station and event locations in Google Maps
+Plot station and event locations with OpenStreetMap or Google Maps
 
-directory: [googleMapsSnuffling](googleMapsSnuffling)
+directory: [map](map)
 
-![screenshot](screenshots/googleMapsSnuffling.png)
+![screenshot](screenshots/map.png)
 
 
 Plot PSD

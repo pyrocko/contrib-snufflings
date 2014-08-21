@@ -40,7 +40,7 @@ class MapMaker(Snuffling):
     '''
     <html>
     <body>
-    <h1>Create a map containing event and station locations using googlemaps.</h1>
+    <h1>Map event and stations with OpenStreetMap or Google Maps</h1>
 
     <p>
     Invokes the standard browser if "Open in external browser" is selected.
