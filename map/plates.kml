@@ -3,6 +3,7 @@
 <Document>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 -0.4379, -54.8518, 100.0
 -0.0388257, -54.6772, 100.0
@@ -26,6 +27,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 7.77235, -54.396, 100.0
 8.28834, -54.0326, 100.0
@@ -60,6 +62,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Lemaux et al. [2002]</name>
 <coordinates>
 32.1258, -46.9998, 100.0
 31.8654, -47.2011, 100.0
@@ -93,6 +96,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Lemaux et al. [2002]</name>
 <coordinates>
 32.1258, -46.9998, 100.0
 33.1739, -47.2644, 100.0
@@ -119,6 +123,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 38.0827, -44.6188, 100.0
 38.1937, -44.401, 100.0
@@ -218,6 +223,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 58.2392, 12.7455, 100.0
 57.8675, 13.0023, 100.0
@@ -240,6 +246,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 68.2738, -6.8109, 100.0
 67.8113, -7.2525, 100.0
@@ -301,6 +308,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>W part, by Peter Bird, 1999</name>
 <coordinates>
 -29.7698, 39.3996, 100.0
 -29.335, 39.315, 100.0
@@ -448,6 +456,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 2002.03</name>
 <coordinates>
 6.78405, 37.3219, 100.0
 7.21517, 37.3203, 100.0
@@ -464,6 +473,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 2002.03</name>
 <coordinates>
 10.3732, 38.685, 100.0
 10.6091, 38.8209, 100.0
@@ -484,6 +494,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 2002.03</name>
 <coordinates>
 14.5145, 38.7653, 100.0
 15.1752, 38.2924, 100.0
@@ -498,6 +509,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 2002.03</name>
 <coordinates>
 15.3751, 37.3401, 100.0
 15.8319, 37.2743, 100.0
@@ -517,6 +529,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 2002.03</name>
 <coordinates>
 17.9599, 39.1696, 100.0
 18.3644, 38.9474, 100.0
@@ -528,6 +541,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 58.2392, 12.7455, 100.0
 58.0174, 12.2835, 100.0
@@ -603,6 +617,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 -46.7658, 15.4506, 100.0
 -46.6476, 16.0187, 100.0
@@ -701,6 +716,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 -46.7658, 15.4506, 100.0
 -45.9475, 15.3604, 100.0
@@ -880,6 +896,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 -12.5326, -28.9409, 100.0
 -13.2624, -29.098, 100.0
@@ -931,6 +948,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 -16.4299, -42.8677, 100.0
 -16.3296, -43.387, 100.0
@@ -977,6 +995,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 69.9595, -25.6512, 100.0
 70.4086, -26.0604, 100.0
@@ -1093,6 +1112,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 109.351, -49.5235, 100.0
 110.472, -49.779, 100.0
@@ -1172,6 +1192,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 146.881, -54.6953, 100.0
 147.043, -55.1749, 100.0
@@ -1204,6 +1225,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>mostly Mueller et al. [1987]; edited by P. Bird, 1999</name>
 <coordinates>
 -76.0062, -45.6585, 100.0
 -76.6746, -45.6427, 100.0
@@ -1272,6 +1294,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 161.228, -61.4567, 100.0
 161.975, -61.763, 100.0
@@ -1446,6 +1469,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 -0.4379, -54.8518, 100.0
 -1.03898, -55.019, 100.0
@@ -1497,6 +1521,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 -76.4833, -52.0684, 100.0
 -76.6257, -51.3775, 100.0
@@ -1514,6 +1539,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 65.0282, 24.3824, 100.0
 64.1615, 24.3498, 100.0
@@ -1559,6 +1585,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 104.576, -8.16657, 100.0
 104.981, -8.5688, 100.0
@@ -1596,6 +1623,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 120.886, -11.4925, 100.0
 121.11, -11.4927, 100.0
@@ -1622,6 +1650,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 131.415, -8.26747, 100.0
 131.867, -7.6612, 100.0
@@ -1632,6 +1661,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 159.803, -60.0055, 100.0
 160.327, -60.5039, 100.0
@@ -1643,6 +1673,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 166.951, -44.9871, 100.0
 167.1, -44.8262, 100.0
@@ -1656,6 +1687,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 168.77, -44.0215, 100.0
 169.136, -43.8453, 100.0
@@ -1677,6 +1709,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 175.503, -42.0593, 100.0
 176.081, -41.91, 100.0
@@ -1733,6 +1766,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 -174.985, -23.7499, 100.0
 -174.842, -23.5126, 100.0
@@ -1773,6 +1807,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Circum Pacific Map Project [1981]</name>
 <coordinates>
 -177.419, -24.1051, 100.0
 -177.448, -24.242, 100.0
@@ -1818,6 +1853,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 -176.346, -14.634, 100.0
 -175.865, -14.4781, 100.0
@@ -1830,6 +1866,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name></name>
 <coordinates>
 -173.836, -14.5338, 100.0
 -173.407, -14.584, 100.0
@@ -1838,6 +1875,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 2001.05</name>
 <coordinates>
 138.972, -1.6075, 100.0
 139.205, -2.09261, 100.0
@@ -1852,6 +1890,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 2001.05</name>
 <coordinates>
 140.798, -5.10959, 100.0
 140.847, -5.14497, 100.0
@@ -1871,6 +1910,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Circum Pacific Map Project [1981]</name>
 <coordinates>
 148.587, -7.39451, 100.0
 149.314, -7.03217, 100.0
@@ -1890,6 +1930,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Circum Pacific Map Project [1981]</name>
 <coordinates>
 153.93, -6.265, 100.0
 154.225, -6.50689, 100.0
@@ -1900,6 +1941,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Circum Pacific Map Project [1981]</name>
 <coordinates>
 154.927, -7.29284, 100.0
 155.454, -7.48875, 100.0
@@ -1908,6 +1950,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Circum Pacific Map Project [1981]</name>
 <coordinates>
 155.454, -7.48875, 100.0
 155.812, -7.70595, 100.0
@@ -1918,6 +1961,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Lock et al. [1987]</name>
 <coordinates>
 148.587, -7.39451, 100.0
 148.733, -7.47525, 100.0
@@ -1944,6 +1988,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 2001.05</name>
 <coordinates>
 151.654, -9.76005, 100.0
 151.545, -9.67589, 100.0
@@ -1961,6 +2006,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 156.296, -8.17405, 100.0
 156.467, -8.3819, 100.0
@@ -2069,6 +2115,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 166.154, -13.7794, 100.0
 166.161, -13.8276, 100.0
@@ -2173,6 +2220,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 -61.5534, 18.9589, 100.0
 -62.1765, 19.2752, 100.0
@@ -2232,6 +2280,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 -90.898, 12.5837, 100.0
 -90.2927, 12.5426, 100.0
@@ -2247,6 +2296,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 -63.8782, 10.5316, 100.0
 -63.2327, 10.5091, 100.0
@@ -2264,6 +2314,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 -58.1571, 10.1597, 100.0
 -57.7617, 10.6345, 100.0
@@ -2294,6 +2345,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 -90.898, 12.5837, 100.0
 -91.3079, 12.8322, 100.0
@@ -2335,6 +2387,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>truncated from Mueller et al. [1987]</name>
 <coordinates>
 -105.586, 17.8808, 100.0
 -105.399, 17.7679, 100.0
@@ -2373,6 +2426,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 -99.7389, 2.26882, 100.0
 -99.657, 2.19007, 100.0
@@ -2424,6 +2478,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 65.0282, 24.3824, 100.0
 65.4921, 24.6201, 100.0
@@ -2458,6 +2513,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 72.4591, 34.6822, 100.0
 73.0296, 34.1759, 100.0
@@ -2509,6 +2565,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 125.679, 78.1326, 100.0
 126.457, 77.6844, 100.0
@@ -2542,6 +2599,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 -15.7156, 69.5499, 100.0
 -15.4245, 69.8397, 100.0
@@ -2753,6 +2811,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 -29.7698, 39.3996, 100.0
 -29.6089, 39.9928, 100.0
@@ -3031,6 +3090,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 144.454, 40.847, 100.0
 144.479, 40.5494, 100.0
@@ -3074,6 +3134,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]; N end by Peter Bird, 1999</name>
 <coordinates>
 -124.742, 40.3134, 100.0
 -125.45, 40.3541, 100.0
@@ -3124,6 +3185,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 -124.742, 40.3134, 100.0
 -124.953, 40.6333, 100.0
@@ -3183,6 +3245,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 144.454, 40.847, 100.0
 145.077, 41.3192, 100.0
@@ -3222,6 +3285,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 164.066, 55.2092, 100.0
 164.847, 54.957, 100.0
@@ -3288,6 +3352,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 -145.756, 59.2735, 100.0
 -144.977, 59.5759, 100.0
@@ -3323,6 +3388,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 -124.742, 40.3134, 100.0
 -124.416, 40.3107, 100.0
@@ -3352,6 +3418,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]</name>
 <coordinates>
 -115.773, 33.4211, 100.0
 -115.596, 33.2366, 100.0
@@ -3425,6 +3492,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 -61.5534, 18.9589, 100.0
 -60.7526, 19.2082, 100.0
@@ -3454,6 +3522,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mueller et al. [1987]; Naar and Hey [1991]</name>
 <coordinates>
 -102.319, -0.015477, 100.0
 -102.397, -0.503231, 100.0
@@ -3538,6 +3607,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 -76.0062, -45.6585, 100.0
 -75.8214, -44.8494, 100.0
@@ -3584,6 +3654,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 -71.3068, -21.9654, 100.0
 -71.2495, -21.2622, 100.0
@@ -3603,6 +3674,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 -75.9163, -15.7355, 100.0
 -76.4029, -15.2185, 100.0
@@ -3631,6 +3703,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 -81.5989, -3.24451, 100.0
 -81.6519, -3.00021, 100.0
@@ -3654,6 +3727,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, May 2002</name>
 <coordinates>
 128.462, 25.4576, 100.0
 128.978, 25.8591, 100.0
@@ -3677,6 +3751,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 132.824, 30.7544, 100.0
 132.965, 30.9698, 100.0
@@ -3700,6 +3775,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 138.674, 35.0337, 100.0
 139.234, 35.0141, 100.0
@@ -3715,6 +3791,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 134.521, 6.99019, 100.0
 135.415, 6.89507, 100.0
@@ -3730,6 +3807,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 138.359, 9.37865, 100.0
 138.574, 9.95256, 100.0
@@ -3747,6 +3825,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 143.097, 11.5689, 100.0
 143.503, 11.4936, 100.0
@@ -3780,6 +3859,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 1999</name>
 <coordinates>
 143.522, 24.3908, 100.0
 143.096, 24.9092, 100.0
@@ -3805,6 +3885,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, 2001</name>
 <coordinates>
 -174.985, -23.7499, 100.0
 -175.691, -23.8526, 100.0
@@ -3816,6 +3897,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Zellmer and Taylor [2001]</name>
 <coordinates>
 -176.346, -14.634, 100.0
 -176.339, -14.7803, 100.0
@@ -3832,6 +3914,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Zellmer and Taylor [2001]</name>
 <coordinates>
 -177.13, -15.5594, 100.0
 -177.248, -15.7096, 100.0
@@ -3869,6 +3952,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Zellmer and Taylor [2001]</name>
 <coordinates>
 -173.836, -14.5338, 100.0
 -173.905, -14.629, 100.0
@@ -3912,6 +3996,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Zellmer and Taylor [2001]</name>
 <coordinates>
 -175.979, -19.3865, 100.0
 -176.027, -19.6508, 100.0
@@ -3945,6 +4030,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Klepeis and Lawver, 1996</name>
 <coordinates>
 -76.4833, -52.0684, 100.0
 -76.3121, -52.9285, 100.0
@@ -3968,6 +4054,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Klepeis and Lawver, 1996</name>
 <coordinates>
 -64.617, -57.9586, 100.0
 -63.5707, -58.3592, 100.0
@@ -3982,6 +4069,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Klepeis and Lawver, 1996</name>
 <coordinates>
 -56.925, -60.5647, 100.0
 -57.4938, -60.8546, 100.0
@@ -3998,6 +4086,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Klepeis and Lawver, 1996</name>
 <coordinates>
 -63.9693, -62.4224, 100.0
 -63.2916, -62.8247, 100.0
@@ -4014,6 +4103,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, September 2001</name>
 <coordinates>
 -56.925, -60.5647, 100.0
 -56.2692, -60.7422, 100.0
@@ -4026,6 +4116,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Klepeis and Lawver, 1996</name>
 <coordinates>
 -54.3007, -61.5102, 100.0
 -53.1221, -61.0366, 100.0
@@ -4042,6 +4133,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, September 2001</name>
 <coordinates>
 20.0, 37.9075, 100.0
 20.3001, 37.8039, 100.0
@@ -4050,6 +4142,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>McClusky et al., 2000</name>
 <coordinates>
 29.7309, 35.4273, 100.0
 29.3888, 35.7284, 100.0
@@ -4072,6 +4165,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>McClusky et al., 2000</name>
 <coordinates>
 25.4165, 40.1564, 100.0
 24.931, 40.0922, 100.0
@@ -4093,6 +4187,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>McClusky et al., 2000</name>
 <coordinates>
 36.4134, 36.0232, 100.0
 36.4315, 35.7522, 100.0
@@ -4111,6 +4206,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>McClusky et al., 2000</name>
 <coordinates>
 36.4134, 36.0232, 100.0
 36.3892, 36.2596, 100.0
@@ -4130,6 +4226,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, September 2001</name>
 <coordinates>
 41.0015, 39.0799, 100.0
 41.0262, 38.8487, 100.0
@@ -4150,6 +4247,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>McClusky et al., 2000</name>
 <coordinates>
 41.0015, 39.0799, 100.0
 40.4492, 39.3925, 100.0
@@ -4181,6 +4279,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 164.066, 55.2092, 100.0
 163.34, 55.817, 100.0
@@ -4201,6 +4300,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 170.743, 61.7358, 100.0
 169.722, 61.6666, 100.0
@@ -4228,6 +4328,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 144.932, 65.2865, 100.0
 145.487, 64.4376, 100.0
@@ -4257,6 +4358,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Wei and Seno, 1998; detail by Peter Bird</name>
 <coordinates>
 142.409, 54.0349, 100.0
 142.849, 53.3843, 100.0
@@ -4305,6 +4407,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, May 2002</name>
 <coordinates>
 142.409, 54.0349, 100.0
 141.278, 54.0742, 100.0
@@ -4400,6 +4503,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 96.4803, 14.4, 100.0
 97.39, 14.4188, 100.0
@@ -4433,6 +4537,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 114.0, 18.4377, 100.0
 114.419, 18.8261, 100.0
@@ -4453,6 +4558,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Circum Pacific Mapping Project, 1986</name>
 <coordinates>
 96.4803, 14.4, 100.0
 96.4537, 14.9093, 100.0
@@ -4462,6 +4568,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 96.4061, 15.1355, 100.0
 96.4193, 15.3962, 100.0
@@ -4490,6 +4597,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Circum Pacific Mapping Project, 1986</name>
 <coordinates>
 92.2781, 6.94757, 100.0
 92.3761, 6.33253, 100.0
@@ -4505,6 +4613,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Circum Pacific Mapping Project, 1986</name>
 <coordinates>
 94.9794, 2.1041, 100.0
 95.5419, 1.88178, 100.0
@@ -4515,6 +4624,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 96.2019, 1.345, 100.0
 96.3795, 1.12302, 100.0
@@ -4541,6 +4651,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, May 2002</name>
 <coordinates>
 114.0, 18.4377, 100.0
 113.759, 18.863, 100.0
@@ -4600,6 +4711,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 -71.3068, -21.9654, 100.0
 -70.6833, -21.7339, 100.0
@@ -4648,6 +4760,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>DeMets and Wilson, 1997</name>
 <coordinates>
 -108.582, 21.9047, 100.0
 -108.676, 21.9596, 100.0
@@ -4662,6 +4775,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>DeMets and Wilson, 1997</name>
 <coordinates>
 -108.582, 21.9047, 100.0
 -108.669, 21.7739, 100.0
@@ -4705,6 +4819,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>DeMets and Wilson, 1997</name>
 <coordinates>
 -108.582, 21.9047, 100.0
 -108.397, 21.8348, 100.0
@@ -4721,6 +4836,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>DeMets and Wilson, 1997</name>
 <coordinates>
 -106.89, 21.7992, 100.0
 -106.862, 21.7156, 100.0
@@ -4745,6 +4861,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>DeMets and Wilson, 1997</name>
 <coordinates>
 -105.586, 17.8808, 100.0
 -105.51, 18.1403, 100.0
@@ -4756,6 +4873,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 121.575, 24.6914, 100.0
 121.335, 24.963, 100.0
@@ -4764,6 +4882,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 121.335, 24.963, 100.0
 120.981, 24.6536, 100.0
@@ -4777,6 +4896,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 120.452, 21.6321, 100.0
 120.344, 21.2021, 100.0
@@ -4794,6 +4914,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 119.255, 16.5557, 100.0
 119.728, 16.407, 100.0
@@ -4813,6 +4934,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 124.891, 14.7042, 100.0
 125.15, 14.1321, 100.0
@@ -4842,6 +4964,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, June 2002</name>
 <coordinates>
 126.872, 2.34565, 100.0
 127.446, 2.31942, 100.0
@@ -4854,6 +4977,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 126.872, 2.34565, 100.0
 126.426, 1.70646, 100.0
@@ -4862,6 +4986,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 126.426, 1.70646, 100.0
 126.144, 1.00135, 100.0
@@ -4871,6 +4996,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Rangin et al. [1999]</name>
 <coordinates>
 123.43, 2.00599, 100.0
 123.219, 2.02386, 100.0
@@ -4887,6 +5013,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Rangin et al. [1999]</name>
 <coordinates>
 119.475, -0.0810301, 100.0
 119.896, -0.85933, 100.0
@@ -4912,6 +5039,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 127.325, -3.7191, 100.0
 127.51, -3.16252, 100.0
@@ -4922,6 +5050,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 125.969, -0.277582, 100.0
 125.969, 0.189999, 100.0
@@ -4932,6 +5061,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Rangin et al. [1999]</name>
 <coordinates>
 119.475, -0.0810301, 100.0
 119.296, -0.680331, 100.0
@@ -4945,6 +5075,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Rangin et al. [1999]</name>
 <coordinates>
 118.823, -3.60956, 100.0
 119.565, -3.96595, 100.0
@@ -4959,6 +5090,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 132.689, -6.68099, 100.0
 133.188, -6.51458, 100.0
@@ -4971,6 +5103,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 127.666, -1.75821, 100.0
 127.241, -1.38815, 100.0
@@ -4982,6 +5115,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 127.666, -1.75821, 100.0
 128.383, -2.28637, 100.0
@@ -4990,6 +5124,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Rangin et al. [1999]</name>
 <coordinates>
 128.383, -2.28637, 100.0
 129.258, -2.41628, 100.0
@@ -5005,6 +5140,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Rangin et al. [1999]</name>
 <coordinates>
 132.717, -4.44004, 100.0
 133.311, -4.62627, 100.0
@@ -5014,6 +5150,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 120.886, -11.4925, 100.0
 120.995, -10.8294, 100.0
@@ -5027,6 +5164,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Rangin et al. [1999]</name>
 <coordinates>
 120.543, -7.81221, 100.0
 121.253, -7.99023, 100.0
@@ -5055,6 +5193,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Puntodewo et al. [1994]</name>
 <coordinates>
 138.793, -1.15941, 100.0
 138.674, -0.819845, 100.0
@@ -5074,6 +5213,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Puntodewo et al. [1994]</name>
 <coordinates>
 132.515, 0.0170583, 100.0
 132.373, 0.0339015, 100.0
@@ -5087,6 +5227,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 140.798, -5.10959, 100.0
 140.264, -4.93064, 100.0
@@ -5104,6 +5245,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Rangin et al. [1999]</name>
 <coordinates>
 134.966, -4.29798, 100.0
 134.488, -4.43733, 100.0
@@ -5113,6 +5255,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Rangin et al. [1999]</name>
 <coordinates>
 138.972, -1.6075, 100.0
 138.488, -1.75378, 100.0
@@ -5130,6 +5273,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>per Brian Taylor, p.c., 2002</name>
 <coordinates>
 96.4803, 14.4, 100.0
 96.5031, 14.1292, 100.0
@@ -5162,6 +5306,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 92.2781, 6.94757, 100.0
 91.9032, 7.66274, 100.0
@@ -5181,6 +5326,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 92.0682, 13.7149, 100.0
 92.5168, 14.3843, 100.0
@@ -5196,6 +5342,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 125.969, 0.189999, 100.0
 125.616, -0.12779, 100.0
@@ -5205,6 +5352,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 125.263, -0.445578, 100.0
 124.857, -0.269106, 100.0
@@ -5219,6 +5367,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, November 2001</name>
 <coordinates>
 -15.7156, 69.5499, 100.0
 -16.0335, 69.2647, 100.0
@@ -5290,6 +5439,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, November 2001</name>
 <coordinates>
 68.2738, -6.81092, 100.0
 69.0074, -6.53842, 100.0
@@ -5345,6 +5495,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Massell et al., 2000, Figure 3, Puysegur thrust</name>
 <coordinates>
 166.951, -44.9871, 100.0
 166.71, -45.2113, 100.0
@@ -5385,6 +5536,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Massell et al., 2000, Figure 3</name>
 <coordinates>
 163.235, -50.0787, 100.0
 163.047, -50.2732, 100.0
@@ -5445,6 +5597,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by P. Bird, May 2002, after Lallemand et al. [1997b]</name>
 <coordinates>
 121.575, 24.6914, 100.0
 121.779, 24.2554, 100.0
@@ -5461,6 +5614,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 125.55, 23.3799, 100.0
 125.954, 23.4977, 100.0
@@ -5474,6 +5628,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Letouzey & Kimura [1985]</name>
 <coordinates>
 121.575, 24.6914, 100.0
 122.024, 24.853, 100.0
@@ -5514,6 +5669,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, May 2002</name>
 <coordinates>
 129.442, 31.7926, 100.0
 129.768, 32.0417, 100.0
@@ -5530,6 +5686,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, May 2002</name>
 <coordinates>
 123.364, 31.4713, 100.0
 124.072, 32.1727, 100.0
@@ -5541,6 +5698,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, May 2002</name>
 <coordinates>
 123.364, 31.4713, 100.0
 123.867, 31.3257, 100.0
@@ -5558,6 +5716,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Weissel and Anderson [1978]</name>
 <coordinates>
 134.521, 6.99019, 100.0
 134.269, 6.61025, 100.0
@@ -5584,6 +5743,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, June 2002</name>
 <coordinates>
 138.359, 9.37865, 100.0
 139.192, 9.06494, 100.0
@@ -5620,6 +5780,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, June 2002</name>
 <coordinates>
 142.246, -2.6931, 100.0
 142.394, -2.46221, 100.0
@@ -5644,6 +5805,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, June 2002</name>
 <coordinates>
 149.27, -0.65021, 100.0
 149.481, -0.818472, 100.0
@@ -5679,6 +5841,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, June 2002</name>
 <coordinates>
 138.793, -1.15941, 100.0
 139.257, -1.38997, 100.0
@@ -5694,6 +5857,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, June 2001</name>
 <coordinates>
 138.793, -1.15941, 100.0
 138.972, -1.6075, 100.0
@@ -5702,6 +5866,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Auzende et al. [2000]; Martinez and Taylor [1996]</name>
 <coordinates>
 143.743, -3.46045, 100.0
 144.368, -3.53117, 100.0
@@ -5739,6 +5904,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, June 2002</name>
 <coordinates>
 142.246, -2.6931, 100.0
 142.449, -2.81358, 100.0
@@ -5752,6 +5918,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name></name>
 <coordinates>
 149.817, -3.61656, 100.0
 149.913, -3.49148, 100.0
@@ -5783,6 +5950,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name></name>
 <coordinates>
 149.817, -3.61656, 100.0
 149.872, -3.65909, 100.0
@@ -5807,6 +5975,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Martinez and Taylor [1996]; Taylor et al. [1995]</name>
 <coordinates>
 151.301, -3.65625, 100.0
 151.375, -3.7062, 100.0
@@ -5836,6 +6005,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Tregoning et al. [1998]</name>
 <coordinates>
 143.743, -3.46045, 100.0
 144.079, -3.76571, 100.0
@@ -5856,6 +6026,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Taylor et al. [1995]</name>
 <coordinates>
 155.454, -7.48875, 100.0
 155.262, -7.62863, 100.0
@@ -5869,6 +6040,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Taylor et al. [1995]</name>
 <coordinates>
 151.654, -9.76005, 100.0
 151.834, -9.76114, 100.0
@@ -5930,6 +6102,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Martinez et al. [2000]</name>
 <coordinates>
 143.097, 11.5689, 100.0
 143.082, 11.7921, 100.0
@@ -5984,6 +6157,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, June 2002</name>
 <coordinates>
 142.257, 23.0091, 100.0
 142.886, 23.7012, 100.0
@@ -5993,6 +6167,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Auzende et al. [1995a]</name>
 <coordinates>
 172.571, -13.4106, 100.0
 172.434, -13.4349, 100.0
@@ -6025,6 +6200,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Auzende et al. [1994]</name>
 <coordinates>
 173.901, -16.8493, 100.0
 173.88, -17.1634, 100.0
@@ -6057,6 +6233,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, June 2002</name>
 <coordinates>
 172.439, -23.1781, 100.0
 172.783, -23.0686, 100.0
@@ -6069,6 +6246,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, June 2002</name>
 <coordinates>
 172.571, -13.4106, 100.0
 172.74, -13.6927, 100.0
@@ -6103,6 +6281,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Auzende et al. [1994]</name>
 <coordinates>
 173.901, -16.8493, 100.0
 174.503, -16.5632, 100.0
@@ -6119,6 +6298,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Auzende et al. [1994]</name>
 <coordinates>
 176.184, -16.5521, 100.0
 176.179, -16.6696, 100.0
@@ -6150,6 +6330,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, June 2002</name>
 <coordinates>
 175.59, -20.1887, 100.0
 175.828, -20.6294, 100.0
@@ -6163,6 +6344,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Auzende et al. [1995a]</name>
 <coordinates>
 176.184, -16.5521, 100.0
 176.377, -16.569, 100.0
@@ -6196,6 +6378,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Auzende et al. [1994]</name>
 <coordinates>
 178.562, -15.8973, 100.0
 178.936, -15.8124, 100.0
@@ -6208,6 +6391,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Schellart et al. [2002]</name>
 <coordinates>
 172.571, -13.4106, 100.0
 173.049, -13.4895, 100.0
@@ -6231,6 +6415,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, June 2002</name>
 <coordinates>
 177.417, -14.0551, 100.0
 178.029, -14.309, 100.0
@@ -6244,6 +6429,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Pelletier et al. [1998]</name>
 <coordinates>
 -179.739, -15.5422, 100.0
 -179.444, -15.5268, 100.0
@@ -6252,6 +6438,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, June 2002</name>
 <coordinates>
 -179.444, -15.5268, 100.0
 -178.812, -15.3773, 100.0
@@ -6263,6 +6450,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, June 2002</name>
 <coordinates>
 -176.346, -14.634, 100.0
 -176.88, -14.6708, 100.0
@@ -6280,6 +6468,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Naar and Hey, 1991</name>
 <coordinates>
 -114.421, -22.1145, 100.0
 -114.505, -22.1961, 100.0
@@ -6314,6 +6503,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Naar and Hey, 1991</name>
 <coordinates>
 -112.976, -26.8302, 100.0
 -112.947, -26.7241, 100.0
@@ -6357,6 +6547,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Larson et al. [1992]</name>
 <coordinates>
 -112.023, -31.5362, 100.0
 -112.041, -31.7737, 100.0
@@ -6383,6 +6574,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Larson et al. [1992]</name>
 <coordinates>
 -110.827, -35.0908, 100.0
 -110.527, -35.0613, 100.0
@@ -6396,6 +6588,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Larson et al. [1992]</name>
 <coordinates>
 -109.259, -34.5446, 100.0
 -109.277, -34.2037, 100.0
@@ -6418,6 +6611,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Hey et al. [1995]</name>
 <coordinates>
 -112.976, -26.8302, 100.0
 -113.112, -27.0143, 100.0
@@ -6448,6 +6642,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Lonsdale [1988]</name>
 <coordinates>
 -102.068, 2.63532, 100.0
 -102.082, 2.57438, 100.0
@@ -6477,6 +6672,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Lonsdale [1988]</name>
 <coordinates>
 -102.181, 1.13426, 100.0
 -102.082, 1.20646, 100.0
@@ -6507,6 +6703,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Lonsdale [1988]</name>
 <coordinates>
 -101.512, 2.23226, 100.0
 -101.49, 2.60499, 100.0
@@ -6518,6 +6715,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Lonsdale [1988]</name>
 <coordinates>
 -102.068, 2.63532, 100.0
 -102.109, 2.78564, 100.0
@@ -6531,6 +6729,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Lonsdale [1988]</name>
 <coordinates>
 -102.181, 1.13426, 100.0
 -102.24, 0.712821, 100.0
@@ -6543,6 +6742,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Lonsdale [1988]</name>
 <coordinates>
 -101.512, 2.23226, 100.0
 -101.203, 2.24142, 100.0
@@ -6560,6 +6760,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, June 2002</name>
 <coordinates>
 -29.4885, -55.0334, 100.0
 -30.9056, -54.8217, 100.0
@@ -6613,6 +6814,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Livermore et al. [1997]; Leat et al. [2000]</name>
 <coordinates>
 -29.4885, -55.0334, 100.0
 -29.7147, -55.2043, 100.0
@@ -6653,6 +6855,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Leat et al. [2000]</name>
 <coordinates>
 -27.6967, -60.6171, 100.0
 -26.8895, -60.506, 100.0
@@ -6662,6 +6865,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Maldonado et al., 1998</name>
 <coordinates>
 -44.2259, -60.2425, 100.0
 -43.1509, -60.3761, 100.0
@@ -6679,6 +6883,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Leat et al. [2000]</name>
 <coordinates>
 -32.367, -60.4089, 100.0
 -31.0139, -60.5118, 100.0
@@ -6690,6 +6895,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, June 2002</name>
 <coordinates>
 -26.0709, -60.391, 100.0
 -25.0688, -59.9733, 100.0
@@ -6711,6 +6917,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, October 2001</name>
 <coordinates>
 60.2148, 18.2397, 100.0
 60.4564, 18.7983, 100.0
@@ -6732,6 +6939,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Fournier et al. [2001]</name>
 <coordinates>
 60.2148, 18.2397, 100.0
 60.0619, 17.4577, 100.0
@@ -6752,6 +6960,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, June 2002</name>
 <coordinates>
 56.2652, 14.6232, 100.0
 56.2079, 14.6433, 100.0
@@ -6866,6 +7075,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, June 2002</name>
 <coordinates>
 39.2978, 19.0298, 100.0
 38.8261, 19.4475, 100.0
@@ -6894,6 +7104,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Brian Taylor, pers. comm., 2002</name>
 <coordinates>
 39.2978, 19.0298, 100.0
 39.5899, 18.4193, 100.0
@@ -6917,6 +7128,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, June 2002</name>
 <coordinates>
 20.3001, 37.8039, 100.0
 20.7603, 37.0983, 100.0
@@ -6943,6 +7155,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, June 2002</name>
 <coordinates>
 29.7309, 35.4273, 100.0
 30.2208, 35.1543, 100.0
@@ -6964,6 +7177,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>by Peter Bird, September 2001</name>
 <coordinates>
 42.0332, 11.5772, 100.0
 41.4423, 11.3169, 100.0
@@ -7069,6 +7283,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Lemaux et al. [2002]</name>
 <coordinates>
 32.1252, -46.9975, 100.0
 32.6626, -46.1911, 100.0
@@ -7082,6 +7297,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Peter Bird, June 2002</name>
 <coordinates>
 35.0898, -42.1032, 100.0
 35.528, -41.2537, 100.0
@@ -7107,6 +7323,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mann and Kolarsky [1995]</name>
 <coordinates>
 -76.684, 8.7313, 100.0
 -76.7653, 9.06455, 100.0
@@ -7134,6 +7351,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Kellogg and Vega [1995]</name>
 <coordinates>
 -80.879, 10.0579, 100.0
 -81.0792, 9.93537, 100.0
@@ -7162,6 +7380,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Westbrook et al. [1995]</name>
 <coordinates>
 -78.6463, 7.33731, 100.0
 -78.7511, 7.32893, 100.0
@@ -7177,6 +7396,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Kolarsky and Mann [1995]</name>
 <coordinates>
 -80.2498, 7.13273, 100.0
 -80.3628, 7.22073, 100.0
@@ -7195,6 +7415,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Moore and Sender [1995]</name>
 <coordinates>
 -81.741, 7.06054, 100.0
 -81.8886, 6.97836, 100.0
@@ -7215,6 +7436,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Kellogg and Vega [1995]</name>
 <coordinates>
 -82.8748, 7.36639, 100.0
 -83.0742, 7.59169, 100.0
@@ -7238,6 +7460,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Westbrook et al. [1995]</name>
 <coordinates>
 -78.6463, 7.33731, 100.0
 -78.7148, 7.23227, 100.0
@@ -7261,6 +7484,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Mann and Kolarsky [1995]</name>
 <coordinates>
 -78.6463, 7.33731, 100.0
 -78.2285, 7.50952, 100.0
@@ -7276,6 +7500,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Taboada et al. [1997]</name>
 <coordinates>
 -76.684, 8.7313, 100.0
 -76.7013, 9.01654, 100.0
@@ -7307,6 +7532,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Perez et al. [1997]</name>
 <coordinates>
 -70.6594, 13.3101, 100.0
 -70.4957, 13.1623, 100.0
@@ -7324,6 +7550,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Collot et al. [2002]</name>
 <coordinates>
 -81.5989, -3.24451, 100.0
 -81.3022, -3.26785, 100.0
@@ -7343,6 +7570,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Audemard and Audemard [2002]</name>
 <coordinates>
 -78.0055, 0.147576, 100.0
 -77.707, 0.585555, 100.0
@@ -7408,6 +7636,7 @@
 </Placemark>
 <Placemark>
 <LineString>
+<name>Taboada et al. [1997]</name>
 <coordinates>
 -67.9613, 10.4995, 100.0
 -67.4989, 10.5924, 100.0
