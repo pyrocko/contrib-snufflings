@@ -50,6 +50,10 @@ class MapMaker(Snuffling):
     Linux do: <tt>xdg-settings set default-web-browser firefox.desktop</tt>
     </p>
     <p>
+    Clicking one of the plate boundary lines shows a reference regarding that
+    plate boundary.
+    </p>
+    <p>
     The plate boundary database is based on the work done by Peter Bird, who kindly permitted usage. <br>
     See: <i>50. Bird, P. (2003) An updated digital model of plate boundaries, Geochemistry Geophysics Geosystems, 4(3), 1027, doi:10.1029/2001GC000252.</i>
     <br>
