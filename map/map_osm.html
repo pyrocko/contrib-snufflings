@@ -137,11 +137,38 @@
               var item = items[i];
               var icon = item.icon_data;
               var lonLat = get_transformed_lonlat(item);
-              markers.addMarker(new OpenLayers.Marker(lonLat, icon.clone()));
+              var m = new OpenLayers.Marker(lonLat, icon.clone());
+              item.marker = m;
+              markers.addMarker(m);
           };
           map.addLayer(markers);
           return markers
       }
+
+      function add_station_marker_labels(map, items){
+          var marker_labels = new OpenLayers.Layer.Vector("Labels", {
+              styleMap : new OpenLayers.StyleMap({'default':{
+                      label: "${name}",
+                      fontSize: "12px",
+                      fontFamily: "Arial",
+                      fontWeight: "bold",
+                      labelAlign: "tl",
+                      labelYOffset: 10,
+                      labelXOffset: 4
+          }})});
+
+          var label_array = [];
+          for (i=0; i<items.length; i++){
+              var item=items[i];
+              var lonlat = get_transformed_lonlat(item)
+              var p = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
+              var label = new OpenLayers.Feature.Vector(p);
+              label.attributes = {name:item.nsl};
+              label_array[i] = label;
+          };
+          marker_labels.addFeatures(label_array);
+          map.addLayer(marker_labels)
+      };
 
       function add_event_markers(map, items){
           var vectorLayer = new OpenLayers.Layer.Vector("Events");
@@ -176,6 +203,7 @@
           var events = stations_events[1];
           var event_makers = add_event_markers(map, events);
           var station_markers = add_station_markers(map, stations);
+          add_station_marker_labels(map, stations);
           //add_kml_layer(map, './plates.kml');
           zoomToExtent(map, [station_markers, event_makers])
       }
