@@ -47,7 +47,7 @@ class EventDataConverter(glue.EventDataToKiwi):
 
         return alltraces
 
-class Seismosizer(Snuffling):
+class KiwiSeismosizer(Snuffling):
 
     def __init__(self, sourcetype='moment_tensor'):
         Snuffling.__init__(self)
@@ -56,7 +56,7 @@ class Seismosizer(Snuffling):
     def setup(self):
         '''Customization of the snuffling.'''
         
-        self.set_name('Seismosizer (%s)' % self.sourcetype)
+        self.set_name('Kiwi Seismosizer (%s)' % self.sourcetype)
         for pname in source.param_names(self.sourcetype):
             si = source.source_infos(self.sourcetype)[pname]
             self.add_parameter(Param('%s [ %s ]:' % (si.name.title(), si.unit), d2u(si.name), si.default, si.soft_min, si.soft_max))
@@ -309,4 +309,4 @@ class Seismosizer(Snuffling):
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
     
-    return [ Seismosizer('moment_tensor'), Seismosizer('bilateral') ]
+    return [ KiwiSeismosizer('moment_tensor'), KiwiSeismosizer('bilateral') ]
