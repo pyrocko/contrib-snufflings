@@ -166,15 +166,19 @@
 
                 var latlngbounds = new google.maps.LatLngBounds();
                 map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
-                var platekml = 'https://raw.githubusercontent.com/HerrMuellerluedenscheid/contrib-snufflings/plates/googleMapsSnuffling/plates.kml'
+                var platekml='https://raw.githubusercontent.com/emolch/contrib-snufflings/master/map/plates.kml';
                 kmloptions = {suppressInfoWindows: false,
                               preserveViewport:true,
-                              map: map};
+                              map: map,
+                              clickable:true};
                  
                 boundaries = new google.maps.KmlLayer(platekml, kmloptions);
                 boundaries.category = 'plateboundaries';
                 gmarkers.push(boundaries);
-                
+                google.maps.event.addListener(boundaries, 'click', function(kmlEvent) {
+                   var text = kmlEvent.featureData.description;
+                 });
+ 
                 for (i=0; i<marker.length; i++)
                     {
                         marker[i].setMap(map);

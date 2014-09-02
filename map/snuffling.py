@@ -15,10 +15,10 @@ def get_magnitude(event):
     if event.magnitude:
         mag = event.magnitude
     elif event.moment_tensor:
-        mag = event.moment_tensor.magnitude
+        mag = event.moment_tensor.moment_magnitude()
     else:
         mag = 0.
-    return mag
+    return float(mag)
 
 def convert_event_marker(marker):
     ev = marker.get_event()
@@ -48,6 +48,10 @@ class MapMaker(Snuffling):
     containing the necessary information due to the "Same-Origin-Policy".
     In that case you need to reset your standard browser. I.e.: Firefox on
     Linux do: <tt>xdg-settings set default-web-browser firefox.desktop</tt>
+    </p>
+    <p>
+    Clicking one of the plate boundary lines shows a reference regarding that
+    plate boundary.
     </p>
     <p>
     The plate boundary database is based on the work done by Peter Bird, who kindly permitted usage. <br>
