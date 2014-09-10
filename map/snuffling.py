@@ -109,8 +109,10 @@ class MapMaker(Snuffling):
         if self.only_active:
             markers = [viewer.get_active_event_marker()]
         else:
+            tmin, tmax = self.get_selected_time_range(fallback=True)
             markers = [m for m in viewer.get_markers()
-                       if isinstance(m, gui_util.EventMarker)]
+                       if isinstance(m, gui_util.EventMarker) and\
+                      m.tmin>=tmin and m.tmax<=tmax]
 
         ev_marker_list = []
         for m in markers:
