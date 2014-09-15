@@ -56,6 +56,7 @@
             deb=xmlDoc.getElementsByTagName("event")
             for (i=0; i<deb.length; i++)
                 {
+                    var name = deb[i].childNodes[1].firstChild.data;
                     var lat = deb[i].childNodes[3].firstChild.data;
                     var lon = deb[i].childNodes[5].firstChild.data;
                     var time = deb[i].childNodes[7].firstChild.data;
@@ -74,7 +75,8 @@
                           icon: { path: google.maps.SymbolPath.CIRCLE,
                                   scale: 2,
                                   strokeColor: 'red'},
-                              title: 'origin time: '+time+
+                                  title: name + 
+                                  "\n" + 'origin time: '+time+
                               '\n depth: '+depth+
                               '\n magnitude: '+mag
                           });
