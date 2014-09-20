@@ -80,3 +80,12 @@ file: [kiwi_seismosizer.py](kiwi_seismosizer.py)
 
 ![screenshot](screenshots/kiwi_seismosizer.png)
 
+Time Line
+---------
+
+Plot time vs. magnitude
+
+file: [time_line.py](time_line.py)
+
+![screenshot](screenshots/timeline.png)
+
