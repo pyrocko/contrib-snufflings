@@ -1,10 +1,10 @@
 from pyrocko.snuffling import Snuffling, Param, Choice, Switch
 from pyrocko.gui_util import EventMarker
 from pyrocko.orthodrome import distance_accurate50m as distance
-from pyrocko.util import str_to_time, time_to_str
 import matplotlib.dates as mdates
 from matplotlib import cm
 import numpy as num
+from datetime import datetime
 
 cmap = cm.jet
 km = 1000.
@@ -15,6 +15,9 @@ class TimeLine(Snuffling):
     <html>
     <body>
     <h1>Temporal Evolution of Seismicity</h1>
+
+    The considered region can be limited by defining one central coordinate and a
+    maximum epicentral distance.
     </body>
     </html>
     '''
@@ -27,28 +30,33 @@ class TimeLine(Snuffling):
         self.add_parameter(Param('Longitude:', 'lon', 180., -180, 180., high_is_none=True))
         self.add_parameter(Param('Maximum Distance [km]:', 'maxd', 20000., 0., 20000., high_is_none=True))
 
-        self.add_parameter(Switch('Save figure', 'save', False))
+        self.add_trigger('Save Figure', self.save_as)
         self.set_live_update(False)
+        self.fig = None
         
     def call(self):
         '''Main work routine of the snuffling.'''
         self.cleanup()
-        viewer = self.get_viewer()
+        viewer = self.get_viewer()  
         tmin, tmax = self.get_selected_time_range(fallback=True)
-        event_markers = filter(lambda x: x.tmin>tmin and x.tmax<tmax,
+        event_markers = filter(lambda x: x.tmin>=tmin and x.tmax<=tmax,
                                viewer.markers)
+        
         event_markers = filter(lambda x: isinstance(x, EventMarker), event_markers)
         if self.maxd:
             event_markers = filter(lambda x: distance(self, x._event)<=self.maxd*km,
                                event_markers)
+        
+        if event_markers==[]:
+            self.fail('No events in selected area found')
 
         fframe = self.figure_frame()
         fig = fframe.gcf()
+        self.fig = fig
         ax = fig.add_subplot(311)
         ax1 = fig.add_subplot(323)
         ax2 = fig.add_subplot(325)
         ax3 = fig.add_subplot(324)
-        ax.fmt_xdata = mdates.DateFormatter('%Y-%m-%d %H:%M:%S')
         
         num_events = len(event_markers)
         magnitudes = num.zeros(num_events)
@@ -67,8 +75,6 @@ class TimeLine(Snuffling):
             lons[i] = e.lon
             depths[i] = e.depth
             times[i] = e.time
-            time_str = time_to_str(m.tmin)
-            time_str = time_str.replace(',','.')
         
         lon_max = lons.max()
         lon_min = lons.min()
@@ -78,8 +84,19 @@ class TimeLine(Snuffling):
         depths_max = depths.max()
         mags_min = magnitudes.min()
         mags_max = magnitudes.max()
+        dates = map(datetime.fromtimestamp, times)
 
-        ax.scatter(times, 
+        fds = mdates.date2num(dates)
+        tday = 3600*24
+        tweek = tday*7
+        if tmax-tmin<14*tday:
+            hfmt = mdates.DateFormatter('%Y-%m-%d %H:%M:%S')
+        elif tmax-tmin<tweek*52:
+            hfmt = mdates.DateFormatter('%Y-%m-%d')
+        else:
+            hfmt = mdates.DateFormatter('%Y/%m')
+
+        ax.scatter(fds, 
                    magnitudes, 
                    s=20, 
                    c=times, 
@@ -87,46 +104,58 @@ class TimeLine(Snuffling):
                    vmax=tmax, 
                    cmap=cmap)
 
+        ax.xaxis.set_major_formatter(hfmt)
         ax.spines['top'].set_color('none')
         ax.spines['right'].set_color('none')
         ax.set_ylim((mags_min, mags_max*1.10))
-        ax.set_xlim((tmin, tmax))
+        ax.set_xlim(map(datetime.fromtimestamp, (tmin, tmax)))
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
         ax.set_ylabel('Magnitude')
         init_pos = ax.get_position()
 
-        #fig.autofmt_xdate()
         # top left plot
         ax1.scatter(lons, lats, s=20, c=times, vmin=tmin, vmax=tmax, cmap=cmap)
         ax1.set_xlim((lon_min, lon_max))
         ax1.set_ylim((lat_min, lat_max))
         ax1.grid(True, which='both')
         ax1.set_xticklabels([])
-        ax1.set_ylabel('latitude')
+        ax1.set_ylabel('Lat')
+        ax1.get_xaxis().tick_bottom()
+        ax1.get_yaxis().tick_left()
 
         # bottom left plot
         ax2.scatter(lons, depths, s=20, c=times, vmin=tmin, vmax=tmax, cmap=cmap)
         ax2.set_xlim((lon_min, lon_max))
         ax2.set_ylim((depths_min, depths_max))
         ax2.grid(True)
-        ax2.set_xlabel('longitude')
+        ax2.set_xlabel('Lon')
         ax2.set_ylabel('Depth')
+        ax2.get_yaxis().tick_left()
+        ax2.invert_yaxis()
 
+        # top left plot
         ax3.scatter(depths, lats, s=20, c=times, vmin=tmin, vmax=tmax, cmap=cmap)
         ax3.set_xlim((depths_min, depths_max))
         ax3.grid(True)
         ax3.set_ylim((lat_min, lat_max))
-        ax3.yaxis.tick_right()
+        ax3.set_xlabel('Depth')
+        ax3.get_xaxis().tick_bottom()
+        ax3.get_yaxis().tick_right()
 
         fig.subplots_adjust(bottom=0.1, 
-                            right=0.8, 
-                            top=0.9,
-                            wspace=0.0,
-                            hspace=0.0)
-
+                            right=0.9, 
+                            top=0.95,
+                            wspace=0.02,
+                            hspace=0.02)
+        init_pos.y0+=0.05
         ax.set_position(init_pos)
         fig.canvas.draw()
+
+    def save_as(self):
+        if self.fig:
+            fn = self.output_filename()
+            self.fig.savefig(fn)
 
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
