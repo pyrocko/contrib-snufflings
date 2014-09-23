@@ -26,24 +26,35 @@ class SetupBuildCommand(Command):
 
 
 class PassSetup(SetupBuildCommand):
-    descrition = "install doesnt work. Use python setup.py link instead."
+    descrition = """install doesnt work. Use "python setup.py link" instead.""" 
+    user_options = []
     def run(self):
-            print  "install doesnt work. Use python setup.py link instead."
+        print """install doesnt work. Use "python setup.py link" instead."""
 
 class LinkSnufflingFiles(SetupBuildCommand):
 
     description = "Create symbolic links and subdirectory in $HOME/.snufflings"
 
     user_options = [('force', None, 
-                            'force overwriting of existing symbolic links.'),]
+                            'force overwriting of existing symbolic links.'),
+                    ('choice=', None, 'Comma separated list of snufflings to link'), ]
 
     def initialize_options(self):
         self.force = False
+        self.choice = []
 
     def run(self):
         snufflings = pjoin(os.getenv('HOME'), '.snufflings')
         cwd = os.getcwd()
-        files = glob.glob(pjoin(cwd, '*'))
+        if self.choice:
+            choices = self.choice.split(',')
+            files = []
+            for c in choices:
+                files.extend(glob.glob(pjoin(cwd, c)))
+
+        else:
+            files = glob.glob(pjoin(cwd, '*'))
+
         for fn in files:
             try:
                 target = fn.replace(cwd, snufflings)
