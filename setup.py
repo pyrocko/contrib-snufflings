@@ -55,6 +55,8 @@ class LinkSnufflingFiles(SetupBuildCommand):
         else:
             files = glob.glob(pjoin(cwd, '*'))
 
+        files.remove(cwd+'/setup.py')
+
         for fn in files:
             try:
                 target = fn.replace(cwd, snufflings)
