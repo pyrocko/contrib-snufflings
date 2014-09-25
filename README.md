@@ -80,6 +80,15 @@ file: [kiwi_seismosizer.py](kiwi_seismosizer.py)
 
 ![screenshot](screenshots/kiwi_seismosizer.png)
 
+Time Line
+---------
+
+Plot time vs. magnitude
+
+file: [time_line.py](time_line.py)
+
+![screenshot](screenshots/timeline.png)
+
 Extract Events
 --------------
 
@@ -88,3 +97,4 @@ Save waveforms for time windows around selected events as MSEED.
 file: [extract_events.py](extract_events.py)
 
 ![screenshot](screenshots/extract_events.png)
+

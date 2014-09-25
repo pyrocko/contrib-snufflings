@@ -25,13 +25,13 @@ def convert_event_marker(marker):
     depth = ev.depth
     if depth is None:
         depth = 0.0
-
-    xmleventmarker = XMLEventMarker(eventname=ev.name,
+    ev_name = ev.name if ev.name else '(Event)'
+    xmleventmarker = XMLEventMarker(eventname=ev_name,
                             longitude=ev.lon,
                             latitude=ev.lat,
                             origintime=util.time_to_str(ev.time),
                             depth=depth,
-                            magnitude=get_magnitude(ev),
+                            magnitude=float(get_magnitude(ev)),
                             active=['no', 'yes'][marker._active])
 
     return xmleventmarker
@@ -109,8 +109,10 @@ class MapMaker(Snuffling):
         if self.only_active:
             markers = [viewer.get_active_event_marker()]
         else:
+            tmin, tmax = self.get_selected_time_range(fallback=True)
             markers = [m for m in viewer.get_markers()
-                       if isinstance(m, gui_util.EventMarker)]
+                       if isinstance(m, gui_util.EventMarker) and\
+                      m.tmin>=tmin and m.tmax<=tmax]
 
         ev_marker_list = []
         for m in markers:
