@@ -80,3 +80,11 @@ file: [kiwi_seismosizer.py](kiwi_seismosizer.py)
 
 ![screenshot](screenshots/kiwi_seismosizer.png)
 
+Extract Events
+--------------
+
+Save waveforms for time windows around selected events as MSEED.
+
+file: [extract_events.py](extract_events.py)
+
+![screenshot](screenshots/extract_events.png)
