@@ -92,7 +92,8 @@ file: [time_line.py](time_line.py)
 Extract Events
 --------------
 
-Save waveforms for time windows around selected events as MSEED.
+Save waveforms for time windows around selected events as MSEED. This is a
+hybrid Snuffling which can be run from the command-line as well.
 
 file: [extract_events.py](extract_events.py)
 
