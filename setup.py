@@ -53,7 +53,9 @@ class LinkSnufflingFiles(SetupBuildCommand):
                 files.extend(glob.glob(pjoin(cwd, c)))
 
         else:
-            files = glob.glob(pjoin(cwd, '*'))
+            files = glob.glob(pjoin(cwd, '*.py'))
+            files.append(pjoin(cwd, 'map'))
+            files.remove(cwd+'/setup.py')
 
         for fn in files:
             try:
