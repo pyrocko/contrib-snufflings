@@ -1,6 +1,7 @@
 import numpy as num
 
 from PyQt4.QtCore import *
+from PyQt4.QtGui import QFileDialog
 from pyrocko import moment_tensor, model
 from pyrocko.snuffling import Snuffling, Param, Choice, Switch
 from pyrocko import gf
@@ -34,6 +35,7 @@ class Seismosizer(Snuffling):
         
         self.add_trigger('Set Engine', self.set_engine)
         self.add_trigger('Set Params from Event', self.mechanism_from_event)
+        self.add_trigger('Add Stores', self.add_store)
 
         self.store_ids = None
         self.offline_config = None
@@ -162,6 +164,16 @@ class Seismosizer(Snuffling):
         self.set_parameter('strike', strike)
         self.set_parameter('dip', dip)
         self.set_parameter('rake', slip_rake)
+
+    def add_store(self):
+        self._engine = self.get_engine()
+        superdir = str(QFileDialog.getExistingDirectory(None,
+                                 'Open working directory',
+                                 '~',
+                                 QFileDialog.ShowDirsOnly))
+        self._engine.store_superdirs.append( superdir)
+        self.store_ids = self._engine.get_store_ids()
+        self.set_parameter_choices('store_id', self.store_ids)
 
 
 def __snufflings__():
