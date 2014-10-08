@@ -25,13 +25,13 @@ def convert_event_marker(marker):
     depth = ev.depth
     if depth is None:
         depth = 0.0
-
-    xmleventmarker = XMLEventMarker(eventname=ev.name,
+    ev_name = ev.name if ev.name else '(Event)'
+    xmleventmarker = XMLEventMarker(eventname=ev_name,
                             longitude=ev.lon,
                             latitude=ev.lat,
                             origintime=util.time_to_str(ev.time),
                             depth=depth,
-                            magnitude=get_magnitude(ev),
+                            magnitude=float(get_magnitude(ev)),
                             active=['no', 'yes'][marker._active])
 
     return xmleventmarker
