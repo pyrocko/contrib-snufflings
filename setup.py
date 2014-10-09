@@ -37,15 +37,31 @@ class LinkSnufflingFiles(SetupBuildCommand):
 
     user_options = [('force', None, 
                             'force overwriting of existing symbolic links.'),
-                    ('choice=', None, 'Comma separated list of snufflings to link'), ]
+                    ('choice=', None, 'Comma separated list of snufflings to link'),
+                    ('undangle', None, 'Unlink broken (dangling) symlinks in $HOME/.snufflings'), ]
 
     def initialize_options(self):
         self.force = False
+        self.undangle = False
         self.choice = []
 
     def run(self):
         snufflings = pjoin(os.getenv('HOME'), '.snufflings')
         cwd = os.getcwd()
+
+        # look for dangling symlinks inside .snufflings:
+        for fn in glob.glob(snufflings+'/*'):
+            try:
+                os.stat(fn)
+            except OSError, e:
+                if e.errno == errno.ENOENT:
+                    if not self.undangle:
+                        print 'file %s does not exist or is a broken symlink' % fn
+                        print 'broken symlinks can be removed using --undangle'
+                    else:
+                        os.unlink(fn)
+                        print 'Unlinked file:  %s'%fn
+
         if self.choice:
             choices = self.choice.split(',')
             files = []
