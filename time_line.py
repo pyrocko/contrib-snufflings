@@ -51,12 +51,11 @@ class TimeLine(Snuffling):
             self.fail('No events in selected area found')
 
         fframe = self.figure_frame()
-        fig = fframe.gcf()
-        self.fig = fig
-        ax = fig.add_subplot(311)
-        ax1 = fig.add_subplot(323)
-        ax2 = fig.add_subplot(325)
-        ax3 = fig.add_subplot(324)
+        self.fig = fframe.gcf()
+        ax = self.fig.add_subplot(311)
+        ax1 = self.fig.add_subplot(323)
+        ax2 = self.fig.add_subplot(325)
+        ax3 = self.fig.add_subplot(324)
         
         num_events = len(event_markers)
         magnitudes = num.zeros(num_events)
@@ -89,7 +88,7 @@ class TimeLine(Snuffling):
         fds = mdates.date2num(dates)
         tday = 3600*24
         tweek = tday*7
-        if tmax-tmin<14*tday:
+        if tmax-tmin<1*tday:
             hfmt = mdates.DateFormatter('%Y-%m-%d %H:%M:%S')
         elif tmax-tmin<tweek*52:
             hfmt = mdates.DateFormatter('%Y-%m-%d')
@@ -143,19 +142,21 @@ class TimeLine(Snuffling):
         ax3.get_xaxis().tick_bottom()
         ax3.get_yaxis().tick_right()
 
-        fig.subplots_adjust(bottom=0.1, 
+        self.fig.subplots_adjust(bottom=0.1, 
                             right=0.9, 
                             top=0.95,
                             wspace=0.02,
                             hspace=0.02)
         init_pos.y0+=0.05
         ax.set_position(init_pos)
-        fig.canvas.draw()
+        self.fig.canvas.draw()
 
     def save_as(self):
         if self.fig:
             fn = self.output_filename()
-            self.fig.savefig(fn)
+            self.fig.savefig(fn,
+                             pad_inches=0.05, 
+                             bbox_inches='tight')
 
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
