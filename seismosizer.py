@@ -17,8 +17,8 @@ class Seismosizer(Snuffling):
         
         self.set_name('Seismosizer')
         self.add_parameter(Param('Time', 'time', 0.0, -50., 50.))
-        self.add_parameter(Param('Latitude', 'lat', 0.0, -90., 90.))
-        self.add_parameter(Param('Longitude', 'lon', 0.0, -180., 180.))
+        #self.add_parameter(Param('Latitude', 'lat', 0.0, -90., 90.))
+        #self.add_parameter(Param('Longitude', 'lon', 0.0, -180., 180.))
         self.add_parameter(Param('North shift', 'north_km', 0.0, -50., 50.))
         self.add_parameter(Param('East shift', 'east_km', 0.0, -50., 50.))
         self.add_parameter(Param('Depth', 'depth_km', 10.0, 0.0, 600.0))
@@ -73,7 +73,8 @@ class Seismosizer(Snuffling):
         if event:
             event, stations = self.get_active_event_and_stations(missing='warn')
         else:
-            event = model.Event(lat=self.lat, lon=self.lon)
+            #event = model.Event(lat=self.lat, lon=self.lon)
+            event = model.Event(lat=0., lon=0.)
             stations = []
 
         s2c = {}
