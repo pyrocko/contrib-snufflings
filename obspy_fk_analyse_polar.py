@@ -1,8 +1,5 @@
 from pyrocko.snuffling import Param, Snuffling, pile , Choice
 from pyrocko import trace
-from obspy.core import UTCDateTime, stream
-from obspy.core import trace as obspy_trace
-from obspy.signal import array_analysis
 
 from matplotlib.colorbar import ColorbarBase
 from matplotlib.colors import Normalize
@@ -12,6 +9,9 @@ import numpy as np
 
 def p2o_trace(ptrace, station):
     '''Convert Pyrocko trace to ObsPy trace.'''
+
+    from obspy.core import UTCDateTime
+    from obspy.core import obspy_trace
 
     otr = obspy_trace.Trace(
             data = ptrace.get_ydata(),
@@ -82,6 +82,9 @@ class FK(Snuffling):
         self.set_live_update(False)
 
     def call(self):
+        from obspy.core import UTCDateTime, stream
+        from obspy.signal import array_analysis
+
         self.cleanup()
         viewer = self.get_viewer()
 
