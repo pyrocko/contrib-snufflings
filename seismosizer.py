@@ -206,10 +206,7 @@ class Seismosizer(Snuffling):
 
     def add_store(self):
         self._engine = self.get_engine()
-        superdir = str(QFileDialog.getExistingDirectory(None,
-                                 'Open directory containing GF Stores',
-                                 '~',
-                                 QFileDialog.ShowDirsOnly))
+        superdir = self.input_directory()
         self._engine.store_superdirs.append( superdir)
         self.store_ids = self._engine.get_store_ids()
         self.set_parameter_choices('store_id', self.store_ids)
