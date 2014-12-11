@@ -14,6 +14,12 @@ If you want to modify, develop, or keep up to date on any of these, it is
 preferable to clone the whole repos somewhere in your filesystem and just make
 symbolic links in `$HOME/.snufflings` for each snuffling to be used.
 
+The `setup.py` script included in this repository provides a shortcut to
+create required symbolic links. Running `python setup.py link` will do
+that for you. If you find yourself with broken (dangling) symlinks e.g. after
+checking out a different branch you can remove all broken symlinks in your
+`$HOME/.snufflings` diretory by adding a `--undangle` to the link command.
+
 To add your own creation, simply clone this repos, add your stuff and a
 screenshot and send a pull request. 
 
