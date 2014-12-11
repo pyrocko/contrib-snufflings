@@ -33,13 +33,16 @@ class BeamForming(Snuffling):
     <body>
     <h1>Beam Forming</h1>
     Mark a time frame using extended markers. If no time window is selected,
-    all traces visible in the viewer will be stacked.
-    If no reference point is defined using 'Center lat' and 'Center lon'
-    sliders geographical center is calculated by taking the average of
+    all traces visible in the viewer will be stacked.<br>
+    Set a backzimuth and horizontal slowness of the passing wave field.<br>
+    If no reference point is defined by 'Center lat' and 'Center lon'
+    sliders the geographical center is calculated by taking the average of
     latitudes and longitudes.<br>
     Activating normalization will normalize traces using their standard
-    deviation. Otherwise, the stacked trace's amplitudes will be normalized of
-    summed traces.
+    deviation. Otherwise, the stacked trace's amplitudes will be normalized by 
+    the number of summed traces.<br>
+    Button "Plot" shows the station distribution together with the applied
+    time shifts.
     </body>
     </html>
     '''
