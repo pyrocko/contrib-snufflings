@@ -2,7 +2,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from pyrocko.snuffling import Snuffling, Param, Switch
 from pyrocko.model import Station
 from pyrocko import orthodrome as ortho
-from pyrocko import util
+from pyrocko import util, io
 import numpy as num
 from collections import defaultdict
 import matplotlib.pyplot as plt
@@ -67,6 +67,7 @@ class BeamForming(Snuffling):
         self.add_parameter(Switch('Normalize Traces', 'normalize', False))
         self.add_parameter(Switch('Add Shifted Traces', 'add_shifted', False))
         self.add_trigger('plot', self.plot)
+        self.add_trigger('Save Traces', self.save)
         self.station_c = None
         self.z_c = None
         self.stacked_traces = None
@@ -106,7 +107,7 @@ class BeamForming(Snuffling):
         gammas = azis - azirad
         gammas = gammas % (2*num.pi)
         channels = set()
-        stacked = {}
+        self.stacked = {}
         num_stacked = {}
         self.t_shifts = {}
         for traces in self.chopper_selected_traces(fallback=True):
@@ -115,7 +116,7 @@ class BeamForming(Snuffling):
                 tr.ydata = tr.ydata.astype(num.float64)
                 tr.ydata -= tr.ydata.mean(dtype=num.float64)
                 try:
-                    stack_trace = stacked[tr.channel]
+                    stack_trace = self.stacked[tr.channel]
                     num_stacked[tr.channel] += 1
                 except KeyError:
                     stack_trace = tr.copy(data=True)
@@ -127,7 +128,7 @@ class BeamForming(Snuffling):
                                           location='',
                                           channel=tr.channel)
 
-                    stacked[tr.channel] = stack_trace
+                    self.stacked[tr.channel] = stack_trace
                     channels.add(tr.channel)
                     num_stacked[tr.channel] = 1
 
@@ -159,10 +160,10 @@ class BeamForming(Snuffling):
             self.add_trace(tr)
 
         if not self.normalize:
-            for ch, tr in stacked.items():
+            for ch, tr in self.stacked.items():
                 tr.set_ydata(tr.get_ydata()/num_stacked[ch])
 
-        self.add_traces(stacked.values())
+        self.add_traces(self.stacked.values())
 
     def center_lat_lon(self, stations):
         '''Calculate a mean geographical centre of the array
@@ -230,6 +231,11 @@ class BeamForming(Snuffling):
         ax.set_xlabel("N-S")
         ax.set_ylabel("E-W")
         plt.show()
+
+    def save(self):
+        default_fn = 'BeamTraces_baz%s_slow%s.mseed' % (self.bazi, self.slow)
+        fn = self.output_filename('Template for output files', default_fn)
+        io.save(self.stacked.values(), fn)
 
 
 def __snufflings__():
