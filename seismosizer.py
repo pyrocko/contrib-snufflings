@@ -50,6 +50,8 @@ class Seismosizer(Snuffling):
     def set_engine(self):
         self._engine = None
         self.store_ids = self.get_store_ids()
+        if self.store_ids==[]:
+            return 
         self.set_parameter_choices('store_id', self.store_ids)
         self.store_id = self.store_ids[0]
 
