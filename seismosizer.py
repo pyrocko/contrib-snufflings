@@ -1,4 +1,5 @@
 import numpy as num
+import os 
 
 from PyQt4.QtCore import *
 from pyrocko import moment_tensor, model
@@ -191,28 +192,32 @@ class Seismosizer(Snuffling):
             self.fail('No active event set.')
 
         if event.moment_tensor is not None:
-            mt = event.moment_tensor.m()
+            strike, dip, slip_rake = event.moment_tensor.both_strike_dip_rake()[0]
+            moment = event.moment_tensor.scalar_moment()
+            self.set_parameter('magnitude', moment_tensor.moment_to_magnitude(moment))
+            self.set_parameter('strike', strike)
+            self.set_parameter('dip', dip)
+            self.set_parameter('rake', slip_rake)
         else:
-            self.fail('No source mechanism available for event %s.' % event.name)
+            self.warn('No source mechanism available for event %s. Only setting location' % event.name)
         
         self.set_parameter('lat', event.lat)
         self.set_parameter('lon', event.lon)
         self.set_parameter('depth_km', event.depth/km)
 
-        strike, dip, slip_rake = event.moment_tensor.both_strike_dip_rake()[0]
-        moment = event.moment_tensor.scalar_moment()
-        self.set_parameter('magnitude', moment_tensor.moment_to_magnitude(moment))
-        self.set_parameter('strike', strike)
-        self.set_parameter('dip', dip)
-        self.set_parameter('rake', slip_rake)
-
     def add_store(self):
         self._engine = self.get_engine()
         superdir = self.input_directory()
-        self._engine.store_superdirs.append( superdir)
+        if self.has_config(superdir):
+            self._engine.store_dirs.append(superdir)
+        else:
+            self._engine.store_superdirs.append(superdir)
         self.store_ids = self._engine.get_store_ids()
+        
         self.set_parameter_choices('store_id', self.store_ids)
 
+    def has_config(self, directory):
+        return 'config' in os.listdir(directory)
 
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
