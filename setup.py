@@ -70,7 +70,11 @@ class LinkSnufflingFiles(SetupBuildCommand):
 
         else:
             files = glob.glob(pjoin(cwd, '*.py'))
-            files.append(pjoin(cwd, 'map'))
+            subs = next(os.walk('.'))[1]
+            subs = filter(lambda x: x[0]!='.', subs)
+            subs.remove('screenshots')
+            for sub in subs:
+                files.append(pjoin(cwd, sub))
             files.remove(cwd+'/setup.py')
 
         for fn in files:
