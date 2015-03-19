@@ -167,15 +167,14 @@ class SimilaritySnuffling(Snuffling):
 
                         b_tr_shifted = b_tr.copy()
                         a_tr_shifted = a_tr.copy()
-                        if abs(v_mini) > abs(v_maxi):
-                            tshift = -t_mini
 
+                        # TODO: Confirm that traces are shifted correctly!!!!!
                         if abs(v_mini) > abs(v_maxi):
-                            if abs(t_mini) < self.limit * self.tdist:
+                            if abs(t_center-t_mini) < self.limit * self.tdist:
                                 self.cc[itarget, ia, ib] = v_mini
                                 b_tr_shifted.shift(-t_mini)
                         else:
-                            if abs(t_maxi) < self.limit * self.tdist:
+                            if abs(t_center-t_maxi) < self.limit * self.tdist:
                                 self.cc[itarget, ia, ib] = v_maxi
                                 b_tr_shifted.shift(-t_maxi)
 
@@ -189,8 +188,6 @@ class SimilaritySnuffling(Snuffling):
 
                             ya = a_tr_chopped.ydata
                             yb = b_tr_chopped.ydata
-                            #print ya
-                            #print yb
                             relamp = num.sum(ya*yb) / num.sum(ya**2)
 
                         if self.show_traces:
