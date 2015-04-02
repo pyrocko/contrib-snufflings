@@ -99,8 +99,8 @@ class SimilaritySnuffling(Snuffling):
                 tmax = ev.time + dist / self.vmin + self.tpad
                 # want_incomplete?
                 trs = pile.all(
-                    tmin=tmin_selection,
-                    tmax=tmax_selection,
+                    tmin=tmin,
+                    tmax=tmax,
                     trace_selector=lambda tr: tr.nslc_id == target.codes,
                     want_incomplete=True)
 
