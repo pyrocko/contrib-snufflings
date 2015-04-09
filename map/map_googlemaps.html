@@ -195,6 +195,7 @@
                 
                 for (i in magnitudeCircle) {
                         var circleOptions = {
+			visible: false,
                         strokeColor: '#FF0000',
                         strokeOpacity: 0.8,
                         strokeWeight: 2,
@@ -237,7 +238,7 @@
                 Magnitude Circles: <input type='checkbox' 
                                 id='magnitudebox' 
                                 onclick="boxclick(this, 'magnitudecircle')" 
-                                checked="checked" /> &nbsp;&nbsp;
+                                /> &nbsp;&nbsp;
                 Plate Boundaries: <input type='checkbox' 
                                 id='platebox' 
                                 onclick="boxclick(this, 'plateboundaries')" 
