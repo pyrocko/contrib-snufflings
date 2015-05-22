@@ -11,17 +11,16 @@ r_earth = 6371000.785
 torad = num.pi/180.
 onedeg = r_earth*torad
 
-
 def to_cartesian(items):
     res = defaultdict()
+    latlon00 = ortho.Loc(0.,0.)
     for i, item in enumerate(items):
-        lat = item.lat/180.*num.pi
-        lon = item.lon/180.*num.pi
+
+        y, x = ortho.latlon_to_ne(latlon00, item)
         depth = item.depth
         elevation = item.elevation
-        x = r_earth*num.cos(lat)*num.sin(lon)
-        y = r_earth*num.cos(lat)*num.cos(lon)
         dz = elevation - depth
+        lat = item.lat/180.*num.pi
         z = r_earth+dz*num.sin(lat)
         res[item] = (x, y, z)
     return res
@@ -38,11 +37,14 @@ class BeamForming(Snuffling):
     If no reference point is defined by 'Center lat' and 'Center lon'
     sliders the geographical center is calculated by taking the average of
     latitudes and longitudes.<br>
-    Activating normalization will normalize traces using their standard
-    deviation. Otherwise, the stacked trace's amplitudes will be normalized by 
+    <p>
+    'pre-normalize by std'  - will normalize traces using their standard
+    deviation.<br>
+    'multiply 1/[no. of traces] - stacked trace's amplitudes will be normalized by 
     the number of summed traces.<br>
-    Button "Plot" shows the station distribution together with the applied
-    time shifts.
+    </p>
+    "Plot" - map station distribution together with the applied time shifts. The
+    blue arrow indicates the applied back azimuth.
     </body>
     </html>
     '''
@@ -57,17 +59,19 @@ class BeamForming(Snuffling):
         # max_slow = 1.
         # def_slow = 0.1
 
-        self.add_parameter(Param('slowness [s/km]', 'slow', 0.1, 0., 1))
+        self.add_parameter(Param('slowness [s/km]', 'slow', 0.1, 0., 1.))
         # self.add_parameter(Param('slowness [s/deg]',
         #                          'slow_deg',
         #                          def_slow*onedeg,
         #                          min_slow*onedeg,
         #                          max_slow*onedeg))
 
-        self.add_parameter(Switch('Normalize Traces', 'normalize', False))
+        self.add_parameter(Switch('pre-normalize by std ', 'normalize_std', False))
+        self.add_parameter(Switch('multiply 1/[no. of traces]', 'post_normalize', False))
         self.add_parameter(Switch('Add Shifted Traces', 'add_shifted', False))
         self.add_trigger('plot', self.plot)
         self.add_trigger('Save Traces', self.save)
+        self.add_trigger('Set center by mean lat/lon', self.set_center_latlon)
         self.station_c = None
         self.z_c = None
         self.stacked_traces = None
@@ -75,6 +79,8 @@ class BeamForming(Snuffling):
     def call(self):
 
         self.cleanup()
+        if self.stacked_traces is not None:
+            self.add_traces(self.stacked_traces)
         viewer = self.get_viewer()
         if self.station_c:
             viewer.stations.pop(('', 'STK'))
@@ -86,9 +92,9 @@ class BeamForming(Snuffling):
             self.set_parameter('lat_c', self.lat_c)
             self.set_parameter('lon_c', self.lon_c)
 
-        self.station_c = Station(lat=self.lat_c,
-                                 lon=self.lon_c,
-                                 elevation=self.z_c,
+        self.station_c = Station(lat=float(self.lat_c),
+                                 lon=float(self.lon_c),
+                                 elevation=float(self.z_c),
                                  depth=0.,
                                  name='Array Center',
                                  network='',
@@ -110,6 +116,7 @@ class BeamForming(Snuffling):
         self.stacked = {}
         num_stacked = {}
         self.t_shifts = {}
+        shifted_traces = []
         for traces in self.chopper_selected_traces(fallback=True):
             for tr in traces:
                 tr = tr.copy()
@@ -140,7 +147,6 @@ class BeamForming(Snuffling):
 
                     stat = stats[0]
                 except IndexError:
-                    print 'stats ', stats
                     break
 
                 i = stations.index(stat)
@@ -151,19 +157,23 @@ class BeamForming(Snuffling):
                 tr.shift(-t_shift)
                 stat = viewer.get_station(tr.nslc_id[:2])
                 self.t_shifts[stat] = -t_shift
-                if self.normalize:
+                if self.normalize_std:
                     tr.ydata = tr.ydata/tr.ydata.std()
                 stack_trace.add(tr)
 
-        if self.add_shifted:
-            tr.set_station('%s_s' % tr.station)
-            self.add_trace(tr)
+                if self.add_shifted:
+                    tr.set_station('%s_s' % tr.station)
+                    shifted_traces.append(tr)
 
-        if not self.normalize:
+        #normalize by number of stacked traces:
+        if self.post_normalize:
             for ch, tr in self.stacked.items():
                 tr.set_ydata(tr.get_ydata()/num_stacked[ch])
-
-        self.add_traces(self.stacked.values())
+        self.stacked_traces = self.stacked.values()
+        self.cleanup()
+        self.add_traces(self.stacked_traces)
+        if self.add_shifted:
+            self.add_traces(shifted_traces)
 
     def center_lat_lon(self, stations):
         '''Calculate a mean geographical centre of the array
@@ -185,6 +195,7 @@ class BeamForming(Snuffling):
     def plot(self):
         stations = self.get_stations()
         res = to_cartesian(stations)
+        center_xyz = res[self.station_c]
         x = num.zeros(len(res))
         y = num.zeros(len(res))
         z = num.zeros(len(res))
@@ -192,8 +203,8 @@ class BeamForming(Snuffling):
         stat_labels = []
         i = 0
         for s, xyz in res.items():
-            x[i] = xyz[1]
-            y[i] = xyz[0]
+            x[i] = xyz[0]
+            y[i] = xyz[1]
             z[i] = xyz[2]
 
             try:
@@ -221,22 +232,31 @@ class BeamForming(Snuffling):
         max_range = num.max([x_range, y_range])
 
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(x, y, z, c=sizes, s=40)
+        ax = self.pylab()
+        ax.scatter(x, y, c=sizes, s=200, cmap=plt.cm.get_cmap('bwr'),
+                   vmax=num.max(sizes), vmin=-num.max(sizes))
         for i, lab in enumerate(stat_labels):
-            ax.text(x[i], y[i], z[i], lab, size=9)
+            ax.text(x[i], y[i], lab, size=14)
+        ax.arrow(center_xyz[0]/1000.,
+                 center_xyz[1]/1000.,
+                 num.sin(self.bazi/180.*num.pi),
+                 num.cos(self.bazi/180.*num.pi),
+                 head_width=1,
+                 head_length=2)
         ax.set_xlim([x.mean()-max_range*0.55, x.mean()+max_range*0.55])
         ax.set_ylim([y.mean()-max_range*0.55, y.mean()+max_range*0.55])
-        ax.set_zlim([z.mean()-max_range*0.2, z.mean()+max_range*0.2])
-        ax.set_xlabel("N-S")
-        ax.set_ylabel("E-W")
-        plt.show()
+        ax.set_ylabel("N-S [km]")
+        ax.set_xlabel("E-W [km]")
 
     def save(self):
         default_fn = 'BeamTraces_baz%s_slow%s.mseed' % (self.bazi, self.slow)
         fn = self.output_filename('Template for output files', default_fn)
         io.save(self.stacked.values(), fn)
 
+    def set_center_latlon(self):
+        self.lat_c, self.lon_c, self.z_c = self.center_lat_lon(self.get_stations())
+        self.set_parameter('lat_c', self.lat_c)
+        self.set_parameter('lon_c', self.lon_c)
 
 def __snufflings__():
     return [BeamForming()]
