@@ -32,19 +32,24 @@ class BeamForming(Snuffling):
     <body>
     <h1>Beam Forming</h1>
     Mark a time frame using extended markers. If no time window is selected,
-    all traces visible in the viewer will be stacked.<br>
+    all traces currently visible in the viewer will be stacked.<br>
     Set a backzimuth and horizontal slowness of the passing wave field.<br>
     If no reference point is defined by 'Center lat' and 'Center lon'
     sliders the geographical center is calculated by taking the average of
-    latitudes and longitudes.<br>
+    latitudes and longitudes. This can also be done by pressing <b>Set center by
+    mean lat/lon</b><br>
+    If sampling rates differ, traces with highest sampling rates will be stacked, first. 
+    The current stacked trace will then be downsampled to match the next lower sampling
+    rate. The stacking will proceed until another lower sampling rate is found, etc.
     <p>
-    'pre-normalize by std'  - will normalize traces using their standard
-    deviation.<br>
-    'multiply 1/[no. of traces] - stacked trace's amplitudes will be normalized by 
+    <b>pre-normalize by std</b> - normalize traces using their standard deviation.<br>
+    <b>multiply 1/[no. of traces]</b> - stacked trace's will be normalized by 
     the number of summed traces.<br>
+    <b>Add Shifted Trace</b> - Add time shifted traces to the viewer.<br>
+    <b>Plot</b> - map station distribution together with the applied time shifts. The
+    blue arrow indicates the applied back azimuth.</br>
+    <b>Save Traces</b> - write stacked traces to mseed file.
     </p>
-    "Plot" - map station distribution together with the applied time shifts. The
-    blue arrow indicates the applied back azimuth.
     </body>
     </html>
     '''
@@ -75,6 +80,7 @@ class BeamForming(Snuffling):
         self.station_c = None
         self.z_c = None
         self.stacked_traces = None
+
 
     def call(self):
 
@@ -117,53 +123,60 @@ class BeamForming(Snuffling):
         num_stacked = {}
         self.t_shifts = {}
         shifted_traces = []
-        for traces in self.chopper_selected_traces(fallback=True):
-            for tr in traces:
-                tr = tr.copy()
-                tr.ydata = tr.ydata.astype(num.float64)
-                tr.ydata -= tr.ydata.mean(dtype=num.float64)
-                try:
-                    stack_trace = self.stacked[tr.channel]
-                    num_stacked[tr.channel] += 1
-                except KeyError:
-                    stack_trace = tr.copy(data=True)
-                    stack_trace.set_ydata(num.zeros(
-                        len(stack_trace.get_ydata())))
+        traces = list(self.chopper_selected_traces(fallback=True))
+        traces = [tr for trs in traces for tr in trs ]
+        traces.sort(key=lambda x: x.deltat)
+        for tr in traces:
+            if tr.nslc_id[:3] == ('_', 'STK', ''):
+                continue
+            tr = tr.copy(data=True)
+            tr.ydata = tr.ydata.astype(num.float64)
+            tr.ydata -= tr.ydata.mean(dtype=num.float64)
+            try:
+                stack_trace = self.stacked[tr.channel]
+                num_stacked[tr.channel] += 1
+            except KeyError:
+                stack_trace = tr.copy(data=True)
+                stack_trace.set_ydata(num.zeros(
+                    len(stack_trace.get_ydata())))
 
-                    stack_trace.set_codes(network='',
-                                          station='STK',
-                                          location='',
-                                          channel=tr.channel)
+                stack_trace.set_codes(network='_',
+                                      station='STK',
+                                      location='',
+                                      channel=tr.channel)
 
-                    self.stacked[tr.channel] = stack_trace
-                    channels.add(tr.channel)
-                    num_stacked[tr.channel] = 1
+                self.stacked[tr.channel] = stack_trace
+                channels.add(tr.channel)
+                num_stacked[tr.channel] = 1
 
-                nslc_id = tr.nslc_id
+            nslc_id = tr.nslc_id
 
-                try:
-                    stats = filter(lambda x: util.match_nslc(
-                        '%s.%s.%s.*' % x.nsl(), nslc_id), stations)
+            try:
+                stats = filter(lambda x: util.match_nslc(
+                    '%s.%s.%s.*' % x.nsl(), nslc_id), stations)
 
-                    stat = stats[0]
-                except IndexError:
-                    break
+                stat = stats[0]
+            except IndexError:
+                break
 
-                i = stations.index(stat)
-                gamma = gammas[i]
+            i = stations.index(stat)
+            gamma = gammas[i]
 
-                d = num.cos(gamma)*distances[i]
-                t_shift = d*self.slow/1000.
-                tr.shift(-t_shift)
-                stat = viewer.get_station(tr.nslc_id[:2])
-                self.t_shifts[stat] = -t_shift
-                if self.normalize_std:
-                    tr.ydata = tr.ydata/tr.ydata.std()
-                stack_trace.add(tr)
+            d = num.cos(gamma)*distances[i]
+            t_shift = d*self.slow/1000.
+            tr.shift(-t_shift)
+            stat = viewer.get_station(tr.nslc_id[:2])
+            self.t_shifts[stat] = -t_shift
+            if self.normalize_std:
+                tr.ydata = tr.ydata/tr.ydata.std()
 
-                if self.add_shifted:
-                    tr.set_station('%s_s' % tr.station)
-                    shifted_traces.append(tr)
+            if num.abs(tr.deltat-stack_trace.deltat)>0.000001:
+                stack_trace.downsample_to(tr.deltat)
+            stack_trace.add(tr)
+
+            if self.add_shifted:
+                tr.set_station('%s_s' % tr.station)
+                shifted_traces.append(tr)
 
         #normalize by number of stacked traces:
         if self.post_normalize:
@@ -237,14 +250,15 @@ class BeamForming(Snuffling):
                    vmax=num.max(sizes), vmin=-num.max(sizes))
         for i, lab in enumerate(stat_labels):
             ax.text(x[i], y[i], lab, size=14)
+
         ax.arrow(center_xyz[0]/1000.,
                  center_xyz[1]/1000.,
                  num.sin(self.bazi/180.*num.pi),
                  num.cos(self.bazi/180.*num.pi),
-                 head_width=1,
-                 head_length=2)
-        ax.set_xlim([x.mean()-max_range*0.55, x.mean()+max_range*0.55])
-        ax.set_ylim([y.mean()-max_range*0.55, y.mean()+max_range*0.55])
+                 head_width=1.4,
+                 head_length=4)
+        #ax.set_xlim([x.mean()-max_range*0.55, x.mean()+max_range*0.55])
+        #ax.set_ylim([y.mean()-max_range*0.55, y.mean()+max_range*0.55])
         ax.set_ylabel("N-S [km]")
         ax.set_xlabel("E-W [km]")
 
