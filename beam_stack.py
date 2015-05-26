@@ -1,5 +1,5 @@
 from mpl_toolkits.mplot3d import Axes3D
-from pyrocko.snuffling import Snuffling, Param, Switch
+from pyrocko.snuffling import Snuffling, Param, Switch, Choice
 from pyrocko.model import Station
 from pyrocko import orthodrome as ortho
 from pyrocko import util, io
@@ -38,10 +38,14 @@ class BeamForming(Snuffling):
     sliders the geographical center is calculated by taking the average of
     latitudes and longitudes. This can also be done by pressing <b>Set center by
     mean lat/lon</b><br>
-    If sampling rates differ, traces with highest sampling rates will be stacked, first. 
+    If sampling rates differ and <b>Tread different dt by</b> is set to <b>downsample</b>,
+    traces with highest sampling rates (smalles deltat) will be stacked, first. 
     The current stacked trace will then be downsampled to match the next lower sampling
-    rate. The stacking will proceed until another lower sampling rate is found, etc.
+    rate. The stacking will proceed until another lower sampling rate is found, etc.<br>
+    Else, if <b>Tread different dt by</b> is set to <b>oversample</b> all traces will by
+    resampled in the frequency domain to match the highest occurring sampling rate. 
     <p>
+    <b>Tread different dt by </b> - oversample:|downsample.<br>
     <b>pre-normalize by std</b> - normalize traces using their standard deviation.<br>
     <b>multiply 1/[no. of traces]</b> - stacked trace's will be normalized by 
     the number of summed traces.<br>
@@ -70,7 +74,7 @@ class BeamForming(Snuffling):
         #                          def_slow*onedeg,
         #                          min_slow*onedeg,
         #                          max_slow*onedeg))
-
+        self.add_parameter(Choice('Treat different dt by', 'diff_dt_treat', 'oversample',['oversample', 'downsample']))
         self.add_parameter(Switch('pre-normalize by std ', 'normalize_std', False))
         self.add_parameter(Switch('multiply 1/[no. of traces]', 'post_normalize', False))
         self.add_parameter(Switch('Add Shifted Traces', 'add_shifted', False))
@@ -125,7 +129,13 @@ class BeamForming(Snuffling):
         shifted_traces = []
         traces = list(self.chopper_selected_traces(fallback=True))
         traces = [tr for trs in traces for tr in trs ]
-        traces.sort(key=lambda x: x.deltat)
+        if self.diff_dt_treat=='downsample':
+            traces.sort(key=lambda x: x.deltat)
+        elif self.diff_dt_treat=='oversample':
+            dts = [t.deltat for t in traces]
+            for tr in traces:
+                tr.resample(min(dts))
+
         for tr in traces:
             if tr.nslc_id[:3] == ('_', 'STK', ''):
                 continue
@@ -171,7 +181,10 @@ class BeamForming(Snuffling):
                 tr.ydata = tr.ydata/tr.ydata.std()
 
             if num.abs(tr.deltat-stack_trace.deltat)>0.000001:
-                stack_trace.downsample_to(tr.deltat)
+                if self.diff_dt_treat=='downsample':
+                    stack_trace.downsample_to(tr.deltat)
+                elif self.diff_dt_treat=='upsample':
+                    print 'something went wrong with the upsampling, previously'
             stack_trace.add(tr)
 
             if self.add_shifted:
