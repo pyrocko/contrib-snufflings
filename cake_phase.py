@@ -1,7 +1,7 @@
 from pyrocko.snuffling import Snuffling, Param, Switch, Choice
 from pyrocko.pile_viewer import PhaseMarker
 from pyrocko import orthodrome
-
+from pyrocko import gf
 from pyrocko import cake
 import numpy as num
 
@@ -27,6 +27,7 @@ class CakePhase(Snuffling):
     </p>
     <p>
     Instructions and information on Cake's syntax of seismic rays can be found in the <a href="http://emolch.github.io/pyrocko/v0.3/cake_doc.html#cmdoption-cake--phase">Cake documentation</a>.
+    
     </p>
     </body>
     </html>
@@ -37,12 +38,16 @@ class CakePhase(Snuffling):
         self.set_name('Cake Phase')
 
         #self._phase_names = 'PmP ~S ~P ~P(moho)s ~P(sill-top)s ~P(sill-bottom)s Pdiff'.split()
-        self._phase_names = '~P Pg Sg pP P Pdiff PKP PcP PcS PKIKP pPKIKP SSP PPS SPP PSP SP PS ~PS ~SP Pn S Sn PP PPP ScS S Sdiff SS SSS PcP SKS SKIKS'.split()
+        self._phase_names = '~P Pg Sg pP p P Pdiff PKP PcP PcS PKIKP pPKIKP SSP PPS SPP PSP SP PS ~PS ~SP Pn s S Sn PP PPP ScS Sdiff SS SSS PcP SKS SKIKS'.split()
 
         for iphase, name in enumerate(self._phase_names):
             self.add_parameter(Switch(name, 'wantphase_%i' % iphase, iphase==0))
+        
 
         self._models = cake.builtin_models()
+        self._engine = gf.LocalEngine(use_config=True)
+        store_ids = self._engine.get_store_ids()
+        self._models.extend(store_ids)
 
         self.model_choice = Choice('Model', 'chosen_model', 
                 'ak135-f-continental.m', self._models)
@@ -53,9 +58,10 @@ class CakePhase(Snuffling):
         self.add_trigger('Add Model', self.add_model_to_choice)
         self.add_trigger('Plot Model', self.plot_model)
         self.add_trigger('Plot Rays', self.plot_rays)
+
         self._phases = {}
         self._model = None
-
+    
     def wanted_phases(self):
         try:
             wanted = []
@@ -131,11 +137,13 @@ class CakePhase(Snuffling):
             
             fig.canvas.draw()
 
-
     def update_model(self):
         if not self._model or self._model[0] != self.chosen_model:
-            self._model = (self.chosen_model, 
-                           cake.load_model(self.chosen_model))
+            if self.chosen_model in cake.builtin_models():
+                load_model = cake.load_model(self.chosen_model)
+            else:
+                load_model = self._engine.get_store(self.chosen_model).config.earthmodel_1d 
+            self._model = (self.chosen_model, load_model)
 
     def update_model_choices(self):
         self.set_parameter_choices('chosen_model', self._models)
@@ -166,7 +174,6 @@ class CakePhase(Snuffling):
         self.add_parameter(Switch(phase_def, 'wantphase_%s'%str(len(self._phase_names)-1), True))
         self.reset_gui(reloaded=True)
         self.call()
-
 
     def plot_model(self):
         self.update_model()
