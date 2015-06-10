@@ -110,16 +110,19 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
             active_stations = self.stations
 
         station_list=[]
-        for stat in active_stations:
-            if (viewer and not util.match_nslc(viewer.blacklist, stat.nsl())) or cli_mode:
-                xml_station_marker = XMLStationMarker(
-                    nsl='.'.join(stat.nsl()),
-                    longitude = stat.lon,
-                    latitude = stat.lat,
-                    active = 'yes')
+        if active_stations:
+            for stat in active_stations:
+                if (viewer and not util.match_nslc(viewer.blacklist, stat.nsl())) or cli_mode:
+                    xml_station_marker = XMLStationMarker(
+                        nsl='.'.join(stat.nsl()),
+                        longitude = stat.lon,
+                        latitude = stat.lat,
+                        active = 'yes')
 
-                station_list.append(xml_station_marker)
+                    station_list.append(xml_station_marker)
 
+        else:
+            stations_list = []
         active_station_list = StationMarkerList(stations=station_list)
 
         if self.only_active:
@@ -220,6 +223,8 @@ if __name__ == '__main__':
     if options.stations_filename:
         stations = model.load_stations(options.stations_filename)
         s.stations = stations
+    else:
+        s.stations = None
 
     if options.events_filename:
         events = model.load_events(filename=options.events_filename)
