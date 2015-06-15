@@ -1,8 +1,10 @@
 from pyrocko.snuffling import Snuffling, Param, Choice, Switch
 from pyrocko.gui_util import EventMarker
 from pyrocko.orthodrome import distance_accurate50m as distance
+from pyrocko import util, model
 import matplotlib.dates as mdates
 from matplotlib import cm
+import matplotlib.pyplot as plt
 import numpy as num
 from datetime import datetime
 
@@ -33,7 +35,8 @@ class TimeLine(Snuffling):
         self.add_trigger('Save Figure', self.save_as)
         self.set_live_update(False)
         self.fig = None
-        
+        self.cli_mode = False
+
     def call(self):
         '''Main work routine of the snuffling.'''
         self.cleanup()
@@ -41,31 +44,37 @@ class TimeLine(Snuffling):
         tmin, tmax = self.get_selected_time_range(fallback=True)
         event_markers = filter(lambda x: x.tmin>=tmin and x.tmax<=tmax,
                                viewer.markers)
-        
+
         event_markers = filter(lambda x: isinstance(x, EventMarker), event_markers)
         if self.maxd:
             event_markers = filter(lambda x: distance(self, x._event)<=self.maxd*km,
                                event_markers)
-        
+
         if event_markers==[]:
             self.fail('No events in selected area found')
+        events = [m.get_event() for m in event_markers]
 
-        fframe = self.figure_frame()
-        fig = fframe.gcf()
-        self.fig = fig
-        ax = fig.add_subplot(311)
-        ax1 = fig.add_subplot(323)
-        ax2 = fig.add_subplot(325)
-        ax3 = fig.add_subplot(324)
+        self.make_time_line(events)
+
+    def make_time_line(self, events):
+
+        if self.cli_mode:
+            self.fig = plt.figure()
+        else:
+            fframe = self.figure_frame()
+            self.fig = fframe.gcf()
+        ax = self.fig.add_subplot(311)
+        ax1 = self.fig.add_subplot(323)
+        ax2 = self.fig.add_subplot(325)
+        ax3 = self.fig.add_subplot(324)
         
-        num_events = len(event_markers)
+        num_events = len(events)
         magnitudes = num.zeros(num_events)
         times = num.zeros(num_events)
         lats = num.zeros(num_events)
         lons = num.zeros(num_events)
         depths = num.zeros(num_events)
-        for i, m in enumerate(event_markers):
-            e = m._event
+        for i, e in enumerate(events):
             if e.magnitude:
                 mag = e.magnitude 
             else:
@@ -76,6 +85,8 @@ class TimeLine(Snuffling):
             depths[i] = e.depth
             times[i] = e.time
         
+        tmin = min(times)
+        tmax = max(times)
         lon_max = lons.max()
         lon_min = lons.min()
         lat_max = lats.max()
@@ -89,7 +100,7 @@ class TimeLine(Snuffling):
         fds = mdates.date2num(dates)
         tday = 3600*24
         tweek = tday*7
-        if tmax-tmin<14*tday:
+        if tmax-tmin<1*tday:
             hfmt = mdates.DateFormatter('%Y-%m-%d %H:%M:%S')
         elif tmax-tmin<tweek*52:
             hfmt = mdates.DateFormatter('%Y-%m-%d')
@@ -143,22 +154,44 @@ class TimeLine(Snuffling):
         ax3.get_xaxis().tick_bottom()
         ax3.get_yaxis().tick_right()
 
-        fig.subplots_adjust(bottom=0.1, 
+        self.fig.subplots_adjust(bottom=0.1, 
                             right=0.9, 
                             top=0.95,
                             wspace=0.02,
                             hspace=0.02)
         init_pos.y0+=0.05
         ax.set_position(init_pos)
-        fig.canvas.draw()
-
+        if self.cli_mode:
+            plt.show()
+        else:
+            self.fig.canvas.draw()
+ 
     def save_as(self):
         if self.fig:
             fn = self.output_filename()
-            self.fig.savefig(fn)
+            self.fig.savefig(fn,
+                             pad_inches=0.05, 
+                             bbox_inches='tight')
 
+    def configure_cli_parser(self, parser):
+        parser.add_option(
+            '--events',
+            dest='events_filename',
+            default=None,
+            metavar='FILENAME',
+            help='Read events from FILENAME')
+    
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
     
     return [ TimeLine() ]
+
+if __name__=='__main__':
+    util.setup_logging('time_line.py', 'info')
+    s = TimeLine()
+    options, args, parser = s.setup_cli()
+
+    s.cli_mode = True
+    if options.events_filename:
+        s.make_time_line(list(model.Event.load_catalog(options.events_filename)))
 

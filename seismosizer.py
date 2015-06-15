@@ -1,4 +1,5 @@
 import numpy as num
+import os 
 
 from PyQt4.QtCore import *
 from pyrocko import moment_tensor, model
@@ -17,8 +18,8 @@ class Seismosizer(Snuffling):
         
         self.set_name('Seismosizer')
         self.add_parameter(Param('Time', 'time', 0.0, -50., 50.))
-        self.add_parameter(Param('Latitude', 'lat', 0.0, -90., 90.))
-        self.add_parameter(Param('Longitude', 'lon', 0.0, -180., 180.))
+        #self.add_parameter(Param('Latitude', 'lat', 0.0, -90., 90.))
+        #self.add_parameter(Param('Longitude', 'lon', 0.0, -180., 180.))
         self.add_parameter(Param('North shift', 'north_km', 0.0, -50., 50.))
         self.add_parameter(Param('East shift', 'east_km', 0.0, -50., 50.))
         self.add_parameter(Param('Depth', 'depth_km', 10.0, 0.0, 600.0))
@@ -36,6 +37,7 @@ class Seismosizer(Snuffling):
 
         self.add_trigger('Set Engine', self.set_engine)
         self.add_trigger('Set Params from Event', self.mechanism_from_event)
+        self.add_trigger('Add Stores', self.add_store)
 
         self.store_ids = None
         self.offline_config = None
@@ -49,6 +51,8 @@ class Seismosizer(Snuffling):
     def set_engine(self):
         self._engine = None
         self.store_ids = self.get_store_ids()
+        if self.store_ids==[]:
+            return 
         self.set_parameter_choices('store_id', self.store_ids)
         self.store_id = self.store_ids[0]
 
@@ -72,7 +76,8 @@ class Seismosizer(Snuffling):
         if event:
             event, stations = self.get_active_event_and_stations(missing='warn')
         else:
-            event = model.Event(lat=self.lat, lon=self.lon)
+            #event = model.Event(lat=self.lat, lon=self.lon)
+            event = model.Event(lat=0., lon=0.)
             stations = []
 
         s2c = {}
@@ -192,21 +197,32 @@ class Seismosizer(Snuffling):
             self.fail('No active event set.')
 
         if event.moment_tensor is not None:
-            mt = event.moment_tensor.m()
+            strike, dip, slip_rake = event.moment_tensor.both_strike_dip_rake()[0]
+            moment = event.moment_tensor.scalar_moment()
+            self.set_parameter('magnitude', moment_tensor.moment_to_magnitude(moment))
+            self.set_parameter('strike', strike)
+            self.set_parameter('dip', dip)
+            self.set_parameter('rake', slip_rake)
         else:
-            self.fail('No source mechanism available for event %s.' % event.name)
+            self.warn('No source mechanism available for event %s. Only setting location' % event.name)
         
         self.set_parameter('lat', event.lat)
         self.set_parameter('lon', event.lon)
         self.set_parameter('depth_km', event.depth/km)
 
-        strike, dip, slip_rake = event.moment_tensor.both_strike_dip_rake()[0]
-        moment = event.moment_tensor.scalar_moment()
-        self.set_parameter('magnitude', moment_tensor.moment_to_magnitude(moment))
-        self.set_parameter('strike', strike)
-        self.set_parameter('dip', dip)
-        self.set_parameter('rake', slip_rake)
+    def add_store(self):
+        self._engine = self.get_engine()
+        superdir = self.input_directory()
+        if self.has_config(superdir):
+            self._engine.store_dirs.append(superdir)
+        else:
+            self._engine.store_superdirs.append(superdir)
+        self.store_ids = self._engine.get_store_ids()
+        
+        self.set_parameter_choices('store_id', self.store_ids)
 
+    def has_config(self, directory):
+        return 'config' in os.listdir(directory)
 
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''

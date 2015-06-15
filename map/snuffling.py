@@ -2,8 +2,8 @@ import subprocess
 import os
 import tempfile
 import shutil
-from pyrocko.snuffling import Snuffling, Param, Switch, Choice
-from pyrocko import util, gui_util, guts
+from pyrocko.snuffling import Snuffling, Param, Switch, Choice, NoViewerSet
+from pyrocko import util, gui_util, guts, model
 from xmlMarker import (XMLEventMarker, EventMarkerList, XMLStationMarker,
     StationMarkerList, MarkerLists, dump_xml)
 from PyQt4.QtCore import QUrl 
@@ -67,6 +67,15 @@ class MapMaker(Snuffling):
     mark areas where the plate model is known to be incomplete (and/or inapplicable).<br>
     This matter will be pointed out in future releases of this snuffling. 
     </p>
+    <p>
+    This snuffling can also be called from the command line, if it is stored in
+    the default pyrocko location under $HOME/.snufflings<br>
+    e.g.:
+    <code>
+python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
+--events=events_test.pf
+</code>
+</p>
     </body>
     </html>
     '''
@@ -83,36 +92,50 @@ class MapMaker(Snuffling):
     def call(self):
         self.cleanup()
 
-        viewer = self.get_viewer()
-
-        if self.only_active:
-            active_event, active_stations = \
-            self.get_active_event_and_stations()
-        else:
-            active_event = None
-            active_stations = viewer.stations.values()
-
+        try:
+            viewer = self.get_viewer()
+            cli_mode = False
+        except NoViewerSet:
+            viewer = None
+            cli_mode = True
+        
+        if not cli_mode:
+            if self.only_active:
+                active_event, active_stations = \
+                self.get_active_event_and_stations()
+            else:
+                active_event = None
+                active_stations = viewer.stations.values()
+        elif cli_mode:
+            active_stations = self.stations
 
         station_list=[]
-        for stat in active_stations:
-            if not util.match_nslc(viewer.blacklist, stat.nsl()):
-                xml_station_marker = XMLStationMarker(
-                    nsl='.'.join(stat.nsl()),
-                    longitude = stat.lon,
-                    latitude = stat.lat,
-                    active = 'yes')
+        if active_stations:
+            for stat in active_stations:
+                if (viewer and not util.match_nslc(viewer.blacklist, stat.nsl())) or cli_mode:
+                    xml_station_marker = XMLStationMarker(
+                        nsl='.'.join(stat.nsl()),
+                        longitude = stat.lon,
+                        latitude = stat.lat,
+                        active = 'yes')
 
-            station_list.append(xml_station_marker)
+                    station_list.append(xml_station_marker)
 
+        else:
+            stations_list = []
         active_station_list = StationMarkerList(stations=station_list)
 
         if self.only_active:
             markers = [viewer.get_active_event_marker()]
         else:
-            tmin, tmax = self.get_selected_time_range(fallback=True)
-            markers = [m for m in viewer.get_markers()
-                       if isinstance(m, gui_util.EventMarker) and\
-                      m.tmin>=tmin and m.tmax<=tmax]
+            if not cli_mode:
+                tmin, tmax = self.get_selected_time_range(fallback=True)
+                markers = [m for m in viewer.get_markers()
+                           if isinstance(m, gui_util.EventMarker) and\
+                          m.tmin>=tmin and m.tmax<=tmax]
+
+            else:
+                markers = self.markers
 
         ev_marker_list = []
         for m in markers:
@@ -136,8 +159,13 @@ class MapMaker(Snuffling):
         url = 'file://' + tempdir + '/' + map_fn
 
         for entry in ['loadxmldoc.js', map_fn]:
-            shutil.copy(os.path.join(self.module_dir(), entry),
-                        os.path.join(tempdir, entry))
+            if cli_mode:
+                snuffling_dir = os.environ['HOME']+'/.snufflings/map/'
+            else:
+                snuffling_dir = self.module_dir()
+
+            shutil.copy(os.path.join(snuffling_dir, entry),
+                    os.path.join(tempdir, entry))
 
         markers_fn = os.path.join(tempdir, 'markers.xml')
         dump_xml(event_station_list, filename=markers_fn)
@@ -152,5 +180,61 @@ class MapMaker(Snuffling):
                 name='Map %i (%s)' % (g_counter, self.map_kind))
 
 
+    def configure_cli_parser(self, parser):
+
+         parser.add_option(
+            '--events',
+            dest='events_filename',
+            default=None, 
+            metavar='FILENAME',
+            help='Read markers from FILENAME')
+
+         parser.add_option(
+            '--markers',
+            dest='markers_filename',
+            default=None, 
+            metavar='FILENAME',
+            help='Read markers from FILENAME')
+
+         parser.add_option(
+            '--stations',
+            dest='stations_filename',
+            default=None,
+            metavar='FILENAME',
+            help='Read stations from FILENAME')
+
+         parser.add_option(
+            '--provider',
+            dest='map_provider',
+            default='google',
+            help='map provider [google | osm] (default=osm)')
+
+
 def __snufflings__():
     return [ MapMaker() ]
+
+
+if __name__ == '__main__':
+    util.setup_logging('map.py', 'info')
+    s = MapMaker()
+    options, args, parser = s.setup_cli()
+    s.markers = [] 
+
+    if options.stations_filename:
+        stations = model.load_stations(options.stations_filename)
+        s.stations = stations
+    else:
+        s.stations = None
+
+    if options.events_filename:
+        events = model.load_events(filename=options.events_filename)
+        markers = [gui_util.EventMarker(e) for e in events]
+        s.markers.extend(markers)
+
+    if options.markers_filename:
+        markers = gui_util.load_markers(options.markers_filename)
+        s.markers.extend(markers)
+    s.open_external = True
+    mapmap = {'google': 'Google Maps', 'osm': 'OpenStreetMap'}
+    s.map_kind = mapmap[options.map_provider]
+    s.call()
