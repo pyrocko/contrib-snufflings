@@ -2,7 +2,7 @@ import numpy as num
 
 from PyQt4.QtCore import *
 from pyrocko import moment_tensor, model
-from pyrocko.snuffling import Snuffling, Param, Choice, Switch
+from pyrocko.snuffling import Snuffling, Param, Choice, Switch, EventMarker
 from pyrocko import gf
 
 km = 1000.
@@ -32,6 +32,8 @@ class Seismosizer(Snuffling):
         self.add_parameter(Param('Rise-time', 'risetime', 0.0, 0.0, 20.0))
         self.add_parameter(Choice('GF Store', 'store_id', '<not loaded yet>', ['<not loaded yet>']))
         
+        self.add_parameter(Choice('Waveform type', 'waveform_type', 'Displacement', ['Displacement [m]', 'Displacement [nm]', 'Velocity [m/s]', 'Velocity [nm/s]']))
+
         self.add_trigger('Set Engine', self.set_engine)
         self.add_trigger('Set Params from Event', self.mechanism_from_event)
 
@@ -39,27 +41,16 @@ class Seismosizer(Snuffling):
         self.offline_config = None
         self._engine = None
 
-    def setup_gui(self, *args, **kwargs):
-        def visibility(visible):
-            if visible:
-                if self._engine is None:
-                    self.set_engine()
-
-        retval = Snuffling.setup_gui(self, *args, **kwargs)
-        panel = self._panel.parent()
-        panel.connect( panel, SIGNAL('visibilityChanged(bool)'), visibility)
-
-        return retval
+    def panel_visibility_changed(self, bool):
+        if bool:
+            if self._engine is None:
+                self.set_engine()
 
     def set_engine(self):
         self._engine = None
         self.store_ids = self.get_store_ids()
         self.set_parameter_choices('store_id', self.store_ids)
-        if 'global_2s' in self.store_ids:
-            self.store_id = 'global_2s'
-        else:
-            self.store_id = self.store_ids[0]
-
+        self.store_id = self.store_ids[0]
 
     def get_engine(self):
         if not self._engine:
@@ -79,17 +70,35 @@ class Seismosizer(Snuffling):
 
         event = viewer.get_active_event()
         if event:
-            event, stations = self.get_active_event_and_stations(missing='raise')
+            event, stations = self.get_active_event_and_stations(missing='warn')
         else:
             event = model.Event(lat=self.lat, lon=self.lon)
             stations = []
-    
+
+        s2c = {}
+        for traces in self.chopper_selected_traces(fallback=True):
+            for tr in traces:
+                net, sta, loc, cha = tr.nslc_id
+                ns = net, sta
+                if ns not in s2c:
+                    s2c[ns] = set()
+
+                s2c[ns].add((loc, cha))
+
         if not stations:
             stations = []
             for (lat, lon) in [(5.,0.), (-5.,0.)]:
-                stations.append(
-                    model.Station(station='(%g, %g)' % (lat, lon), lat=lat, lon=lon))
-        
+                s = model.Station(station='(%g, %g)' % (lat, lon), lat=lat, lon=lon)
+                stations.append(s)
+                ns = s.nsl()[:2]
+                if ns not in s2c:
+                    s2c[ns] = set()
+
+                for cha in 'NEZ':
+                    s2c[ns].add(('', cha))
+
+            viewer.add_stations(stations)
+
         source = gf.RectangularSource(
             time=event.time+self.time,
             lat=event.lat,
@@ -108,21 +117,51 @@ class Seismosizer(Snuffling):
 
         source.regularize()
 
+        m = EventMarker(source.pyrocko_event())
+        self.add_marker(m)
+
         targets = []
         for station in stations:
-            for component in 'ZNE':
+
+            nsl = station.nsl()
+            if nsl[:2] not in s2c:
+                continue
+
+            for loc, cha in s2c[nsl[:2]]:
 
                 target = gf.Target(
                     codes=(
                         station.network,
                         station.station,
-                        '',
-                        component),
+                        loc + '-syn',
+                        cha),
+                    quantity='displacement',
                     lat=station.lat,
                     lon=station.lon,
                     store_id=self.store_id,
                     optimization='enable',
                     interpolation='multilinear')
+
+                _, bazi = source.azibazi_to(target)
+
+                if cha.endswith('T'):
+                    dip = 0.
+                    azi = bazi + 270.
+                elif cha.endswith('R'):
+                    dip = 0.
+                    azi = bazi + 180.
+                elif cha.endswith('1'):
+                    dip = 0.
+                    azi = 0.
+                elif cha.endswith('2'):
+                    dip = 0.
+                    azi = 90.
+                else:
+                    dip = None
+                    azi = None
+
+                target.azimuth=azi
+                target.dip =dip
 
                 targets.append(target)
 
@@ -135,8 +174,13 @@ class Seismosizer(Snuffling):
         resp = self.get_engine().process(req)
         traces = resp.pyrocko_traces()
 
-        for tr in traces:
-            tr.set_ydata(num.diff(tr.ydata) / tr.deltat)
+        if self.waveform_type.startswith('Velocity'):
+            for tr in traces:
+                tr.set_ydata(num.diff(tr.ydata) / tr.deltat)
+
+        if self.waveform_type.endswith('[nm]') or self.waveform_type.endswith('[nm/s]'):
+            for tr in traces:
+                tr.set_ydata(tr.ydata * 1e9)
 
         self.add_traces(traces)
 
