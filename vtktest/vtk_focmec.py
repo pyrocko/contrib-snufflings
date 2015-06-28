@@ -2,6 +2,7 @@ import vtk
 import numpy as num 
 from pyrocko import model
 from pyrocko import orthodrome as ortho
+import optparse
 import os
 
 def make_polydata_actor(centers, normals, return_pdm=False, type='circle'):
@@ -118,37 +119,51 @@ def read_data(event_fn=None, events=None, get=None):
             moment_tensors.append(e.moment_tensor)
         else:
             moment_tensors.append(None)
-    
-    normals = []
-    for g in get:
-        normals.append(moment_tensors2normals(moment_tensors, g))
+
     centers = to_cartesian(events)
     colors = to_colors(moment_tensors)
-    
+    normals = []
+    if get=='rupture_plane':
+        normals.append(get_rupture_planes(moment_tensors, centers))
+    else:
+        for g in get:
+            normals.append(moment_tensors2normals(moment_tensors, g))
+
     return normals, centers, colors
 
 if __name__=="__main__":
-    webnet = os.environ['WEBNET']
-    input_fn = webnet+"/meta/events2008_mt.pf"
-    compare_fn = webnet+"/rapid_compile/rapidinv_events.pf"
+
+    parser = optparse.OptionParser(usage="usage: %prog [options] filename")
+
+    parser.add_option("--events",
+                      dest='events',
+                      default=None)
+    
+    (options, args) = parser.parse_args()
+
+    input_fn = options.events
+    #webnet = os.environ['WEBNET']
+    #input_fn = webnet+"/meta/events2008_mt.pf"
+    #compare_fn = webnet+"/rapid_compile/rapidinv_events.pf"
     ren = vtk.vtkRenderer()
     actors = [] 
-    normals_list, centers, colors = read_data(compare_fn, get=['p_axis', 't_axis'])
-    for i,normals in enumerate(normals_list):
-        kwargs = {"centers": centers, 'normals':normals, "return_pdm":True}
-        if i==0:
-            color = (0,1,0)
-            opacity = (1.)
-        else:
-            color = (1,1,1)
-            opacity = (0.5)
+    #normals_list, centers, colors = read_data(compare_fn, get=['p_axis', 't_axis'])
+    #for i,normals in enumerate(normals_list):
+    #    kwargs = {"centers": centers, 'normals':normals, "return_pdm":True}
+    #    if i==0:
+    #        color = (0,1,0)
+    #        opacity = (1.)
+    #    else:
+    #        color = (1,1,1)
+    #        opacity = (0.5)
 
-        actor1, apd = make_polydata_actor(**kwargs)
-        actor1.GetProperty().SetColor(color)
-        actor1.GetProperty().SetOpacity(opacity)
-        actors.append(actor1)
+    #    actor1, apd = make_polydata_actor(**kwargs)
+    #    actor1.GetProperty().SetColor(color)
+    #    actor1.GetProperty().SetOpacity(opacity)
+    #    actors.append(actor1)
 
-    normals_list, centers, colors = read_data(input_fn, get=['p_axis', 't_axis'])
+    normals_list, centers, colors = read_data(input_fn, get=['rupture_plane'])
+    #normals_list, centers, colors = read_data(input_fn, get=['p_axis', 't_axis'])
     for i,normals in enumerate(normals_list):
         kwargs = {"centers": centers, 'normals':normals, "return_pdm":True}
         if i==0:
