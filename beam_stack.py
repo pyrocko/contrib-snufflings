@@ -51,7 +51,8 @@ class BeamForming(Snuffling):
     the number of summed traces.<br>
     <b>Add Shifted Trace</b> - Add time shifted traces to the viewer.<br>
     <b>Plot</b> - map station distribution together with the applied time shifts. The
-    blue arrow indicates the applied back azimuth.</br>
+    arrow indicates the applied back azimuth. Grey dots indicate stations which have not
+    been considered in the stacking.</br>
     <b>Save Traces</b> - write stacked traces to mseed file.
     </p>
     </body>
@@ -263,8 +264,14 @@ class BeamForming(Snuffling):
         ax.set_aspect('equal')
         ax.scatter(x, y, c=sizes, s=200, cmap=plt.cm.get_cmap('bwr'),
                    vmax=num.max(sizes), vmin=-num.max(sizes))
+        #ax.colorbar()
         for i, lab in enumerate(stat_labels):
             ax.text(x[i], y[i], lab, size=14)
+        
+        
+        x = x[num.where(sizes==0.)]
+        y = y[num.where(sizes==0.)]
+        ax.scatter(x, y, c='black', alpha=0.4, s=200)
 
         ax.arrow(center_xyz[0]/1000.,
                  center_xyz[1]/1000.,
