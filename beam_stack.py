@@ -2,7 +2,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from pyrocko.snuffling import Snuffling, Param, Switch, Choice
 from pyrocko.model import Station
 from pyrocko import orthodrome as ortho
-from pyrocko import util, io
+from pyrocko import util, io, trace
 import numpy as num
 from collections import defaultdict
 import matplotlib.pyplot as plt
@@ -129,6 +129,7 @@ class BeamForming(Snuffling):
         shifted_traces = []
         traces = list(self.chopper_selected_traces(fallback=True))
         traces = [tr for trs in traces for tr in trs ]
+        taperer = trace.CosFader(xfrac=0.05)
         if self.diff_dt_treat=='downsample':
             traces.sort(key=lambda x: x.deltat)
         elif self.diff_dt_treat=='oversample':
@@ -142,6 +143,7 @@ class BeamForming(Snuffling):
             tr = tr.copy(data=True)
             tr.ydata = tr.ydata.astype(num.float64)
             tr.ydata -= tr.ydata.mean(dtype=num.float64)
+            tr.taper(taperer)
             try:
                 stack_trace = self.stacked[tr.channel]
                 num_stacked[tr.channel] += 1
@@ -257,8 +259,8 @@ class BeamForming(Snuffling):
 
         max_range = num.max([x_range, y_range])
 
-        fig = plt.figure()
         ax = self.pylab()
+        ax.set_aspect('equal')
         ax.scatter(x, y, c=sizes, s=200, cmap=plt.cm.get_cmap('bwr'),
                    vmax=num.max(sizes), vmin=-num.max(sizes))
         for i, lab in enumerate(stat_labels):
