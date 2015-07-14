@@ -1,8 +1,18 @@
 import vtk
 import numpy as num 
-from pyrocko import model
+from pyrocko import model, moment_tensor
 from pyrocko import orthodrome as ortho
 import os
+
+
+def get_fault_planes(p_axis, t_axis, null_axis):
+    pplanes = []
+    tplanes = []
+    for i in range(len(null_axis)):
+        rotmat = moment_tensor.rotation_from_axis_and_angle(angle=45, axis=null_axis[i])
+        tplanes.append(num.array(t_axis[i]*rotmat)[0])
+        pplanes.append(num.array(p_axis[i]*rotmat)[0])
+    return [pplanes, tplanes]
 
 def make_polydata_actor(centers, normals, return_pdm=False, type='circle'):
     """ Create the actor and set colors
@@ -19,7 +29,6 @@ def make_polydata_actor(centers, normals, return_pdm=False, type='circle'):
     mappers = []
     # create source
     for i in range(len(centers)):
-        print i
         normal = normals[i]
         if normal is None:
             continue
@@ -133,36 +142,49 @@ if __name__=="__main__":
     compare_fn = webnet+"/rapid_compile/rapidinv_events.pf"
     ren = vtk.vtkRenderer()
     actors = [] 
-    normals_list, centers, colors = read_data(compare_fn, get=['p_axis', 't_axis'])
-    for i,normals in enumerate(normals_list):
-        kwargs = {"centers": centers, 'normals':normals, "return_pdm":True}
+    normals_list, centers, colors = read_data(compare_fn, get=['p_axis', 't_axis', 'null_axis'])
+    plot_fault_planes = True
+
+    if plot_fault_planes:
+        normals = get_fault_planes(*normals_list)
+        print normals
+    else:
+        normals = normals_list[:2]
+    
+    for i in range(2):
+        kwargs = {"centers": centers, 'normals': normals[i], "return_pdm":True}
         if i==0:
             color = (0,1,0)
             opacity = (1.)
         else:
             color = (1,1,1)
-            opacity = (0.5)
-
+            opacity = (0.1)
+    
         actor1, apd = make_polydata_actor(**kwargs)
         actor1.GetProperty().SetColor(color)
         actor1.GetProperty().SetOpacity(opacity)
         actors.append(actor1)
 
-    normals_list, centers, colors = read_data(input_fn, get=['p_axis', 't_axis'])
-    for i,normals in enumerate(normals_list):
-        kwargs = {"centers": centers, 'normals':normals, "return_pdm":True}
-        if i==0:
-            color = (1,0,0)
-            opacity = (1.)
-        else:
-            color = (1,1,1)
-            opacity = (0.5)
-        actor2, apd = make_polydata_actor(**kwargs)
-        actor2.GetProperty().SetColor(color)
-        actor2.GetProperty().SetOpacity(opacity)
-        actors.append(actor2)
-    
-    #setup_renderer(ren,[actor1, actor2], bboxpolydata=apd)
+    #normals_list, centers, colors = read_data(input_fn, get=['p_axis', 't_axis', 'null_axis'])
+    #if plot_fault_planes:
+    #    normals = get_fault_planes(*normals_list)
+    #else:
+    #    normals = normals_list[:2]
+     
+    #for i in range(2):
+    #    kwargs = {"centers": centers, 'normals':normals[i], "return_pdm":True}
+    #    if i==0:
+    #        color = (1,0,0)
+    #        opacity = (1.)
+    #    else:
+    #        color = (1,1,1)
+    #        opacity = (0.1)
+    #    actor2, apd = make_polydata_actor(**kwargs)
+    #    actor2.GetProperty().SetColor(color)
+    #    actor2.GetProperty().SetOpacity(opacity)
+    #    actors.append(actor2)
+    #
+    #
     setup_renderer(ren, actors, bboxpolydata=apd)
 
     renWin = vtk.vtkRenderWindow()
