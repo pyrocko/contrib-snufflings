@@ -2,7 +2,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from pyrocko.snuffling import Snuffling, Param, Switch, Choice
 from pyrocko.model import Station
 from pyrocko import orthodrome as ortho
-from pyrocko import util, io
+from pyrocko import util, io, trace
 import numpy as num
 from collections import defaultdict
 import matplotlib.pyplot as plt
@@ -51,7 +51,8 @@ class BeamForming(Snuffling):
     the number of summed traces.<br>
     <b>Add Shifted Trace</b> - Add time shifted traces to the viewer.<br>
     <b>Plot</b> - map station distribution together with the applied time shifts. The
-    blue arrow indicates the applied back azimuth.</br>
+    arrow indicates the applied back azimuth. Grey dots indicate stations which have not
+    been considered in the stacking.</br>
     <b>Save Traces</b> - write stacked traces to mseed file.
     </p>
     </body>
@@ -129,6 +130,7 @@ class BeamForming(Snuffling):
         shifted_traces = []
         traces = list(self.chopper_selected_traces(fallback=True))
         traces = [tr for trs in traces for tr in trs ]
+        taperer = trace.CosFader(xfrac=0.05)
         if self.diff_dt_treat=='downsample':
             traces.sort(key=lambda x: x.deltat)
         elif self.diff_dt_treat=='oversample':
@@ -142,6 +144,7 @@ class BeamForming(Snuffling):
             tr = tr.copy(data=True)
             tr.ydata = tr.ydata.astype(num.float64)
             tr.ydata -= tr.ydata.mean(dtype=num.float64)
+            tr.taper(taperer)
             try:
                 stack_trace = self.stacked[tr.channel]
                 num_stacked[tr.channel] += 1
@@ -257,12 +260,18 @@ class BeamForming(Snuffling):
 
         max_range = num.max([x_range, y_range])
 
-        fig = plt.figure()
         ax = self.pylab()
+        ax.set_aspect('equal')
         ax.scatter(x, y, c=sizes, s=200, cmap=plt.cm.get_cmap('bwr'),
                    vmax=num.max(sizes), vmin=-num.max(sizes))
+        #ax.colorbar()
         for i, lab in enumerate(stat_labels):
             ax.text(x[i], y[i], lab, size=14)
+        
+        
+        x = x[num.where(sizes==0.)]
+        y = y[num.where(sizes==0.)]
+        ax.scatter(x, y, c='black', alpha=0.4, s=200)
 
         ax.arrow(center_xyz[0]/1000.,
                  center_xyz[1]/1000.,

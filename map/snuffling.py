@@ -27,10 +27,10 @@ def convert_event_marker(marker):
         depth = 0.0
     ev_name = ev.name if ev.name else '(Event)'
     xmleventmarker = XMLEventMarker(eventname=ev_name,
-                            longitude=ev.lon,
-                            latitude=ev.lat,
+                            longitude=float(ev.lon),
+                            latitude=float(ev.lat),
                             origintime=util.time_to_str(ev.time),
-                            depth=depth,
+                            depth=float(depth),
                             magnitude=float(get_magnitude(ev)),
                             active=['no', 'yes'][marker._active])
 
@@ -115,8 +115,8 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
                 if (viewer and not util.match_nslc(viewer.blacklist, stat.nsl())) or cli_mode:
                     xml_station_marker = XMLStationMarker(
                         nsl='.'.join(stat.nsl()),
-                        longitude = stat.lon,
-                        latitude = stat.lat,
+                        longitude = float(stat.lon),
+                        latitude = float(stat.lat),
                         active = 'yes')
 
                     station_list.append(xml_station_marker)
