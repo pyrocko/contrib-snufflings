@@ -25,10 +25,17 @@ def make_polydata_actor(centers, normals, return_pdm=False, type='circle'):
     # In order to build the bounding box it is convenient to combine
     # All sources using a vtkAppenPolyData
     apd = vtk.vtkAppendPolyData()
+    #save_coordinates(centers)
+    mean_center, plane_normal = plane_fit(centers)
+    source = vtk.vtkRegularPolygonSource()
+    source.SetNumberOfSides(16)
+    source.SetRadius(800)
+    source.SetNormal(*plane_normal)
+    apd.AddInput(source.GetOutput())
 
     mappers = []
     # create source
-    for i in range(len(centers)):
+    for i in range(len(centers.T)):
         normal = normals[i]
         if normal is None:
             continue
@@ -45,12 +52,15 @@ def make_polydata_actor(centers, normals, return_pdm=False, type='circle'):
         elif type=='circle':
             source = vtk.vtkRegularPolygonSource()
             source.SetNumberOfSides(16)
-            source.SetRadius(100)
+            #source.SetRadius(100)
+            source.SetRadius(10)
             source.SetNormal(normal)
-        source.SetCenter(*centers[i])
+        source.SetCenter(*centers.T[i])
         apd.AddInput(source.GetOutput())
+    
     mapper = vtk.vtkPolyDataMapper()
     mapper.SetInputConnection(apd.GetOutputPort())
+
     # actor
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
@@ -109,6 +119,8 @@ def to_cartesian(items):
         depth = item.depth
         lat = item.lat/180.*num.pi
         res.append((x, y, -depth))
+    res = num.array(res) 
+    res = res.T
     return res
 
 def to_colors(items):
@@ -136,6 +148,34 @@ def read_data(event_fn=None, events=None, get=None):
     
     return normals, centers, colors
 
+def save_coordinates(coordinates):
+    savestr = ''
+    for x,y,z in coordinates.T:
+        savestr += '%s  %s  %s\n' % (x,y,z)
+
+    with open('coordinates.dat', 'w') as f:
+        f.write(savestr)
+
+def plane_fit(coordinates):
+    '''Calculate a best fitting plane through the point cloud. 
+    Returns the normal and the mean center.'''
+    data = coordinates
+    cm = num.mean(data, 1)
+
+    # de-mean data
+    data[0] -= cm[0]
+    data[1] -= cm[1]
+    data[2] -= cm[2]
+
+    u, s, vh = num.linalg.svd(data.T)
+    vh = vh.conj().transpose()
+    return cm, vh[:, -1]
+
+def make_plane(normal):
+    plane = vtk.vtkPlaneSource()
+    plane.SetNormal(normal)
+    return plane
+
 if __name__=="__main__":
     webnet = os.environ['WEBNET']
     input_fn = webnet+"/meta/events2008_mt.pf"
@@ -147,7 +187,6 @@ if __name__=="__main__":
 
     if plot_fault_planes:
         normals = get_fault_planes(*normals_list)
-        print normals
     else:
         normals = normals_list[:2]
     
