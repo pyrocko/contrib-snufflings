@@ -1,19 +1,17 @@
-from pyrocko.snuffling import Param, Snuffling, pile , Choice
+from pyrocko.snuffling import Param, Snuffling, Choice
 from pyrocko import trace
 
 from matplotlib.colorbar import ColorbarBase
 from matplotlib.colors import Normalize
-import matplotlib.cm as cm
-import matplotlib.pyplot as plt
+from matplotlib import cm
 import numpy as np
 
 def p2o_trace(ptrace, station):
     '''Convert Pyrocko trace to ObsPy trace.'''
-
     from obspy.core import UTCDateTime
-    from obspy.core import obspy_trace
+    from obspy.core import Trace as oTrace
 
-    otr = obspy_trace.Trace(
+    otr = oTrace(
             data = ptrace.get_ydata(),
             header=dict(
                 network = ptrace.network,
@@ -78,6 +76,10 @@ class FK(Snuffling):
         self.add_parameter(Param('Number of slowness divisions','divisor',20,10,50))
         self.add_parameter(Param('Number of radial sections','numberOfFraction',32,4,50))
         self.add_parameter(Param('Length of Sliding Window [s]','window_lenth',1.,0.5,5.))
+        self.add_parameter(Choice('If sampling rates differ', 'downresample', 'resample',
+                                  ['resample', 'downsample', 'downsample to "target dt"']))
+        self.add_parameter(Param('target dt','target_dt', 0.2, 0., 10))
+
         #self.add_parameter(Choice('Units: ','unit','[s/km]',('[s/km]','[s/deg]')))
         self.set_live_update(False)
 
@@ -94,7 +96,6 @@ class FK(Snuffling):
         traces = []
         for trs in self.chopper_selected_traces(fallback=True):
             for tr in trs:
-                tr.downsample_to(1/20.)
                 tr.lowpass(4, viewer.lowpass)
                 tr.highpass(4, viewer.highpass)
 
@@ -103,8 +104,22 @@ class FK(Snuffling):
         if not traces:
             self.fail('no traces selected')
 
-        tmin, tmax = trace.minmaxtime(traces, key=lambda x: None)[None]
+        if self.downresample == 'resample':
+            dt_want = min([t.deltat for t in traces])
+            for t in traces:
+                t.resample(dt_want)
 
+        elif self.downresample == 'downsample':
+            dt_want = max([t.deltat for t in traces])
+            for t in traces:
+                t.downsample_to(dt_want)
+
+        elif self.downresample == 'downsample to "target dt"':
+            for t in traces:
+                t.downsample_to(float(self.target_dt))
+
+        tmin = max([t.tmin for t in traces])
+        tmax = min([t.tmax for t in traces])
         try:
             obspy_traces = [ p2o_trace(tr, viewer.get_station(viewer.station_key(tr)) ) for tr in traces ]
 
@@ -114,7 +129,6 @@ class FK(Snuffling):
         st = stream.Stream(traces=obspy_traces)
         center = array_analysis.get_geometry(st, return_center=True)
         center_lon, center_lat, center_ele = center[len(center)-1]
-
 
         # Execute sonic
         kwargs = dict(
@@ -128,7 +142,6 @@ class FK(Snuffling):
             semb_thres=-1.0e9, vel_thres=-1.0e9, verbose=True, timestamp='mlabday',
             stime=UTCDateTime(tmin), etime=UTCDateTime(tmax)
         )
-        
 
         try:
             out = array_analysis.array_processing(st, **kwargs)
@@ -141,7 +154,6 @@ class FK(Snuffling):
 
         # make output human readable, adjust backazimuth to values between 0 and 360
         t, rel_power, abs_power, baz, slow = out.T
-        
         baz[baz < 0.0] += 360.
 
         # choose number of fractions in plot (desirably 360 degree/N is an integer!)
@@ -156,14 +168,14 @@ class FK(Snuffling):
         # transform to gradient
         baz_edges = baz_edges / 180 * np.pi
 
-        try:
-            fig = self.pylab(get='figure')
-        except TypeError:
-            fig = plt.figure()
+        #try:
+        fig = self.pylab(get='figure')
+        #except TypeError:
+        #    fig = plt.figure()
         # add polar and colorbar axes
         cax = fig.add_axes([0.85, 0.2, 0.05, 0.5])
         ax = fig.add_axes([0.10, 0.1, 0.70, 0.7], polar=True)
-        plt.rc('grid',linewidth=0)
+        ax.grid(False)
 
         dh = abs(sl_edges[1] - sl_edges[0])
         dw = abs(baz_edges[1] - baz_edges[0])
@@ -174,7 +186,6 @@ class FK(Snuffling):
                           height=dh * np.ones(N),
                           width=dw, bottom=dh * np.arange(N),
                           color=cmap(row / hist.max()))
-                            
 
         ax.set_xticks([pi / 2, 0, 3. / 2 * pi, pi])
         ax.set_xticklabels(['N', 'E', 'S', 'W'])
@@ -183,11 +194,8 @@ class FK(Snuffling):
         ax.set_ylim(0., self.smax)
         ColorbarBase(cax, cmap=cmap,
                      norm=Normalize(vmin=hist.min(), vmax=hist.max()))
-        
-        plt.show()
-        
+
         print 'Center of Array at latitude %s and longitude %s'%(center_lat, center_lon)
 
 def __snufflings__():
     return [ FK() ]
-        
