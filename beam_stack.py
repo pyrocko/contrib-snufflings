@@ -5,7 +5,7 @@ from pyrocko import orthodrome as ortho
 from pyrocko import util, io, trace
 import numpy as num
 from collections import defaultdict
-import matplotlib.pyplot as plt
+from matplotlib import cm
 
 r_earth = 6371000.785
 torad = num.pi/180.
@@ -262,7 +262,7 @@ class BeamForming(Snuffling):
 
         ax = self.pylab()
         ax.set_aspect('equal')
-        ax.scatter(x, y, c=sizes, s=200, cmap=plt.cm.get_cmap('bwr'),
+        ax.scatter(x, y, c=sizes, s=200, cmap=cm.get_cmap('bwr'),
                    vmax=num.max(sizes), vmin=-num.max(sizes))
         #ax.colorbar()
         for i, lab in enumerate(stat_labels):
