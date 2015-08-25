@@ -4,7 +4,6 @@ from pyrocko.orthodrome import distance_accurate50m as distance
 from pyrocko import util, model
 import matplotlib.dates as mdates
 from matplotlib import cm
-import matplotlib.pyplot as plt
 import numpy as num
 from datetime import datetime
 
@@ -187,6 +186,7 @@ def __snufflings__():
     return [ TimeLine() ]
 
 if __name__=='__main__':
+    import matplotlib.pyplot as plt
     util.setup_logging('time_line.py', 'info')
     s = TimeLine()
     options, args, parser = s.setup_cli()
