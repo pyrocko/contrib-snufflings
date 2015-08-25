@@ -115,3 +115,10 @@ file: [extract_events.py](extract_events.py)
 
 ![screenshot](screenshots/extract_events.png)
 
+Export Waveforms
+--------------
+
+Export selected/visible waveforms as MSEED, ASCII, SAC or YAFF files.
+
+file: [export_waveforms.py](export_waveforms.py)
+
