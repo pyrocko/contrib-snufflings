@@ -60,22 +60,13 @@ class BeamForming(Snuffling):
     </html>
     '''
     def setup(self):
-        self.set_name("better Beam Forming")
+        self.set_name("Beam Forming")
         self.add_parameter(Param('Center lat', 'lat_c', 90., -90., 90.,
                                  high_is_none=True))
         self.add_parameter(Param('Center lon', 'lon_c', 180., -180., 180.,
                                  high_is_none=True))
         self.add_parameter(Param('Back azimuth', 'bazi', 0., 0., 360.))
-        # min_slow = 0.
-        # max_slow = 1.
-        # def_slow = 0.1
-
         self.add_parameter(Param('slowness [s/km]', 'slow', 0.1, 0., 1.))
-        # self.add_parameter(Param('slowness [s/deg]',
-        #                          'slow_deg',
-        #                          def_slow*onedeg,
-        #                          min_slow*onedeg,
-        #                          max_slow*onedeg))
         self.add_parameter(Choice('Treat different dt by', 'diff_dt_treat', 'oversample',['oversample', 'downsample']))
         self.add_parameter(Switch('pre-normalize by std ', 'normalize_std', False))
         self.add_parameter(Switch('multiply 1/[no. of traces]', 'post_normalize', False))
@@ -273,8 +264,8 @@ class BeamForming(Snuffling):
 
         ax.arrow(center_xyz[0]/1000.,
                  center_xyz[1]/1000.,
-                 num.sin(self.bazi/180.*num.pi),
-                 num.cos(self.bazi/180.*num.pi),
+                 -num.sin(self.bazi/180.*num.pi),
+                 -num.cos(self.bazi/180.*num.pi),
                  head_width=0.2,
                  head_length=0.2)
         ax.set_ylabel("N-S [km]")
