@@ -119,12 +119,10 @@ class BeamForming(Snuffling):
         lats = num.array([s.lat for s in stations])
         lons = num.array([s.lon for s in stations])
         ns, es = ortho.latlon_to_ne_numpy(lat0, lon0, lats, lons)
-        print es
         theta = num.float(self.bazi*num.pi/180.)
         R = num.array([[num.cos(theta), -num.sin(theta)],
                         [num.sin(theta), num.cos(theta)]])
         distances = R.dot(num.vstack((es, ns)))[1]
-        print distances
         channels = set()
         self.stacked = {}
         num_stacked = {}
