@@ -1,9 +1,11 @@
 from mpl_toolkits.mplot3d import Axes3D
 from pyrocko.snuffling import Snuffling, Param, Switch, Choice
-from pyrocko.model import Station
+from pyrocko.model import Station, dump_stations
 from pyrocko import orthodrome as ortho
 from pyrocko import util, io, trace
 import numpy as num
+from matplotlib.colorbar import ColorbarBase
+from matplotlib.colors import Normalize
 from collections import defaultdict
 from matplotlib import cm
 
@@ -11,12 +13,11 @@ r_earth = 6371000.785
 torad = num.pi/180.
 onedeg = r_earth*torad
 
-def to_cartesian(items):
+def to_cartesian(items, reflatlon):
     res = defaultdict()
-    latlon00 = ortho.Loc(0.,0.)
     for i, item in enumerate(items):
 
-        y, x = ortho.latlon_to_ne(latlon00, item)
+        y, x = ortho.latlon_to_ne(reflatlon, item)
         depth = item.depth
         elevation = item.elevation
         dz = elevation - depth
@@ -59,7 +60,7 @@ class BeamForming(Snuffling):
     </html>
     '''
     def setup(self):
-        self.set_name("Beam Forming")
+        self.set_name("better Beam Forming")
         self.add_parameter(Param('Center lat', 'lat_c', 90., -90., 90.,
                                  high_is_none=True))
         self.add_parameter(Param('Center lon', 'lon_c', 180., -180., 180.,
@@ -80,6 +81,7 @@ class BeamForming(Snuffling):
         self.add_parameter(Switch('multiply 1/[no. of traces]', 'post_normalize', False))
         self.add_parameter(Switch('Add Shifted Traces', 'add_shifted', False))
         self.add_trigger('plot', self.plot)
+        self.add_trigger('Save Station', self.save_station)
         self.add_trigger('Save Traces', self.save)
         self.add_trigger('Set center by mean lat/lon', self.set_center_latlon)
         self.station_c = None
@@ -112,17 +114,17 @@ class BeamForming(Snuffling):
                                  station='STK')
 
         viewer.add_stations([self.station_c])
-
-        distances = [ortho.distance_accurate50m(self.station_c, s) for s in
-                     stations]
-
-        azirad = self.bazi*torad
-        azis = num.array([ortho.azimuth(s, self.station_c) for s in stations])
-        azis %= 360.
-        azis = azis*torad
-
-        gammas = azis - azirad
-        gammas = gammas % (2*num.pi)
+        lat0 = num.array([self.lat_c]*len(stations))
+        lon0 = num.array([self.lon_c]*len(stations))
+        lats = num.array([s.lat for s in stations])
+        lons = num.array([s.lon for s in stations])
+        ns, es = ortho.latlon_to_ne_numpy(lat0, lon0, lats, lons)
+        print es
+        theta = num.float(self.bazi*num.pi/180.)
+        R = num.array([[num.cos(theta), -num.sin(theta)],
+                        [num.sin(theta), num.cos(theta)]])
+        distances = R.dot(num.vstack((es, ns)))[1]
+        print distances
         channels = set()
         self.stacked = {}
         num_stacked = {}
@@ -173,13 +175,11 @@ class BeamForming(Snuffling):
                 break
 
             i = stations.index(stat)
-            gamma = gammas[i]
-
-            d = num.cos(gamma)*distances[i]
+            d = distances[i]
             t_shift = d*self.slow/1000.
-            tr.shift(-t_shift)
+            tr.shift(t_shift)
             stat = viewer.get_station(tr.nslc_id[:2])
-            self.t_shifts[stat] = -t_shift
+            self.t_shifts[stat] = t_shift
             if self.normalize_std:
                 tr.ydata = tr.ydata/tr.ydata.std()
 
@@ -194,7 +194,6 @@ class BeamForming(Snuffling):
                 tr.set_station('%s_s' % tr.station)
                 shifted_traces.append(tr)
 
-        #normalize by number of stacked traces:
         if self.post_normalize:
             for ch, tr in self.stacked.items():
                 tr.set_ydata(tr.get_ydata()/num_stacked[ch])
@@ -223,7 +222,7 @@ class BeamForming(Snuffling):
 
     def plot(self):
         stations = self.get_stations()
-        res = to_cartesian(stations)
+        res = to_cartesian(stations, self.station_c)
         center_xyz = res[self.station_c]
         x = num.zeros(len(res))
         y = num.zeros(len(res))
@@ -238,7 +237,7 @@ class BeamForming(Snuffling):
 
             try:
                 sizes[i] = self.t_shifts[s]
-                stat_labels.append('%s\n%1.2f' % (s.nsl_string(), sizes[i]))
+                stat_labels.append('%s' % (s.nsl_string()))
             except AttributeError:
                 self.fail('Run the snuffling first')
             except KeyError:
@@ -260,15 +259,16 @@ class BeamForming(Snuffling):
 
         max_range = num.max([x_range, y_range])
 
-        ax = self.pylab()
+        fig = self.pylab(get='figure')
+        cax = fig.add_axes([0.85, 0.2, 0.05, 0.5])
+        ax = fig.add_axes([0.10, 0.1, 0.70, 0.7])
         ax.set_aspect('equal')
-        ax.scatter(x, y, c=sizes, s=200, cmap=cm.get_cmap('bwr'),
+        cmap = cm.get_cmap('bwr')
+        ax.scatter(x, y, c=sizes, s=200, cmap=cmap,
                    vmax=num.max(sizes), vmin=-num.max(sizes))
-        #ax.colorbar()
         for i, lab in enumerate(stat_labels):
             ax.text(x[i], y[i], lab, size=14)
-        
-        
+
         x = x[num.where(sizes==0.)]
         y = y[num.where(sizes==0.)]
         ax.scatter(x, y, c='black', alpha=0.4, s=200)
@@ -277,12 +277,13 @@ class BeamForming(Snuffling):
                  center_xyz[1]/1000.,
                  num.sin(self.bazi/180.*num.pi),
                  num.cos(self.bazi/180.*num.pi),
-                 head_width=1.4,
-                 head_length=4)
-        #ax.set_xlim([x.mean()-max_range*0.55, x.mean()+max_range*0.55])
-        #ax.set_ylim([y.mean()-max_range*0.55, y.mean()+max_range*0.55])
+                 head_width=0.2,
+                 head_length=0.2)
         ax.set_ylabel("N-S [km]")
         ax.set_xlabel("E-W [km]")
+        ColorbarBase(cax, cmap=cmap,
+                     norm=Normalize(vmin=sizes.min(), vmax=sizes.max()))
+        fig.canvas.draw()
 
     def save(self):
         default_fn = 'BeamTraces_baz%s_slow%s.mseed' % (self.bazi, self.slow)
@@ -293,6 +294,10 @@ class BeamForming(Snuffling):
         self.lat_c, self.lon_c, self.z_c = self.center_lat_lon(self.get_stations())
         self.set_parameter('lat_c', self.lat_c)
         self.set_parameter('lon_c', self.lon_c)
+
+    def save_station(self):
+        fn = self.output_filename('Save Station')
+        dump_stations([self.station_c], fn)
 
 def __snufflings__():
     return [BeamForming()]
