@@ -85,9 +85,9 @@ class FK(Snuffling):
         self.add_parameter(Param(
             'Number of radial sections', 'numberOfFraction', 32, 4, 50))
         self.add_parameter(Param(
-            'Length of Sliding Window [s]', 'window_lenth', 1., 0.5, 5.))
+            'Length of Sliding Window [s]', 'window_lenth', 1., 0.5, 10.))
         self.add_parameter(Param(
-            'Step fraction of Sliding Window [s]','win_frac', 0.05, 0., 1.))
+            'Step fraction of Sliding Window [s]','win_frac', 0.05, 0., 10.))
         self.add_parameter(Choice(
             'If sampling rates differ', 'downresample', 'resample',
             ['resample', 'downsample', 'downsample to "target dt"']))
