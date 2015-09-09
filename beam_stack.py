@@ -8,6 +8,7 @@ from matplotlib.colorbar import ColorbarBase
 from matplotlib.colors import Normalize
 from collections import defaultdict
 from matplotlib import cm
+from PyQt4.QtCore import SIGNAL
 
 r_earth = 6371000.785
 torad = num.pi/180.
@@ -66,8 +67,11 @@ class BeamForming(Snuffling):
         self.add_parameter(Param('Center lon', 'lon_c', 180., -180., 180.,
                                  high_is_none=True))
         self.add_parameter(Param('Back azimuth', 'bazi', 0., 0., 360.))
-        self.add_parameter(Param('slowness [s/km]', 'slow', 0.1, 0., 1.))
-        self.add_parameter(Choice('Treat different dt by', 'diff_dt_treat', 'oversample',['oversample', 'downsample']))
+        self.add_parameter(Param('slowness', 'slow', 0.1, 0., 1.))
+        self.add_parameter(Choice('slowness unit', 'unit', 's/km',['s/km',
+                                                                    's/deg']))
+        self.add_parameter(Choice('Treat different dt by', 'diff_dt_treat',
+                                  'oversample',['oversample', 'downsample']))
         self.add_parameter(Switch('pre-normalize by std ', 'normalize_std', False))
         self.add_parameter(Switch('multiply 1/[no. of traces]', 'post_normalize', False))
         self.add_parameter(Switch('Add Shifted Traces', 'add_shifted', False))
@@ -79,10 +83,30 @@ class BeamForming(Snuffling):
         self.z_c = None
         self.stacked_traces = None
 
+    def panel_visibility_changed(self, bool):
+        if bool:
+            viewer = self.get_viewer()
+            viewer.connect(self._param_controls['unit'], SIGNAL('choosen(PyQt_PyObject,PyQt_PyObject)'),
+                         self.set_slowness_ranges)
+    
+    def set_slowness_ranges(self, ident, state):
+        if state == 's/km':
+            self.set_parameter_range('slow', 0, 1)
+            self.set_parameter('slow', self.slow/onedeg*1000.)
+        elif state == 's/deg':
+            self.set_parameter_range('slow', 0, 100)
+            self.set_parameter('slow', self.slow/1000.*onedeg)
 
     def call(self):
 
         self.cleanup()
+        if self.unit == 's/deg':
+            slow_factor = 1./onedeg
+        elif self.unit == 's/km':
+            slow_factor = 1./1000.
+
+        slow = self.slow*slow_factor
+
         if self.stacked_traces is not None:
             self.add_traces(self.stacked_traces)
         viewer = self.get_viewer()
@@ -90,6 +114,8 @@ class BeamForming(Snuffling):
             viewer.stations.pop(('', 'STK'))
 
         stations = self.get_stations()
+        if len(stations) == 0:
+            self.fail('No station meta information found')
 
         if not self.lat_c or not self.lon_c or not self.z_c:
             self.lat_c, self.lon_c, self.z_c = self.center_lat_lon(stations)
@@ -165,7 +191,7 @@ class BeamForming(Snuffling):
 
             i = stations.index(stat)
             d = distances[i]
-            t_shift = d*self.slow/1000.
+            t_shift = d*slow
             tr.shift(t_shift)
             stat = viewer.get_station(tr.nslc_id[:2])
             self.t_shifts[stat] = t_shift
@@ -186,9 +212,13 @@ class BeamForming(Snuffling):
         if self.post_normalize:
             for ch, tr in self.stacked.items():
                 tr.set_ydata(tr.get_ydata()/num_stacked[ch])
-        self.stacked_traces = self.stacked.values()
+        
         self.cleanup()
-        self.add_traces(self.stacked_traces)
+
+        for ch, tr in self.stacked.items():
+            if num_stacked[ch]>1:
+                self.add_trace(tr)
+
         if self.add_shifted:
             self.add_traces(shifted_traces)
 
