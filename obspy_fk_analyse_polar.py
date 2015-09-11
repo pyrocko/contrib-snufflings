@@ -203,8 +203,9 @@ class FK(Snuffling):
         fig2 = self.pylab(get='figure')
         labels = ['rel.power', 'abs.power', 'baz', 'slow']
         xlocator = mdates.AutoDateLocator()
+        ax = None
         for i, lab in enumerate(labels):
-            ax = fig2.add_subplot(4, 1, i + 1)
+            ax = fig2.add_subplot(4, 1, i + 1, sharex=ax)
             ax.scatter(out[:, 0], out[:, i + 1], c=out[:, 1], alpha=0.6,
                        edgecolors='none', cmap=cmap)
             ax.set_ylabel(lab)
