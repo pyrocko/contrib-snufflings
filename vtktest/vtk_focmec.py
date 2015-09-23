@@ -4,6 +4,19 @@ from pyrocko import model
 from pyrocko import orthodrome as ortho
 import optparse
 import os
+from pyrocko import model, moment_tensor
+from pyrocko import orthodrome as ortho
+import os
+
+
+def get_fault_planes(p_axis, t_axis, null_axis):
+    pplanes = []
+    tplanes = []
+    for i in range(len(null_axis)):
+        rotmat = moment_tensor.rotation_from_axis_and_angle(angle=45, axis=null_axis[i])
+        tplanes.append(num.array(t_axis[i]*rotmat)[0])
+        pplanes.append(num.array(p_axis[i]*rotmat)[0])
+    return [pplanes, tplanes]
 
 def make_polydata_actor(centers, normals, return_pdm=False, type='circle'):
     """ Create the actor and set colors
@@ -52,6 +65,7 @@ def make_polydata_actor(centers, normals, return_pdm=False, type='circle'):
     else:
         return actor
 
+    
 def setup_renderer(renderer, actors, bboxpolydata=None):
     ren = renderer
     for actor in actors:
@@ -101,6 +115,9 @@ def to_cartesian(items, latref=None, lonref=None):
         depth = item.depth *1000
         lat = item.lat/180.*num.pi
         res.append((x, y, -depth))
+    # vielleicht doch als array?!
+    #res = num.array(res) 
+    #res = res.T
     return res
 
 def to_colors(items):
@@ -108,7 +125,6 @@ def to_colors(items):
     return [(1,0,0)]*len(items)
 
 def read_data(event_fn=None, events=None, get=None):
-
     if event_fn is not None and events is None:
         events = model.load_events(event_fn)
     else:

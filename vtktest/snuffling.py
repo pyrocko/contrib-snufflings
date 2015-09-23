@@ -1,14 +1,12 @@
 from pyrocko.snuffling import Snuffling, Param
-import sys
-import vtk
+import sys 
+import vtk 
 from PyQt4 import QtCore, QtGui
 from vtk.qt4.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
-import numpy as num
+import numpy as num 
 from pyrocko import model
 from pyrocko import orthodrome as ortho
 import os
-from grid_topo import setup_vtk_map_actor
-
 from vtk_focmec import *
 
 class VtkTest(Snuffling):
