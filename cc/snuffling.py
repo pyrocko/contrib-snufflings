@@ -28,12 +28,11 @@ def make_targets(pile, stations, channels):
 
 class SimilaritySnuffling(Snuffling):
     '''
+    tdist: Time distance from center of cross correlated trace. Sets the intended time span.
     vmin and vmax: horizontal velocities used to chop the traces to be cross correlated
-    low and high: low- and high pass corner frequencies
+    low and high: low- and high pass corner frequencies of 4th order butterworth filter
     '''
-    
     def setup(self):
-
         self.set_name('Similarity')
         self.add_parameter(Choice('Channels', 'channels', 'Z', ['Z', '*']))
         self.add_parameter(Param('limit', 'limit', 0.9, 0.0, 1.0))
@@ -46,8 +45,10 @@ class SimilaritySnuffling(Snuffling):
         self.add_parameter(Param('v min', 'vmin', 1500., 500., 2000.))
         self.add_parameter(Param('v max', 'vmax', 6000., 2000., 1000.))
         self.add_parameter(Switch('show traces', 'show_traces', False))
+        self.add_parameter(Switch('show results', 'show_results', False))
         self.add_parameter(Switch('Apply to full dataset', 'apply_full', False))
         self.add_trigger('save result', self.save)
+        self.set_live_update(False)
 
     def call(self):
         self.cleanup()
@@ -63,7 +64,8 @@ class SimilaritySnuffling(Snuffling):
             val = getattr(self, ident)
             if val != None:
                 filters.append(trace.ButterworthResponse(corner=float(val),
-                                                         typ=ident))
+                                                         order=4,
+                                                         type=ident))
 
         stations = self.get_stations()
         stations_d = dict((s.nsl(), s) for s in stations)
@@ -72,10 +74,12 @@ class SimilaritySnuffling(Snuffling):
         mod = cake.load_model()
         nevents = len(events)
         pile = self.get_pile()
-        self.targets = make_targets(pile, stations, self.channels)
-        ntargets = len(self.targets)
+        targets = make_targets(pile, stations, self.channels)
+        if len(targets)==0:
+            self.fail("No station available")
+        ntargets = len(targets)
         self.cc = num.zeros((ntargets, nevents, nevents), dtype=num.float)
-        self.similarity_matrix = SimilarityMatrix(targets=self.targets,
+        self.similarity_matrix = SimilarityMatrix(targets=targets,
                                                   events=events,
                                                   filters=filters,
                                                   padding=float(self.tpad))
@@ -87,9 +91,7 @@ class SimilaritySnuffling(Snuffling):
             tmin_selection, tmax_selection = self.get_selected_time_range(fallback=True)
         istep = 0
         #pb = progressbar.ProgressBar(maxval=ntargets).start()
-        for itarget, target in enumerate(self.targets):
-            # TODO handle differnet channels
-            #nslc = station.nsl() + ('HHZ',)
+        for itarget, target in enumerate(targets):
             ok_raw = []
             ok_filtered = []
             markers = []
@@ -97,72 +99,67 @@ class SimilaritySnuffling(Snuffling):
                 dist = target.distance_to(ev)
                 tmin = ev.time + dist / self.vmax - self.tpad
                 tmax = ev.time + dist / self.vmin + self.tpad
-                # want_incomplete?
-                trs = pile.all(
-                    tmin=tmin,
-                    tmax=tmax,
-                    trace_selector=lambda tr: tr.nslc_id == target.codes,
-                    want_incomplete=True)
+                trs = pile.chopper(tmin=tmin,
+                                   tmax=tmax,
+                                   trace_selector=lambda tr: tr.nslc_id == target.codes,
+                                   want_incomplete=False)
+                tr = [t for trss  in trs for t in trss]
 
-                print len(trs)
-                if len(trs)>=2:
-                    for tr in trs:
-                        print tr
-                        print 'How to handle this case? Merge traces? Want incomplete?'
-                    break
-                if len(trs) == 1:
-                    tr = trs[0]
-                    if self.dt_wanted:
-                        tr.downsample_to(self.dt_wanted)
+                if len(tr)==0:
+                    continue
+                elif len(tr)==1:
+                    tr = tr[0]
+                else:
+                    self.fail('Something went wrong')
+                if self.dt_wanted:
+                    tr.downsample_to(self.dt_wanted)
 
-                    tr2 = tr.copy()
-                    for f in filters:
-                        tr2.transfer(transfer_function=f)
-                    tr2.chop(tmin, tmax)
-                    tr2.set_codes(location=ev.name+'f')
+                tr2 = tr.copy()
+                for f in filters:
+                    tr2.transfer(transfer_function=f)
+                tr2.chop(tmin, tmax)
+                tr2.set_codes(location=ev.name+'f')
 
-                    tr.chop(tmin, tmax)
-                    tr.set_codes(location=ev.name+'r')
+                tr.chop(tmin, tmax)
+                tr.set_codes(location=ev.name+'r')
 
-                    ok_raw.append((iev, ev, tr))
-                    ok_filtered.append((iev, ev, tr2))
+                #ok_raw.append((iev, ev, tr))
+                ok_filtered.append((iev, ev, tr2))
 
-                    if show_arrivals:
-                        rays = mod.arrivals(
-                            phases=[cake.PhaseDef(x) for x in 'p P'.split()],
-                            distances=[dist*cake.m2d], 
-                            zstart=ev.depth)
+                #if show_arrivals:
+                #    rays = mod.arrivals(
+                #        phases=[cake.PhaseDef(x) for x in 'p P'.split()],
+                #        distances=[dist*cake.m2d], 
+                #        zstart=ev.depth)
 
-                        if rays:
-                            ray = rays[0]
-                            mark = gui_util.PhaseMarker(
-                                [tr.nslc_id],
-                                ev.time + ray.t,
-                                ev.time + ray.t,
-                                0,
-                                phasename='P')
+                #    if rays:
+                #        ray = rays[0]
+                #        mark = gui_util.PhaseMarker(
+                #            [tr.nslc_id],
+                #            ev.time + ray.t,
+                #            ev.time + ray.t,
+                #            0,
+                #            phasename='P')
 
-                            print mark
+                #        #print mark
 
-                            markers.append(mark)
+                #        markers.append(mark)
 
 
             ok = ok_filtered
             # isn't it doing the same thing twice?
             # better to pop items?
-            for (ia, a_ev, a_tr) in ok:
+            while ok:
+                (ia, a_ev, a_tr) = ok.pop()
+                #for (ia, a_ev, a_tr) in ok:
                 for (ib, b_ev, b_tr) in ok:
                     relamp = 0.0
                     if a_tr is not None and b_tr is not None:
-                        print '..................'
-                        print a_tr, b_tr
                         c_tr = trace.correlate(a_tr, b_tr, mode='full', normalization='normal')
-                        print c_tr
                         t_center = c_tr.tmin+(c_tr.tmax-c_tr.tmin)/2.
                         c_tr_chopped = c_tr.chop(t_center-self.tdist, t_center+self.tdist, inplace=False)
                         t_mini, v_mini = c_tr_chopped.min()
                         t_maxi, v_maxi = c_tr_chopped.max()
-                        print v_mini, v_maxi
                         #print t_mini, t_maxi, v_mini, v_maxi, (abs(v_mini) > abs(v_maxi) and v_mini < 0.95)
 
                         b_tr_shifted = b_tr.copy()
@@ -179,8 +176,6 @@ class SimilaritySnuffling(Snuffling):
                                 b_tr_shifted.shift(-t_maxi)
 
                         if self.cc[itarget, ia, ib] != 0.0:
-                            #print 'YES'
-                            #print self.cc[itarget, ia, ib]
                             tmin = max(a_tr.tmin, b_tr_shifted.tmin)
                             tmax = min(a_tr.tmax, b_tr_shifted.tmax)
                             a_tr_chopped = a_tr.chop(tmin, tmax, inplace=False)
@@ -204,6 +199,17 @@ class SimilaritySnuffling(Snuffling):
                             relative_amplitude=float(relamp))
 
                         similarities.append(sim)
+
+        if self.show_results:
+            for itarget, target in enumerate(targets):
+                fig = self.pylab(get='figure')
+                axes = fig.add_subplot(111)
+                axes.set_xlabel('Event number')
+                axes.set_ylabel('Event number')
+                mesh = axes.pcolormesh(self.cc[itarget,:,:], cmap='RdBu', vmin=-1.0, vmax=1.0)
+                cb = fig.colorbar(mesh, ax=axes)
+                cb.set_label('Max correlation coefficient')
+                fig.canvas.draw()
 
         if self.show_traces:
             self.add_traces(trs2add)
