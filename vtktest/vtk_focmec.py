@@ -12,7 +12,7 @@ def make_polydata_actor(centers, normals, return_pdm=False, type='circle'):
     :param centers: list of centers as tuples 
     :param normals: list of list of normals as tuples
     """
-     
+
     # In order to build the bounding box it is convenient to combine
     # All sources using a vtkAppenPolyData
     apd = vtk.vtkAppendPolyData()
@@ -20,39 +20,38 @@ def make_polydata_actor(centers, normals, return_pdm=False, type='circle'):
     mappers = []
     # create source
     for i in range(len(centers)):
-        print i
         normal = normals[i]
         if normal is None:
-            continue
-        if type=='torus':
-            source = vtk.vtkSuperquadricSource();
-            source.SetScale(1.0, 1.0, 1.0)
-            source.SetPhiResolution (16)
-            source.SetThetaResolution(16)
-            source.SetThetaRoundness (1)
-            source.SetThickness (0.1)
-            source.SetSize(100.5)
-            source.SetToroidal(1) 
-            source.SetNormal(normal)
-        elif type=='circle':
-            source = vtk.vtkRegularPolygonSource()
-            source.SetNumberOfSides(16)
-            source.SetRadius(100)
-            source.SetNormal(normal)
+            source = vtk.vtkSphereSource()
+            source.SetRadius(80)
+        else:
+            if type=='torus':
+                source = vtk.vtkSuperquadricSource();
+                source.SetScale(1.0, 1.0, 1.0)
+                source.SetPhiResolution (16)
+                source.SetThetaResolution(16)
+                source.SetThetaRoundness (1)
+                source.SetThickness (0.1)
+                source.SetSize(100.5)
+                source.SetToroidal(1)
+                source.SetNormal(normal)
+            elif type=='circle':
+                source = vtk.vtkRegularPolygonSource()
+                source.SetNumberOfSides(16)
+                source.SetRadius(100)
+                source.SetNormal(normal)
         source.SetCenter(*centers[i])
         apd.AddInput(source.GetOutput())
     mapper = vtk.vtkPolyDataMapper()
     mapper.SetInputConnection(apd.GetOutputPort())
-    # actor
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
-    
+
     if return_pdm:
         return actor, apd
     else:
         return actor
 
-    
 def setup_renderer(renderer, actors, bboxpolydata=None):
     ren = renderer
     for actor in actors:
@@ -71,7 +70,6 @@ def setup_renderer(renderer, actors, bboxpolydata=None):
         outlineActor.GetProperty().SetColor(100, 100, 100)
         ren.AddViewProp(outlineActor)
         ren.AddActor(outlineActor)
-    
 
     # Create a vtkLight, and set the light parameters.
     #light = vtk.vtkLight()
@@ -92,13 +90,15 @@ def moment_tensors2normals(tensors, get):
 
     return normals
 
-def to_cartesian(items):
+def to_cartesian(items, latref=None, lonref=None):
     res = []
-    latlon00 = ortho.Loc(0.,0.)
+    latref = latref or 0.
+    lonref = lonref or 0.
+    latlon00 = ortho.Loc(latref, lonref)
     for i, item in enumerate(items):
 
         y, x = ortho.latlon_to_ne(latlon00, item)
-        depth = item.depth
+        depth = item.depth *1000
         lat = item.lat/180.*num.pi
         res.append((x, y, -depth))
     return res
@@ -108,7 +108,7 @@ def to_colors(items):
     return [(1,0,0)]*len(items)
 
 def read_data(event_fn=None, events=None, get=None):
-    
+
     if event_fn is not None and events is None:
         events = model.load_events(event_fn)
     else:
@@ -138,7 +138,7 @@ if __name__=="__main__":
     parser.add_option("--events",
                       dest='events',
                       default=None)
-    
+
     (options, args) = parser.parse_args()
 
     input_fn = options.events
