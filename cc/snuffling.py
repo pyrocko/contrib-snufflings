@@ -1,4 +1,7 @@
 import sys
+import matplotlib
+matplotlib.use('Qt4Agg')
+import logging
 import os.path as op
 import numpy as num
 import progressbar
@@ -7,17 +10,15 @@ from pyrocko import model, trace, util, orthodrome, cake, gui_util
 from pyrocko.gf.seismosizer import Target, SeismosizerTrace
 from pyrocko.snuffling import Snuffling, Choice, Param, Switch
 from similarity import SimilarityMatrix, Similarity
-import matplotlib
-matplotlib.use('Qt4Agg')
 import matplotlib.pyplot as plt
 util.setup_logging('cc.py')
+logger = logging.getLogger()
 
-
-def make_targets(pile, stations, channels):
+def make_targets(pile, stations):
     targets = []
     for nslc_id in pile.nslc_ids.keys():
         for s in stations:
-            if util.match_nslc('%s.*%s'%(s.nsl_string(), channels), nslc_id):
+            if util.match_nslc('%s.*'%(s.nsl_string()), nslc_id):
                 targets.append(Target(lat=s.lat,
                                      lon=s.lon,
                                      depth=s.depth,
@@ -40,7 +41,6 @@ class SimilaritySnuffling(Snuffling):
     '''
     def setup(self):
         self.set_name('Similarity')
-        self.add_parameter(Choice('Channels', 'channels', 'Z', ['Z', '*']))
         self.add_parameter(Choice('Windowing method', 'time_window_choice', 'P-phase', ['P-phase', 'vmin/vmax']))
         self.add_parameter(Param('limit', 'limit', 0.9, 0.0, 1.0))
         # Todo visibility changed -> hp lp
@@ -60,6 +60,7 @@ class SimilaritySnuffling(Snuffling):
 
     def call(self):
         self.cleanup()
+        viewer = self.get_viewer()
         events = [m.get_event() for m in self.get_selected_event_markers()]
         for iev, ev in enumerate(events):
             ev.name = '%05i' % iev
@@ -82,7 +83,7 @@ class SimilaritySnuffling(Snuffling):
         mod = cake.load_model()
         nevents = len(events)
         pile = self.get_pile()
-        targets = make_targets(pile, stations, self.channels)
+        targets = make_targets(pile, stations)
         if len(targets)==0:
             self.fail("No station available")
         ntargets = len(targets)
@@ -103,7 +104,6 @@ class SimilaritySnuffling(Snuffling):
         #pb.set_status('CC', 0)
         if self.save_traces :
             figure_dir = self.input_directory(caption='Select directory to store images')
-            self.get_viewer().update()
         for itarget, target in enumerate(targets):
             print (itarget+1.)/float(ntargets)
             ok_raw = []
@@ -123,10 +123,9 @@ class SimilaritySnuffling(Snuffling):
                     tmax = ev.time + rays[0].t + self.tpad * 0.9
                 trs = pile.chopper(tmin=tmin,
                                    tmax=tmax,
-                                   trace_selector=lambda tr: tr.nslc_id == target.codes,
+                                   trace_selector=viewer.trace_selector,
                                    want_incomplete=False)
-                tr = [t for trss  in trs for t in trss]
-
+                tr = [t for trss  in trs for t in trss if t.nslc_id==target.codes]
                 if len(tr)==0:
                     continue
                 elif len(tr)==1:
@@ -166,7 +165,6 @@ class SimilaritySnuffling(Snuffling):
             ok = ok_filtered
             while ok:
                 (ia, a_ev, a_tr) = ok.pop()
-                #for (ia, a_ev, a_tr) in ok:
                 for (ib, b_ev, b_tr) in ok:
                     relamp = 0.0
                     if a_tr is not None and b_tr is not None:
@@ -194,8 +192,12 @@ class SimilaritySnuffling(Snuffling):
                         if self.cc[itarget, ia, ib] != 0.0:
                             tmin = max(a_tr.tmin, b_tr_shifted.tmin)
                             tmax = min(a_tr.tmax, b_tr_shifted.tmax)
-                            a_tr_chopped = a_tr.chop(tmin, tmax, inplace=False)
-                            b_tr_chopped = b_tr_shifted.chop(tmin, tmax)
+                            try:
+                                a_tr_chopped = a_tr.chop(tmin, tmax, inplace=False)
+                                b_tr_chopped = b_tr_shifted.chop(tmin, tmax)
+                            except trace.NoData:
+                                logger.warn('NoData %s'%a_tr_chopped)
+                                continue
 
                             ya = a_tr_chopped.ydata
                             yb = b_tr_chopped.ydata
@@ -232,6 +234,8 @@ class SimilaritySnuffling(Snuffling):
 
         if self.show_results:
             for itarget, target in enumerate(targets):
+                if not num.any(self.cc[itarget]):
+                    continue
                 fig = self.pylab(get='figure')
                 fig.suptitle('.'.join(target.codes))
                 axes = fig.add_subplot(111)
