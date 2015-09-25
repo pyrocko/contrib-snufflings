@@ -12,7 +12,7 @@ from pyrocko.snuffling import Snuffling, Choice, Param, Switch
 from similarity import SimilarityMatrix, Similarity
 import matplotlib.pyplot as plt
 util.setup_logging('cc.py')
-logger = logging.getLogger()
+logger = logging.getLogger('cc-snuffling')
 
 def make_targets(pile, stations):
     targets = []
@@ -31,19 +31,56 @@ def make_targets(pile, stations):
 
 class SimilaritySnuffling(Snuffling):
     '''
-    tdist: Time distance from center of cross correlated trace. Sets the intended time span.
-    vmin and vmax: horizontal velocities used to chop the traces to be cross correlated
-    low and high: low- and high pass corner frequencies of 4th order butterworth filter
-    windowing method: using P-phase, the chopping ranges are caluclated as follows:
-    tmin = t_p-padding*0.1
-    tmax = t_p+padding*0.9
-    where t_p is the eariest onset time of the p- and P-phase respectively.
+    <html>
+    <head>
+    <style type="text/css">
+        body { margin-left:10px };
+    </style>
+    </head>
+    <body>
+    <h1 align="center">Cross Correlation Matrix</h1>
+    <p>
+    Cross correlate events and save results in yaml format.
+    <b>Parameters:</b><br />
+        <b>&middot; Windowing method:</b> Time window selection behaviour.
+        Select <i>P-phase</i> to use P phase onset to set the position of the
+        selection window.<br>
+        if windowing method is using P-phase, the chopping ranges are caluclated as follows:
+        <p>
+        tmin = t_p-padding*0.1
+        <br>
+        tmax = t_p+padding*0.9
+        <p>
+        where t_p is the earlier onset time of the p- and P-phase respectively.<br>
+        Select <i>vmin/vmax</i> and the use sliders <i>vmin</i> and <i>vmax</i> to
+        define horizontal velocities to define the selection window.<br />
+        <b>&middot; tdist:</b> Time distance from center of cross correlated trace. Sets the intended time span. <br />
+        <b>&middot; low and high:</b> Low- and high pass corner frequencies of 4th order butterworth filter<br />
+        <b>&middot; save traces:</b> Select an output directory using the opening
+        dialog. Trace pairs, as well as the cc trace are going to be saved here.
+        <b>Drawing the traces is time consuming!</b><br />
+        <b>&middot; show results:</b> make cc result images after processing.<br />
+        <b>&middot; save results:</b> Store results in YAML format.<br />
+        <p>
+        Since results are stored in yaml format, they can easily be loaded 
+        programmatically as follows:
+        <pre>
+        from similarity import SimilarityMatrix, Similarity
+        from pyrocko.guts import load as guts_load
+
+        fn = 'saved-similarities.dat'
+        matrix = guts_load(filename=fn)
+        for s in matrix.similarities:
+                print s
+        </pre>
+        This assumes, that you the module <pre>similarity.py</pre> is stored in
+        the same directory or in a place where it can be found by python
+        e.g. using the the <pre>PYTHONPATH</pre> environment variable.
+    </p>
     '''
     def setup(self):
         self.set_name('Similarity')
         self.add_parameter(Choice('Windowing method', 'time_window_choice', 'P-phase', ['P-phase', 'vmin/vmax']))
-        self.add_parameter(Param('limit', 'limit', 0.9, 0.0, 1.0))
-        # Todo visibility changed -> hp lp
         self.add_parameter(Param('lp', 'low', 10., 0.1, 200.0, high_is_none=True))
         self.add_parameter(Param('hp', 'high', 1, 0.1, 200.0, low_is_none=True))
         self.add_parameter(Param('padding', 'tpad', 10, 0.1, 60.0))
@@ -56,7 +93,7 @@ class SimilaritySnuffling(Snuffling):
         self.add_parameter(Switch('Apply to full dataset', 'apply_full', False))
         self.add_trigger('save result', self.save)
         self.set_live_update(False)
-        self.warned = False
+        self.phase_cache = {}
 
     def call(self):
         self.cleanup()
@@ -92,6 +129,7 @@ class SimilaritySnuffling(Snuffling):
                                                   events=events,
                                                   filters=filters,
                                                   padding=float(self.tpad),
+                                                  windowing_method=self.time_window_choice,
                                                   vmax=float(self.vmax),
                                                   vmin=float(self.vmin))
         similarities = []
@@ -100,13 +138,10 @@ class SimilaritySnuffling(Snuffling):
             tmin_selection = None; tmax_selection=None
         else:
             tmin_selection, tmax_selection = self.get_selected_time_range(fallback=True)
-        #pb = self.get_viewer().parent().get_progressbars()
-        #pb.set_status('CC', 0)
         if self.save_traces :
             figure_dir = self.input_directory(caption='Select directory to store images')
         for itarget, target in enumerate(targets):
             print (itarget+1.)/float(ntargets)
-            ok_raw = []
             ok_filtered = []
             markers = []
             for iev, ev in enumerate(events):
@@ -115,12 +150,18 @@ class SimilaritySnuffling(Snuffling):
                     tmin = ev.time + dist / self.vmax - self.tpad
                     tmax = ev.time + dist / self.vmin + self.tpad
                 elif self.time_window_choice=='P-phase':
-                    rays = mod.arrivals(
-                        phases=[cake.PhaseDef(x) for x in 'p P'.split()],
-                        distances=[dist*cake.m2d],
-                        zstart=ev.depth)
-                    tmin = ev.time + rays[0].t - self.tpad * 0.1
-                    tmax = ev.time + rays[0].t + self.tpad * 0.9
+                    d = dist*cake.m2d
+                    z = ev.depth
+                    t = self.phase_cache.get((mod, d, z), False)
+                    if not t:
+                        rays = mod.arrivals(
+                            phases=[cake.PhaseDef(x) for x in 'p P'.split()],
+                            distances=[d],
+                            zstart=z)
+                        t = rays[0].t
+                        self.phase_cache[(mod, d, z)] = t
+                    tmin = ev.time + t - self.tpad * 0.1
+                    tmax = ev.time + t + self.tpad * 0.9
                 trs = pile.chopper(tmin=tmin,
                                    tmax=tmax,
                                    trace_selector=viewer.trace_selector,
@@ -137,30 +178,14 @@ class SimilaritySnuffling(Snuffling):
 
                 tr2 = tr.copy()
                 for f in filters:
-                    tr2.transfer(transfer_function=f)
+                    tr2 = tr2.transfer(transfer_function=f)
                 tr2.chop(tmin, tmax)
                 tr2.set_codes(location=ev.name+'f')
 
                 tr.chop(tmin, tmax)
                 tr.set_codes(location=ev.name+'r')
 
-                #ok_raw.append((iev, ev, tr))
                 ok_filtered.append((iev, ev, tr2))
-
-                #if show_arrivals:
-
-                #    if rays:
-                #        ray = rays[0]
-                #        mark = gui_util.PhaseMarker(
-                #            [tr.nslc_id],
-                #            ev.time + ray.t,
-                #            ev.time + ray.t,
-                #            0,
-                #            phasename='P')
-
-                #        #print mark
-
-                #        markers.append(mark)
 
             ok = ok_filtered
             while ok:
@@ -173,18 +198,15 @@ class SimilaritySnuffling(Snuffling):
                         c_tr_chopped = c_tr.chop(t_center-self.tdist, t_center+self.tdist, inplace=False)
                         t_mini, v_mini = c_tr_chopped.min()
                         t_maxi, v_maxi = c_tr_chopped.max()
-
                         b_tr_shifted = b_tr.copy()
                         a_tr_shifted = a_tr.copy()
 
                         if abs(v_mini) > abs(v_maxi):
-                            if abs(t_center-t_mini) < self.limit * self.tdist:
-                                v_cc = v_mini
-                                time_lag = -t_mini
+                            v_cc = v_mini
+                            time_lag = -t_mini
                         else:
-                            if abs(t_center-t_maxi) < self.limit * self.tdist:
-                                time_lag = -t_maxi
-                                v_cc = v_maxi
+                            time_lag = -t_maxi
+                            v_cc = v_maxi
 
                         self.cc[itarget, ia, ib] = v_cc
                         b_tr_shifted.shift(time_lag)
@@ -226,7 +248,6 @@ class SimilaritySnuffling(Snuffling):
                             jevent=ib,
                             itarget=itarget,
                             cross_correlation=float(self.cc[itarget, ia, ib]),
-                            cross_correlation_trace=SeismosizerTrace.from_pyrocko_trace(c_tr),
                             relative_amplitude=float(relamp),
                             time_lag=float(-time_lag))
 
