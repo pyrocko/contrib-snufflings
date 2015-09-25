@@ -40,7 +40,9 @@ class SimilaritySnuffling(Snuffling):
     <body>
     <h1 align="center">Cross Correlation Matrix</h1>
     <p>
-    Cross correlate events and save results in yaml format.
+    Cross correlate events and save results in yaml format. Requires station
+    meta information to be availble. Selected events will be cross correlated
+    using data from visible traces, exclusively.
     <b>Parameters:</b><br />
         <b>&middot; Windowing method:</b> Time window selection behaviour.
         Select <i>P-phase</i> to use P phase onset to set the position of the
@@ -54,15 +56,18 @@ class SimilaritySnuffling(Snuffling):
         where t_p is the earlier onset time of the p- and P-phase respectively.<br>
         Select <i>vmin/vmax</i> and the use sliders <i>vmin</i> and <i>vmax</i> to
         define horizontal velocities to define the selection window.<br />
-        <b>&middot; tdist:</b> Time distance from center of cross correlated trace. Sets the intended time span. <br />
-        <b>&middot; low and high:</b> Low- and high pass corner frequencies of 4th order butterworth filter<br />
+        <b>&middot; tdist:</b> Time distance from center of cross correlated
+        trace. Sets the intended time span. <br />
+        <b>&middot; dt wanted:</b> downsample traces to selected delta t.<br />
+        <b>&middot; low and high:</b> Low- and high pass corner frequencies of
+        4th order butterworth filter.<br />
         <b>&middot; save traces:</b> Select an output directory using the opening
         dialog. Trace pairs, as well as the cc trace are going to be saved here.
         <b>Drawing the traces is time consuming!</b><br />
         <b>&middot; show results:</b> make cc result images after processing.<br />
         <b>&middot; save results:</b> Store results in YAML format.<br />
         <p>
-        Since results are stored in yaml format, they can easily be loaded 
+        Since results are stored in yaml format, they can easily be loaded
         programmatically as follows:
         <pre>
         from similarity import SimilarityMatrix, Similarity
@@ -79,19 +84,23 @@ class SimilaritySnuffling(Snuffling):
     </p>
     '''
     def setup(self):
-        self.set_name('Similarity')
-        self.add_parameter(Choice('Windowing method', 'time_window_choice', 'P-phase', ['P-phase', 'vmin/vmax']))
-        self.add_parameter(Param('lp', 'low', 10., 0.1, 200.0, high_is_none=True))
-        self.add_parameter(Param('hp', 'high', 1, 0.1, 200.0, low_is_none=True))
-        self.add_parameter(Param('padding', 'tpad', 10, 0.1, 60.0))
-        self.add_parameter(Param('dt wanted', 'dt_wanted', 0.01, 0.01, 10., low_is_none=True))
-        self.add_parameter(Param('tdist', 'tdist', 7.5,1., 20.))
-        self.add_parameter(Param('v min', 'vmin', 1500., 500., 2000.))
-        self.add_parameter(Param('v max', 'vmax', 6000., 2000., 1000.))
-        self.add_parameter(Switch('save traces', 'save_traces', False))
-        self.add_parameter(Switch('show results', 'show_results', False))
-        self.add_parameter(Switch('Apply to full dataset', 'apply_full', False))
-        self.add_trigger('save result', self.save)
+        self.set_name('CC Matrix')
+        self.add_parameter(Choice(
+            'Windowing method', 'time_window_choice', 'P-phase',
+            ['P-phase', 'vmin/vmax']))
+        self.add_parameter(Param('low', 'low', 10., 0.1, 200.0,
+                                 high_is_none=True))
+        self.add_parameter(Param('high', 'high', 1, 0.1, 200.0,
+                                 low_is_none=True))
+        self.add_parameter(Param('padding [s]', 'tpad', 10, 0.1, 60.0))
+        self.add_parameter(Param('dt wanted', 'dt_wanted', 0.01, 0.01, 10.,
+                                 low_is_none=True))
+        self.add_parameter(Param('tdist [s]', 'tdist', 7.5,1., 20.))
+        self.add_parameter(Param('v min [m/s]', 'vmin', 1500., 500., 2000.))
+        self.add_parameter(Param('v max [m/s] ', 'vmax', 2000., 6000., 1000.))
+        self.add_parameter(Switch('Save Rraces', 'save_traces', False))
+        self.add_parameter(Switch('Show Results', 'show_results', False))
+        self.add_trigger('Save Result', self.save)
         self.set_live_update(False)
         self.phase_cache = {}
 
@@ -134,10 +143,6 @@ class SimilaritySnuffling(Snuffling):
                                                   vmin=float(self.vmin))
         similarities = []
         trs2add = []
-        if self.apply_full:
-            tmin_selection = None; tmax_selection=None
-        else:
-            tmin_selection, tmax_selection = self.get_selected_time_range(fallback=True)
         if self.save_traces :
             figure_dir = self.input_directory(caption='Select directory to store images')
         for itarget, target in enumerate(targets):

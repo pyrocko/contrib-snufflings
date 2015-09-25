@@ -80,6 +80,15 @@ file: [corrsearch.py](corrsearch.py)
 
 ![screenshot](screenshots/corrsearch.png)
 
+Cross correlation matrix
+------------------------
+
+Cross correlate selected events. Results, including cross-correlation factor and time lags between maxima of the cross correlation can be stored in YAML format to ease later analysis.
+
+directory: [cc\_matric](cc_matrix)
+
+![screenshot](screenshots/cc_matrix.png)
+
 Export wav Files 
 ----------------
 
