@@ -20,6 +20,7 @@ class SimilarityMatrix(Object):
     similarities = List.T(Similarity.T())
     filters = List.T(trace.FrequencyResponse.T())
     padding = Float.T()
+    windowing_method = String.T()
     vmin = Float.T()
     vmax = Float.T()
 
