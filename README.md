@@ -85,7 +85,7 @@ Cross correlation matrix
 
 Cross correlate selected events. Results, including cross-correlation factor and time lags between maxima of the cross correlation can be stored in YAML format to ease later analysis.
 
-directory: [cc\_matric](cc_matrix)
+directory: [cc\_matrix](cc_matrix)
 
 ![screenshot](screenshots/cc_matrix.png)
 
