@@ -88,7 +88,7 @@ class BeamForming(Snuffling):
             viewer = self.get_viewer()
             viewer.connect(self._param_controls['unit'], SIGNAL('choosen(PyQt_PyObject,PyQt_PyObject)'),
                          self.set_slowness_ranges)
-    
+
     def set_slowness_ranges(self, ident, state):
         if state == 's/km':
             self.set_parameter_range('slow', 0, 1)
@@ -106,7 +106,6 @@ class BeamForming(Snuffling):
             slow_factor = 1./1000.
 
         slow = self.slow*slow_factor
-
         if self.stacked_traces is not None:
             self.add_traces(self.stacked_traces)
         viewer = self.get_viewer()
@@ -117,6 +116,10 @@ class BeamForming(Snuffling):
         if len(stations) == 0:
             self.fail('No station meta information found')
 
+        traces = list(self.chopper_selected_traces(fallback=True))
+        traces = [tr for trs in traces for tr in trs ]
+        visible_nslcs = [tr.nslc_id for tr in traces]
+        stations = filter(lambda s: util.match_nslcs("%s.%s.%s.*" % s.nsl(), visible_nslcs), stations)
         if not self.lat_c or not self.lon_c or not self.z_c:
             self.lat_c, self.lon_c, self.z_c = self.center_lat_lon(stations)
             self.set_parameter('lat_c', self.lat_c)
@@ -145,8 +148,6 @@ class BeamForming(Snuffling):
         num_stacked = {}
         self.t_shifts = {}
         shifted_traces = []
-        traces = list(self.chopper_selected_traces(fallback=True))
-        traces = [tr for trs in traces for tr in trs ]
         taperer = trace.CosFader(xfrac=0.05)
         if self.diff_dt_treat=='downsample':
             traces.sort(key=lambda x: x.deltat)
