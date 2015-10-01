@@ -98,7 +98,7 @@ class SimilaritySnuffling(Snuffling):
         self.add_parameter(Param('tdist [s]', 'tdist', 7.5,1., 20.))
         self.add_parameter(Param('v min [m/s]', 'vmin', 1500., 500., 2000.))
         self.add_parameter(Param('v max [m/s] ', 'vmax', 2000., 6000., 1000.))
-        self.add_parameter(Switch('Save Rraces', 'save_traces', False))
+        self.add_parameter(Switch('Save Traces', 'save_traces', False))
         self.add_parameter(Switch('Show Results', 'show_results', False))
         self.add_trigger('Save Result', self.save)
         self.set_live_update(False)
@@ -123,7 +123,12 @@ class SimilaritySnuffling(Snuffling):
                                                          type=ident))
 
         stations = self.get_stations()
-        stations_d = dict((s.nsl(), s) for s in stations)
+        traces = list(self.chopper_selected_traces(fallback=True, trace_selector=
+                                                   viewer.trace_selector,
+                                                   load_data=False))
+        traces = [tr for trs in traces for tr in trs ]
+        visible_nslcs = [tr.nslc_id for tr in traces]
+        stations = filter(lambda s: util.match_nslcs("%s.%s.%s.*" % s.nsl(), visible_nslcs), stations)
 
         # TODO option to choose other models
         mod = cake.load_model()
