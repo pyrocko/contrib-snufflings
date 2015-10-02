@@ -48,7 +48,7 @@ class TracePlotter(Snuffling):
         vtmin, vtmax = viewer.get_time_range()
         pile = self.get_pile()
         traces = list(pile.chopper(tmin=vtmin, tmax=vtmax, trace_selector=viewer.trace_selector))
-        event = viewer.get_active_event()
+        event, _ = self.get_active_event_and_stations()
         traces = [tr for trs in traces for tr in trs]
         stations = []
         for tr in traces:
@@ -116,15 +116,13 @@ class TracePlotter(Snuffling):
                         t = m.tmin
                         x = [t-red-event.time, t-red-event.time]
                         y = [y_pos, y_pos+(maxd-mind)*0.05]
-                        label = m.get_label()
                         ax.plot(x, y, linewidth=1, color='red')
-                        ax.text(x[1],
-                                y[1],
-                                label,
-                                color='red',
-                                fontsize=6,
-                                verticalalignment='top',
-                                horizontalalignment='right')
+                        label = m.get_label()
+                        if label:
+                            ax.text(x[1], y[1], label, color='red',
+                                    fontsize=6,
+                                    verticalalignment='top',
+                                    horizontalalignment='right')
         for txt in texts:
             txt.set_x(xmax)
         ax.set_ylim([ymin, ymax])
