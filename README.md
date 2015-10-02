@@ -125,9 +125,19 @@ file: [extract_events.py](extract_events.py)
 ![screenshot](screenshots/extract_events.png)
 
 Export Waveforms
---------------
+----------------
 
 Export selected/visible waveforms as MSEED, ASCII, SAC or YAFF files.
 
 file: [export_waveforms.py](export_waveforms.py)
 
+Distance Projected Waveform Plots
+---------------------------------
+
+Applying a reduction velocity allows to 'shrink' the time domain.
+Figures can be exported in various image file formats like .png or .pdf.
+In order to improve the visual perception of small wiggles, positive amplitudes can be plotted in filled mode.
+
+file: [plot_traces.py](plot_traces.py)
+
+![screenshot](screenshots/plot_traces.png)
