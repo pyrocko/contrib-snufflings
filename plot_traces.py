@@ -1,4 +1,5 @@
-from pyrocko.snuffling import Snuffling, Param
+import numpy as num
+from pyrocko.snuffling import Snuffling, Param, Choice, Switch
 from pyrocko import orthodrome as ortho
 from pyrocko import util
 
@@ -7,34 +8,81 @@ class TracePlotter(Snuffling):
     '''
     <html>
     <body>
-    <h1>Trace Plotter</h1>
+    <head>
+    <style type="text/css">
+        body { margin-left:10px };
+    </style>
+    </head>
+    <body>
+    <h1 align="center">Plot Traces with Reduced Velocity</h1>
+    <p>
+    Use the <b>Reduction Velocity</b> to shift traces dependent on epicentral
+    distance to the activated event.
+    If <b>Auto-Run</b> is activated the figure is updated automatically when
+    modifying a value on the panel.<br>
+    When <b>saving a figure</b>, accepted file endings are 'eps', 'png', 'jpeg',
+    'pdf', and 'svg'.
     </body>
     </html>
     '''
     def setup(self):
         self.set_name("Plot Waveforms")
-        self.add_parameter(Param('Reduction velocity[km/s]', 't_red', 1., 1., 10., low_is_none=True))
+        self.add_parameter(Switch('Include Selected Markers', 'add_markers',  False))
+        self.add_parameter(Switch('Fill positive', 'fill_between',  False))
+        self.add_parameter(Param(
+            'Reduction Velocity [km/s]', 't_red', 1., 1., 10., low_is_none=True))
+        self.add_parameter(Param(
+            'Amplitude Gain', 'yscale', 1., 0.1, 100.))
+        self.add_parameter(Choice(
+            'Pre-scale Amplitudes', 'ampl_scaler', 'trace min/max',
+            ['total min/max', 'trace min/max', '4*standard deviation']))
+        self.add_trigger('Save Last Figure', self.save)
         self.set_live_update(False)
+        self.fig = None
 
     def call(self):
 
         self.cleanup()
+        viewer = self.get_viewer()
 
-        event, stations = self.get_active_event_and_stations()
+        vtmin, vtmax = viewer.get_time_range()
+        pile = self.get_pile()
+        traces = list(pile.chopper(tmin=vtmin, tmax=vtmax, trace_selector=viewer.trace_selector))
+        event = viewer.get_active_event()
+        traces = [tr for trs in traces for tr in trs]
+        stations = []
+        for tr in traces:
+            stations.append(viewer.get_station(viewer.station_key(tr)))
         distances = [ortho.distance_accurate50m(event, s) for s in stations]
-
+        distances = [d/1000. for d in distances]
         maxd = max(distances)
         mind = min(distances)
         distances = dict(zip([s.nsl() for s in stations], distances))
-        channels = set()
-        traces = list(self.chopper_selected_traces(fallback=True))
-        traces = [tr for trs in traces for tr in trs ]
         matching_traces = filter(lambda x: util.match_nslc(
                             self.get_station_patterns(stations), x.nslc_id), traces)
-        fig = self.pylab(get='figure')
-        ax = None
-        viewer = self.get_viewer()
-        axs = {}
+        if self.add_markers:
+            markers = self.get_markers()
+            markers = filter(lambda m: m.tmax<=vtmax and m.tmin>=vtmin and m.selected, markers)
+            markers = dict(zip([tuple(m.nslc_ids) for m in markers], markers))
+        if self.fig == None or not self._live_update:
+            new_fig = self.pylab(get='figure')
+            self.fig = new_fig
+
+        if self._live_update:
+            self.fig.clf()
+        ymin = mind-0.03*(maxd-mind)
+        ymax = maxd+0.03*(maxd-mind)
+        ax = self.fig.add_subplot(111)
+        xmin = 9E9
+        xmax = -xmin
+        texts = []
+        manual_scale = 0.1 * (maxd-mind)*self.yscale
+
+        if self.ampl_scaler=='total min/max':
+            max_trace = max(matching_traces, key=lambda x: max(abs(x.get_ydata())))
+            tr_maxy = max(abs(max_trace.get_ydata()))
+            ampl_scale = float(tr_maxy)
+
         for tr in matching_traces:
             if viewer.highpass:
                 tr.highpass(4, viewer.highpass)
@@ -43,30 +91,51 @@ class TracePlotter(Snuffling):
             if tr.nslc_id[:3] not in distances.keys():
                 continue
 
-            ax = fig.add_axes([0.1, 0.1+0.9*((distances[tr.nslc_id[:3]]-mind)/(maxd-mind)), 0.93, 1./len(matching_traces)],
-                              sharex=ax)
             if self.t_red:
-                red = distances[tr.nslc_id[:3]]/self.t_red/1000.
+                red = distances[tr.nslc_id[:3]]/self.t_red
             else:
                 red = 0.
-            ax.plot(tr.get_xdata()-red-event.time,
-                    tr.get_ydata(),
-                    c='black',
-                    linewidth=0.1)
-            ax.axes.get_xaxis().set_visible(False)
-            ax.axes.get_yaxis().set_visible(False)
-            ax.axes.patch.set_visible(False)
-            ax.text(
-                0., 0.5, '%s.%s.%s.%s' % tr.nslc_id, transform=ax.transAxes, 
-                horizontalalignment='right', fontsize=4.)
-            for item in ax.spines.values():
-                item.set_visible(False)
-            axs[distances[tr.nslc_id[:3]]] = ax
-        axs[mind].get_xaxis().set_visible(True)
-        fig.canvas.draw()
+            y_pos = distances[tr.nslc_id[:3]]
+            xdata = tr.get_xdata()-red-event.time
+            xmin = min(xmin, min(xdata))
+            xmax = max(xmax, max(xdata))
+            tr_ydata = tr.get_ydata()
+            if self.ampl_scaler == 'trace min/max':
+                ampl_scale = float(max(abs(tr_ydata)))
+            elif self.ampl_scaler == '4*standard deviation':
+                ampl_scale = 4*float(num.std(tr_ydata))
+            ydata = (tr_ydata/ampl_scale * manual_scale) + y_pos
+            ax.plot(xdata, ydata, c='black', linewidth=0.2)
+            if self.fill_between:
+                ax.fill_between(xdata, y_pos, ydata, where=ydata>y_pos, color='black', alpha=0.5)
+            texts.append(ax.text(xmax, y_pos, '%s.%s.%s.%s' % tr.nslc_id,
+                horizontalalignment='right', fontsize=6.))
+            if self.add_markers:
+                for m in markers.values():
+                    if m.match_nslc(tr.nslc_id):
+                        t = m.tmin
+                        x = [t-red-event.time, t-red-event.time]
+                        y = [y_pos, y_pos+(maxd-mind)*0.05]
+                        label = m.get_label()
+                        ax.plot(x, y, linewidth=1, color='red')
+                        ax.text(x[1],
+                                y[1],
+                                label,
+                                color='red',
+                                fontsize=6,
+                                verticalalignment='top',
+                                horizontalalignment='right')
+        for txt in texts:
+            txt.set_x(xmax)
+        ax.set_ylim([ymin, ymax])
+        ax.set_xlim([xmin, xmax])
+        ax.set_ylabel('Distance [km]')
+        ax.set_xlabel('(red.) Time [s]')
+        self.fig.canvas.draw()
 
     def save(self):
-        pass
+        fn = self.output_filename('Select Filename', 'snuffled_traces.png')
+        self.fig.savefig(fn, pad_inches=0.1, bbox_inches='tight', dpi=320)
 
     def set_center_latlon(self):
         self.lat_c, self.lon_c, self.z_c = self.center_lat_lon(self.get_stations())
