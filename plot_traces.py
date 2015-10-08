@@ -30,7 +30,7 @@ class TracePlotter(Snuffling):
         self.add_parameter(Switch('Include Selected Markers', 'add_markers',  False))
         self.add_parameter(Switch('Fill positive', 'fill_between',  False))
         self.add_parameter(Param(
-            'Reduction Velocity [km/s]', 't_red', 1., 1., 10., low_is_none=True))
+            'Reduction Velocity [km/s]', 't_red', 20., 1., 20., high_is_none=True))
         self.add_parameter(Param(
             'Amplitude Gain', 'yscale', 1., 0.1, 100.))
         self.add_parameter(Choice(
@@ -52,7 +52,8 @@ class TracePlotter(Snuffling):
         traces = [tr for trs in traces for tr in trs]
         stations = []
         for tr in traces:
-            stations.append(viewer.get_station(viewer.station_key(tr)))
+            if tr.nslc_id[:2] in viewer.stations.keys():
+                stations.append(viewer.get_station(viewer.station_key(tr)))
         distances = [ortho.distance_accurate50m(event, s) for s in stations]
         distances = [d/1000. for d in distances]
         maxd = max(distances)
@@ -111,18 +112,22 @@ class TracePlotter(Snuffling):
             texts.append(ax.text(xmax, y_pos, '%s.%s.%s.%s' % tr.nslc_id,
                 horizontalalignment='right', fontsize=6.))
             if self.add_markers:
-                for m in markers.values():
-                    if m.match_nslc(tr.nslc_id):
+                for ids, m in markers.items():
+                    if m.match_nslc(tr.nslc_id) or ids==():
+                        c = m.select_color(m.color_b)
+                        c = [ci/255. for ci in c]
                         t = m.tmin
                         x = [t-red-event.time, t-red-event.time]
-                        y = [y_pos, y_pos+(maxd-mind)*0.05]
-                        ax.plot(x, y, linewidth=1, color='red')
+                        y = [y_pos-(maxd-mind)*0.025, y_pos+(maxd-mind)*0.025]
+                        ax.plot(x, y, linewidth=1, color=c)
                         label = m.get_label()
-                        if label:
-                            ax.text(x[1], y[1], label, color='red',
-                                    fontsize=6,
-                                    verticalalignment='top',
-                                    horizontalalignment='right')
+                        if not label:
+                            label = ''
+
+                        ax.text(x[1]-x[1]*0.005, y[1], label, color=c,
+                                fontsize=6,
+                                verticalalignment='top',
+                                horizontalalignment='right')
         for txt in texts:
             txt.set_x(xmax)
         ax.set_ylim([ymin, ymax])
