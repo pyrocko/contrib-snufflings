@@ -98,8 +98,8 @@ class BeamForming(Snuffling):
             self.set_parameter('slow', self.slow/1000.*onedeg)
 
     def call(self):
-
         self.cleanup()
+        c_station_id = ('_', 'STK')
         if self.unit == 's/deg':
             slow_factor = 1./onedeg
         elif self.unit == 's/km':
@@ -110,7 +110,7 @@ class BeamForming(Snuffling):
             self.add_traces(self.stacked_traces)
         viewer = self.get_viewer()
         if self.station_c:
-            viewer.stations.pop(('', 'STK'))
+            viewer.stations.pop(c_station_id)
 
         stations = self.get_stations()
         if len(stations) == 0:
@@ -130,8 +130,8 @@ class BeamForming(Snuffling):
                                  elevation=float(self.z_c),
                                  depth=0.,
                                  name='Array Center',
-                                 network='',
-                                 station='STK')
+                                 network=c_station_id[0],
+                                 station=c_station_id[1])
 
         viewer.add_stations([self.station_c])
         lat0 = num.array([self.lat_c]*len(stations))
@@ -157,7 +157,7 @@ class BeamForming(Snuffling):
                 tr.resample(min(dts))
 
         for tr in traces:
-            if tr.nslc_id[:3] == ('_', 'STK', ''):
+            if tr.nslc_id[:2] == c_station_id:
                 continue
             tr = tr.copy(data=True)
             tr.ydata = tr.ydata.astype(num.float64)
@@ -171,8 +171,8 @@ class BeamForming(Snuffling):
                 stack_trace.set_ydata(num.zeros(
                     len(stack_trace.get_ydata())))
 
-                stack_trace.set_codes(network='_',
-                                      station='STK',
+                stack_trace.set_codes(network=c_station_id[0],
+                                      station=c_station_id[1],
                                       location='',
                                       channel=tr.channel)
 
