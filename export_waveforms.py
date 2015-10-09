@@ -1,4 +1,5 @@
 from pyrocko import io
+from pyrocko import model
 from pyrocko.snuffling import Snuffling, NoViewerSet, Choice, Switch
 
 
@@ -21,7 +22,7 @@ class ExportWaveforms(Snuffling):
     </p>
     <p>
     Note that exporting to miniseed requires the network, station, location and
-    channel codes to be of length 2, 5, 2 and 3, respectively. Codes exceeding 
+    channel codes to be of length 2, 5, 2 and 3, respectively. Codes exceeding
     these lenghts will be silently truncated.\br
     In order to have more control on code replacements it is recommended to use
     the command line tool <b>jackseis<b> which is shipped with pyrocko.<br>
@@ -37,6 +38,7 @@ class ExportWaveforms(Snuffling):
         self.add_parameter(Choice('Format', 'format', 'mseed',
                                   ['mseed', 'text', 'sac', 'yaff']))
         self.add_parameter(Switch('Combine', 'combine', False))
+        self.add_parameter(Switch('Save Station Meta', 'save_stations', False))
         self.set_live_update(False)
 
     def call(self):
@@ -80,6 +82,12 @@ class ExportWaveforms(Snuffling):
 
         if self.combine:
             io.save(trs2save, out_filename, format=self.format)
+
+        if self.save_stations:
+            stations = self.get_viewer().stations.values()
+            fn = self.output_filename('Save Stations', 'stations.pf')
+            model.dump_stations(stations, fn)
+
 def __snufflings__():
     return [ExportWaveforms()]
 
