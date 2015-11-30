@@ -141,3 +141,10 @@ In order to improve the visual perception of small wiggles, positive amplitudes 
 file: [plot_traces.py](plot_traces.py)
 
 ![screenshot](screenshots/plot_traces.png)
+
+Spectrogram
+-----------
+
+file: [spectrogram.py](spectrogram.py)
+
+![screenshot](screenshots/spectrogram.png)
