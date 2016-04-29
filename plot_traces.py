@@ -35,7 +35,7 @@ class TracePlotter(Snuffling):
             'Amplitude Gain', 'yscale', 1., 0.1, 100.))
         self.add_parameter(Choice(
             'Pre-scale Amplitudes', 'ampl_scaler', 'trace min/max',
-            ['total min/max', 'trace min/max', '4*standard deviation']))
+            ['total min/max', 'trace min/max', 'standard deviation']))
         self.add_trigger('Save Last Figure', self.save)
         self.set_live_update(False)
         self.fig = None
@@ -65,12 +65,14 @@ class TracePlotter(Snuffling):
             markers = self.get_markers()
             markers = filter(lambda m: m.tmax<=vtmax and m.tmin>=vtmin and m.selected, markers)
             markers = dict(zip([tuple(m.nslc_ids) for m in markers], markers))
-        if self.fig == None or not self._live_update:
-            new_fig = self.pylab(get='figure')
-            self.fig = new_fig
+
+        if self.fig is None or self.fframe.closed is True or not self._live_update:
+            self.fframe = self.pylab(get='figure_frame')
+            self.fig = self.fframe.gcf()
 
         if self._live_update:
             self.fig.clf()
+
         ymin = mind-0.03*(maxd-mind)
         ymax = maxd+0.03*(maxd-mind)
         ax = self.fig.add_subplot(111)
@@ -103,8 +105,8 @@ class TracePlotter(Snuffling):
             tr_ydata = tr.get_ydata()
             if self.ampl_scaler == 'trace min/max':
                 ampl_scale = float(max(abs(tr_ydata)))
-            elif self.ampl_scaler == '4*standard deviation':
-                ampl_scale = 4*float(num.std(tr_ydata))
+            elif self.ampl_scaler == 'standard deviation':
+                ampl_scale = float(num.std(tr_ydata))
             ydata = (tr_ydata/ampl_scale * manual_scale) + y_pos
             ax.plot(xdata, ydata, c='black', linewidth=0.2)
             if self.fill_between:
