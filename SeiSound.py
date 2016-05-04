@@ -19,19 +19,27 @@ except ImportError:
 class MarkerThread(QThread):
     def __init__(self, *args, **kwargs):
         self.viewer = kwargs.pop('viewer', None)
+        self.follow = kwargs.pop('follow', False)
         QThread.__init__(self)
         self.marker = None
         self.media = None
         self.speed_up = 1.
         self.timer = QTimer(self)
+        self.timer.setInterval(100)
         self.connect(self.timer, SIGNAL('timeout()'), self.check_and_update)
         self.previous_state = Phonon.StoppedState
         self.t_stretch = 1.
+        self.time_range = (0., 0.)
 
     def handle_states(self, state):
+        if state == Phonon.PausedState:
+            self.timer.stop()
+
         if state == Phonon.PlayingState:
+            if self.timer.isActive() is False:
+                self.timer.start()
             self.check_and_update()
-        
+
         if state == Phonon.LoadingState:
             pass
 
@@ -39,7 +47,7 @@ class MarkerThread(QThread):
             self.cleanup()
 
         self.previous_state = state
-    
+
     def cleanup(self):
         self.viewer.remove_markers([self.marker])
         self.marker = None
@@ -49,20 +57,21 @@ class MarkerThread(QThread):
     def check_and_update(self):
         if self.marker is None:
             self.marker = self.viewer.selected_markers()[0].copy()
-            self.tstart = self.marker.tmin
-            self.tend = self.marker.tmax
-            self.marker.tmax = self.marker.tmin
+            self.time_range = (self.marker.tmin, self.marker.tmax)
             self.viewer.add_marker(self.marker)
+            self._factor = self.speed_up/(1-self.t_stretch)
+            if self.speed_up<0.:
+                self._start_at = self.time_range[1]
+            else:
+                self._start_at = self.time_range[0]
 
         tcurrent = self.media.currentTime()/1000.
-        if self.speed_up<0:
-            now = self.tend + tcurrent*self.speed_up / (1-self.t_stretch)
-        else:
-            now = self.tstart + tcurrent*self.speed_up / (1-self.t_stretch)
+        now = self._start_at + tcurrent * self._factor
         self.marker.tmin = now
         self.marker.tmax = now
+        if self.follow:
+            self.viewer.go_to_time(self.marker.tmin)
         self.viewer.update()
-        self.timer.start(10)
 
 
 class SeiSound(Snuffling):
@@ -74,22 +83,23 @@ class SeiSound(Snuffling):
     </style>
     </head>
 
-    <h1 align="center">Export Traces to wav-file</h1>
+    <h1 align="center">Listen to your seismic records</h1>
 
     <body>
     <p>
 
     Mark a time range you would like to listen to with an extended marker and press 'Run'.<br>
-    Use the scroll bar to *fast forward* the recording by the chosen factor.<br>
-    Click *Apply Main Control Filter* if you simply want to accept the main<br>
-    control filter settings, or choose a different setting using the scroll bars.
+    Use the scroll bar to <b>fast forward</b> the recording by the chosen factor.<br>
+    Click <b>Apply Main Control Filter</b> if you want to adopt the main<br>
+    control filter settings or choose a different setting using the scroll bars.
     <p>
     Note, that this snuffling requires PyQt4's Phonon module to be installed.<br>
     You can try installing it through your distributions package manager. On
     Ubuntu/Debian:
-    <p>
+    <b><pre>
     sudo apt-get install python-qt4-phonon
-    </p>
+    </pre></b>
+    <p>
     Due to performance reasons of the resampling, the fast forward factor is
     rounded to one decimal place.
     </body>
@@ -109,6 +119,7 @@ class SeiSound(Snuffling):
 
         self.add_parameter(Param('Fader [percentage]', 'tfade', 5, 0., 50.))
         self.add_parameter(Param('Volume', 'volume', 60., 0., 100.))
+        self.add_parameter(Switch('Follow', 'follow', False))
         self.add_trigger('Pause/Play', self.pause_play)
         self.add_trigger('Stop', self.stop_play)
         self.add_trigger('Apply Main Control Filters', self.set_from_main)
@@ -127,7 +138,7 @@ class SeiSound(Snuffling):
         if self.marker_thread is not None:
             self.marker_thread.cleanup()
         self.cleanup()
-    
+
     def call(self):
         self.my_cleanup()
         self.viewer = self.get_viewer()
@@ -135,7 +146,7 @@ class SeiSound(Snuffling):
             self.warn(self.no_phonon_warn)
             self.export_wav()
         else:
-            self.marker_thread = MarkerThread(viewer=self.viewer)
+            self.marker_thread = MarkerThread(viewer=self.viewer, follow=self.follow)
             if self.m_media.state() == Phonon.PlayingState:
                 self.m_media.stop()
                 self.marker_thread.cleanup()
@@ -168,11 +179,11 @@ class SeiSound(Snuffling):
     def play_phonon(self):
         self.nslc_ids, data = self.prepare_data()
         tmpfile = tempfile.mkstemp(dir=self._tmpdir, suffix='.wav')[1]
+        #tmpfile = '/tmp/test.wav'
         self.export_wav(data=data, fn=tmpfile)
-        if self.output is None:
-            self.output = Phonon.AudioOutput(parent=self._panel_parent)
-        self.output.setVolume(self.volume/100)
-        Phonon.createPath(self.m_media, self.output)
+        output = Phonon.AudioOutput(parent=self._panel_parent)
+        output.setVolume(self.volume/100)
+        Phonon.createPath(self.m_media, output)
         self.m_media.setCurrentSource(Phonon.MediaSource(tmpfile))
         self.marker_thread.media = self.m_media
         self.marker_thread.speed_up = speed_up=num.round(self.speed_up, 1) 
@@ -221,6 +232,8 @@ class SeiSound(Snuffling):
             self.m_media.pause()
         elif state == Phonon.PausedState:
             self.m_media.play()
+        elif state == Phonon.LoadingState:
+            self.call()
         elif state == Phonon.StoppedState:
             self.call()
         else:
