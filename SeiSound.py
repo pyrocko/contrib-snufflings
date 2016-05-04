@@ -1,5 +1,5 @@
 from PyQt4.QtCore import QThread, SIGNAL, QTimer
-from pyrocko.snuffling import Snuffling, Param, Choice, Switch
+from pyrocko.snuffling import Snuffling, Param, Choice, Switch, NoTracesSelected
 import pyrocko.trace as trace
 from pyrocko.trace import CosFader
 from scipy.io.wavfile import write
@@ -142,6 +142,11 @@ class SeiSound(Snuffling):
     def call(self):
         self.my_cleanup()
         self.viewer = self.get_viewer()
+        try:
+            trange = self.get_selected_time_range(fallback=False)
+        except NoTracesSelected:
+            self.fail('no time range selected')
+
         if no_phonon:
             self.warn(self.no_phonon_warn)
             self.export_wav()
@@ -154,9 +159,6 @@ class SeiSound(Snuffling):
 
     def prepare_data(self):
         trange = self.get_selected_time_range()
-        if num.abs(trange[0]-trange[1]) == 0:
-            self.fail('no time range selected')
-
         self.ttotal = float(trange[1]-trange[0])
         ntraces = 1
         nslc_ids = []
