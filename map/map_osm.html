@@ -37,9 +37,9 @@
           this.time = time || 0;
           this.depth = depth || 0;
           this.magnitude = magnitude || 0;
-          this.icon_data = icon_data || magnitude_circle(this);
+          //this.mag_circle = magnitude_circle(this);
       };
-        
+
       function add_kml_layer(map, url){
           var plates = new OpenLayers.Layer.Vector("KML", {
                       projection: map.displayProjection,
@@ -59,32 +59,17 @@
       function myxmlExtractor(xmlDoc){
           deb = xmlDoc.getElementsByTagName("event")
           var events = [];
-          magnitude_max = -999;
-          magnitude_min = 999;
+	  var magnitudes = [];
+
           for (i=0; i<deb.length; i++)
           {
               var lat = deb[i].childNodes[3].firstChild.data;
               var lon = deb[i].childNodes[5].firstChild.data;
               var time = deb[i].childNodes[7].firstChild.data;
               var depth = deb[i].childNodes[11].firstChild.data;
-              try {
-                  var mag = deb[i].childNodes[9].firstChild.data;
-                  var mag = parseFloat(mag) 
-                  if (mag>magnitude_max){
-                    magnitude_max=mag;
-                  }
-                  if (mag<magnitude_min){
-                    magnitude_min=mag;
-                  }
-              }
-              catch (e) {
-                  var mag = 0;
-              }
-              var event = new Event(lat,
-                                    lon,
-                                    time,
-                                    depth,
-                                    mag);
+              var mag = parseFloat(deb[i].childNodes[9].firstChild.data);
+              magnitudes[magnitudes.length] = mag;
+              var event = new Event(lat, lon, time, depth, mag);
 
               events[events.length] = event;
           };
@@ -97,26 +82,9 @@
               var lat = stationElements[i].childNodes[3].firstChild.data;
               var lon = stationElements[i].childNodes[5].firstChild.data;
               stations[stations.length] = new Station(lat, lon, nsl);
-          } 
-          return [stations, events];
-      };
-
-
-      function magnitude_circle(ev){
-          var lonlat = get_transformed_lonlat(ev)
-          var p = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
-          if (magnitude_min==magnitude_max){
-              var size = 2000;}
-          else{
-              var size = 4000*(1+4*((ev.magnitude-magnitude_min)/(magnitude_max-magnitude_min)));
           }
-
-          var circ = OpenLayers.Geometry.Polygon.createRegularPolygon(p,
-                                                size,
-                                                40,
-                                                0);
-          return circ;
-      }
+          return [stations, events, magnitudes];
+      };
 
       function get_transformed_lonlat(item){
           var lonLat = new OpenLayers.LonLat(item.lon, item.lat);
@@ -164,13 +132,43 @@
           map.addLayer(marker_labels)
       };
 
-      function add_event_markers(map, items){
-          var vectorLayer = new OpenLayers.Layer.Vector("Events");
+      function magnitude_circle_radius(magnitude, magmin, magmax, magshift){
+	  if (magmax==magshift){
+	      return 8;
+	  }
+	  else {
+		  return 2+Math.exp(1.5*(magnitude+magshift-magnitude_min)/(magnitude_max-magnitude_min));
+	  }
+      }
+
+      function add_event_markers(map, items, magmin, magmax){
+	  var vectorLayer = new OpenLayers.Layer.Vector("Events",
+	  {
+	      styleMap: new OpenLayers.StyleMap({
+	          "default": new OpenLayers.Style({
+	              pointRadius: "${radius}",
+	              fillColor: '#ff0000',
+	              fillOpacity: 1.0,
+	              strokeColor: '#000000',
+	              strokeWidth: 2,
+	              strokeOpacity: 1.0
+	          })
+	      })
+	  });
+	  if (magmin<0)
+	      magshift = magmin*-1;
+	  else
+	      magshift = 0.
+
           circles = [];
           for (i=0; i<items.length; i++){
               var item = items[i];
-              var icon = item.icon_data;
-              var circle = new OpenLayers.Feature.Vector(icon); 
+	      var rad = magnitude_circle_radius(item.magnitude, magmin, magmax, magshift);
+	      var lonlat = get_transformed_lonlat(item)
+	      var circle = new OpenLayers.Feature.Vector(
+	    		  new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat),
+	    			{radius: rad });
+
               circles[i] = circle;
           };
           vectorLayer.addFeatures(circles);
@@ -192,14 +190,22 @@
           map.addLayer(new OpenLayers.Layer.OSM());
           epsg4326 = new OpenLayers.Projection("EPSG:4326");
           projectTo = map.getProjectionObject();
-          var stations_events = myxmlExtractor(xmlDoc);
-          var stations = stations_events[0];
-          var events = stations_events[1];
-          var event_makers = add_event_markers(map, events);
+          var stations_events_magnitudes = myxmlExtractor(xmlDoc);
+          var stations = stations_events_magnitudes[0];
+          var events = stations_events_magnitudes[1];
+          magnitudes = stations_events_magnitudes[2];
+	  if (magnitudes.length==1){
+		  magnitude_min = 0
+		  magnitude_max = 0
+	  } else {
+		  magnitude_min = Math.min.apply(Math, magnitudes);
+		  magnitude_max = Math.max.apply(Math, magnitudes);
+	  }
+          var event_markers = add_event_markers(map, events, magnitude_min, magnitude_max);
           var station_markers = add_station_markers(map, stations);
           add_station_marker_labels(map, stations);
           //add_kml_layer(map, './plates.kml');
-          zoomToExtent(map, [station_markers, event_makers])
+          zoomToExtent(map, [station_markers, event_markers])
       }
 
 </script>
