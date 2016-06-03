@@ -1,7 +1,8 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <div id="mapdiv"></div>
+  <div id="map"></div>
+  <div id="logger"></div>
   <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
   <script type="text/javascript" src="http://maplib.khtml.org/khtml.maplib/khtml_all.js"> </script>
   <script type="text/javascript" src="loadxmldoc.js"></script>
@@ -31,13 +32,15 @@
           var icon = new OpenLayers.Icon('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAbUlEQVQ4ja3OOwrAMAwDUN0rHXzzHK1dQnGJ68gfgTYhHsDlAjDILZW52hIBcK9Kx+FUh2WlqLMWpdaVlZaupLR0aaWnSyk9XVjJ6EJKRkcrIzpKGdEdlRmdq8zofpUVnams6DZlh+6j7NC9ygd+w8cw2AIG3AAAAABJRU5ErkJggg==', size, offset);
           return icon}
 
+
       function Event(lat, lon, time, depth, magnitude, icon_data){
           this.lat = lat;
           this.lon = lon;
           this.time = time || 0;
           this.depth = depth || 0;
           this.magnitude = magnitude || 0;
-          //this.mag_circle = magnitude_circle(this);
+	  this.get_event_description = function(){
+		  return "Magnitude " + this.magnitude.toFixed(2) + "<br>" + this.time + "<br>depth: " + (this.depth/1000).toFixed(2) + " km"};
       };
 
       function add_kml_layer(map, url){
@@ -71,7 +74,7 @@
               magnitudes[magnitudes.length] = mag;
               var event = new Event(lat, lon, time, depth, mag);
 
-              events[events.length] = event;
+	      events[events.length] = event;
           };
 
           var stations = [];
@@ -142,8 +145,7 @@
       }
 
       function add_event_markers(map, items, magmin, magmax){
-	  var vectorLayer = new OpenLayers.Layer.Vector("Events",
-	  {
+	  var vectorLayer = new OpenLayers.Layer.Vector("Events", {
 	      styleMap: new OpenLayers.StyleMap({
 	          "default": new OpenLayers.Style({
 	              pointRadius: "${radius}",
@@ -151,9 +153,9 @@
 	              fillOpacity: 1.0,
 	              strokeColor: '#000000',
 	              strokeWidth: 2,
-	              strokeOpacity: 1.0
-	          })
-	      })
+	              strokeOpacity: 1.0})
+	      }),
+	      eventListeners: layerListeners
 	  });
 	  if (magmin<0)
 	      magshift = magmin*-1;
@@ -164,10 +166,9 @@
           for (i=0; i<items.length; i++){
               var item = items[i];
 	      var rad = magnitude_circle_radius(item.magnitude, magmin, magmax, magshift);
-	      var lonlat = get_transformed_lonlat(item)
-	      var circle = new OpenLayers.Feature.Vector(
-	    		  new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat),
-	    			{radius: rad });
+	      var lonlat = get_transformed_lonlat(item);
+	      var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
+	      var circle = new OpenLayers.Feature.Vector(point, {radius: rad, description: item.get_event_description()});
 
               circles[i] = circle;
           };
@@ -184,10 +185,30 @@
           map.zoomToExtent(bounds);
       }
 
-
       function init() {
-          map = new OpenLayers.Map("mapdiv");
-          map.addLayer(new OpenLayers.Layer.OSM());
+	  map = new OpenLayers.Map({
+			div: "map",
+			allOverlays: true,
+			layers: [new OpenLayers.Layer.OSM()],
+	  });
+          layerListeners = {
+  	    featureclick: function(e) {
+                var popup = new OpenLayers.Popup.FramedCloud("popup",
+                                    OpenLayers.LonLat.fromString(e.feature.geometry.toShortString()),
+                                    null,
+				    "<div style='font-size:.8em'>Event:<br>" + e.feature.attributes.description+"</div>",
+                                    null,
+                                    true
+                                );
+                                e.feature.popup = popup;
+                                map.addPopup(popup);
+  		return false;
+  	    },
+  	    //featureunselected: function(e) {
+            //    map.removePopup(e.feature.popup);
+            //    e.feature.popup.destroy();
+            //    e.feature.popup = null; }
+  	  };
           epsg4326 = new OpenLayers.Projection("EPSG:4326");
           projectTo = map.getProjectionObject();
           var stations_events_magnitudes = myxmlExtractor(xmlDoc);
@@ -208,6 +229,14 @@
           zoomToExtent(map, [station_markers, event_markers])
       }
 
+
+	 function log(msg) {
+	      if (!log.timer) {
+		  logger.innerHTML = "";
+		  log.timer = window.setTimeout(function() {delete log.timer;}, 100);
+				          }
+	          logger.innerHTML += msg + "<br>";
+	 }
 </script>
 </head>
 <body topmargin="0" leftmargin="0" marginheight="0" marginwidth="0" onload="init()">
