@@ -1,8 +1,6 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <div id="map"></div>
-  <div id="logger"></div>
   <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
   <script type="text/javascript" src="http://maplib.khtml.org/khtml.maplib/khtml_all.js"> </script>
   <script type="text/javascript" src="loadxmldoc.js"></script>
@@ -39,30 +37,25 @@
           this.time = time || 0;
           this.depth = depth || 0;
           this.magnitude = magnitude || 0;
-	  this.get_event_description = function(){
-		  return "Magnitude " + this.magnitude.toFixed(2) + "<br>" + this.time + "<br>depth: " + (this.depth/1000).toFixed(2) + " km"};
-      };
+	      this.get_event_description = function(){
+			  return "Magnitude " + this.magnitude.toFixed(2) + "<br>" + this.time + "<br>depth: " + (this.depth/1000).toFixed(2) + " km"};
 
-      function add_kml_layer(map, url){
-          var plates = new OpenLayers.Layer.Vector("KML", {
-                      projection: map.displayProjection,
-                      strategies: [new OpenLayers.Strategy.Fixed()],
-                      protocol: new OpenLayers.Protocol.HTTP({
-                          url: url,
-                          format: new OpenLayers.Format.KML({
-                              extractStyles: true, 
-                              extractAttributes: true,
-                              maxDepth: 2
-                          })
-                      })
-                  })
-          map.addLayer(plates)
-      }
+		  this.get_fill_color = function(depth_min, depth_max){
+			  if (depth_min==depth_max)
+			  	scale = 0.5;
+			  else
+				var scale = (this.depth-depth_min)/(depth_max-depth_min);
+			  var r = parseInt(255 * scale);
+				var b = parseInt(255 * (1-scale));
+				return 'rgba(' + r + ',0,'+ b + ',0.5)';
+		  }
+      };
 
       function myxmlExtractor(xmlDoc){
           deb = xmlDoc.getElementsByTagName("event")
           var events = [];
 	  var magnitudes = [];
+	  var depths = [];
 
           for (i=0; i<deb.length; i++)
           {
@@ -72,6 +65,7 @@
               var depth = deb[i].childNodes[11].firstChild.data;
               var mag = parseFloat(deb[i].childNodes[9].firstChild.data);
               magnitudes[magnitudes.length] = mag;
+              depths[depths.length] = depth;
               var event = new Event(lat, lon, time, depth, mag);
 
 	      events[events.length] = event;
@@ -86,7 +80,7 @@
               var lon = stationElements[i].childNodes[5].firstChild.data;
               stations[stations.length] = new Station(lat, lon, nsl);
           }
-          return [stations, events, magnitudes];
+          return [stations, events, magnitudes, depths];
       };
 
       function get_transformed_lonlat(item){
@@ -140,20 +134,20 @@
 	      return 8;
 	  }
 	  else {
-		  return 2+Math.exp(1.5*(magnitude+magshift-magnitude_min)/(magnitude_max-magnitude_min));
+		  return 2.+Math.exp(2.*(magnitude+magshift-magnitude_min)/(magnitude_max-magnitude_min));
 	  }
       }
 
-      function add_event_markers(map, items, magmin, magmax){
+      function add_event_markers(map, items, magmin, magmax, depth_min, depth_max){
 	  var vectorLayer = new OpenLayers.Layer.Vector("Events", {
 	      styleMap: new OpenLayers.StyleMap({
 	          "default": new OpenLayers.Style({
 	              pointRadius: "${radius}",
-	              fillColor: '#ff0000',
+				  fillColor: '${fill_color}',
 	              fillOpacity: 1.0,
 	              strokeColor: '#000000',
-	              strokeWidth: 2,
-	              strokeOpacity: 1.0})
+	              strokeWidth: 1,
+	              strokeOpacity: 1.})
 	      }),
 	      eventListeners: layerListeners
 	  });
@@ -167,10 +161,13 @@
               var item = items[i];
 	      var rad = magnitude_circle_radius(item.magnitude, magmin, magmax, magshift);
 	      var lonlat = get_transformed_lonlat(item);
-	      var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
-	      var circle = new OpenLayers.Feature.Vector(point, {radius: rad, description: item.get_event_description()});
+		  var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
+		  var c = item.get_fill_color(depth_min, depth_max);
+		  var circle = new OpenLayers.Feature.Vector(point, {
+		  					radius: rad, description: item.get_event_description(),
+		  					fill_color: item.get_fill_color(depth_min, depth_max)});
 
-              circles[i] = circle;
+            circles[i] = circle;
           };
           vectorLayer.addFeatures(circles);
           map.addLayer(vectorLayer);
@@ -184,15 +181,35 @@
           }
           map.zoomToExtent(bounds);
       }
+	  function toggle_plate_boundaries(box){
+		if (box.checked)
+		    plate_boundaries.setVisibility(true);
+		else
+		    plate_boundaries.setVisibility(false);
+	  }
+			
+	  function init() {
 
-      function init() {
+        plate_boundaries = new OpenLayers.Layer.Vector("KML", {
+            strategies: [new OpenLayers.Strategy.Fixed()],
+            protocol: new OpenLayers.Protocol.HTTP({
+                url: "https://raw.githubusercontent.com/emolch/contrib-snufflings/master/map/plates.kml",
+                format: new OpenLayers.Format.KML({
+                    extractStyles: true, 
+                    extractAttributes: true,
+                    maxDepth: 2
+                })
+            })
+        })
+	  plate_boundaries.setVisibility(false);
 	  map = new OpenLayers.Map({
 			div: "map",
 			allOverlays: true,
-			layers: [new OpenLayers.Layer.OSM()],
-	  });
-          layerListeners = {
-  	    featureclick: function(e) {
+			layers: [new OpenLayers.Layer.OSM(), plate_boundaries],
+			});
+
+      layerListeners = {
+  	  featureclick: function(e) {
                 var popup = new OpenLayers.Popup.FramedCloud("popup",
                                     OpenLayers.LonLat.fromString(e.feature.geometry.toShortString()),
                                     null,
@@ -204,28 +221,31 @@
                                 map.addPopup(popup);
   		return false;
   	    },
-  	    //featureunselected: function(e) {
-            //    map.removePopup(e.feature.popup);
-            //    e.feature.popup.destroy();
-            //    e.feature.popup = null; }
   	  };
+
           epsg4326 = new OpenLayers.Projection("EPSG:4326");
           projectTo = map.getProjectionObject();
-          var stations_events_magnitudes = myxmlExtractor(xmlDoc);
-          var stations = stations_events_magnitudes[0];
-          var events = stations_events_magnitudes[1];
-          magnitudes = stations_events_magnitudes[2];
+          var data = myxmlExtractor(xmlDoc);
+          var stations = data[0];
+          var events = data[1];
+          var magnitudes = data[2];
+		  var depths = data[3];
 	  if (magnitudes.length==1){
-		  magnitude_min = 0
-		  magnitude_max = 0
+		  magnitude_min = 0;
+		  magnitude_max = 0;
+		  depth_min = 10;
+		  depth_max = 10;
 	  } else {
 		  magnitude_min = Math.min.apply(Math, magnitudes);
 		  magnitude_max = Math.max.apply(Math, magnitudes);
+		  depth_min = Math.min.apply(Math, depths);
+		  depth_max = Math.max.apply(Math, depths);
 	  }
-          var event_markers = add_event_markers(map, events, magnitude_min, magnitude_max);
+          var event_markers = add_event_markers(map, events, magnitude_min, magnitude_max, depth_min, depth_max);
           var station_markers = add_station_markers(map, stations);
           add_station_marker_labels(map, stations);
-          //add_kml_layer(map, './plates.kml');
+
+
           zoomToExtent(map, [station_markers, event_markers])
       }
 
@@ -240,4 +260,32 @@
 </script>
 </head>
 <body topmargin="0" leftmargin="0" marginheight="0" marginwidth="0" onload="init()">
+<div id="map", style="position: absolute; 
+                                left: 0px; 
+                                right:0px; 
+                                bottom: 0px; 
+                                top: 0px;"></div>
+<div id="controls", style="background-color: white; 
+                    opacity: 0.8; 
+                    position: absolute; 
+                    left: 0px; 
+                    right:0px; 
+                    bottom: 0px; 
+                    text-align:center; ">
+            <form action="readXml.html">
+                <!--Stations: <input type='checkbox' 
+                                id='stationbox' 
+                                onclick="boxclick(this, 'stationmarker')" 
+                                checked="checked"/> &nbsp;&nbsp;
+                Magnitude Circles: <input type='checkbox' 
+                                id='magnitudebox' 
+                                onclick="boxclick(this, 'magnitudecircle')" 
+                                /> &nbsp;&nbsp;-->
+                Plate Boundaries: <input type='checkbox' 
+                                id='platebox' 
+                                onclick="toggle_plate_boundaries(this)" 
+                                 /> &nbsp;&nbsp;
+				<!--lat lon: <span id="mouse-position"></span>-->
+</div>
+<div id="logger"></div>
 </body></html>
