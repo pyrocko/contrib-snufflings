@@ -20,8 +20,6 @@ class Ahfullgreen(Snuffling):
         '''Customization of the snuffling.'''
         self.set_name('Ahfullgreen')
         self.add_parameter(Param('Time', 'time', 0.0, -50., 50.))
-        #self.add_parameter(Param('Latitude', 'lat', 0.0, -90., 90.))
-        #self.add_parameter(Param('Longitude', 'lon', 0.0, -180., 180.))
         self.add_parameter(Param('North shift [km]', 'north_km', 10.0, -100., 100.))
         self.add_parameter(Param('East shift [km]', 'east_km', 10.0, -100., 100.))
         self.add_parameter(Param('Depth', 'depth_km', 10.0, 0.0, 600.0))
@@ -37,12 +35,13 @@ class Ahfullgreen(Snuffling):
         self.add_parameter(Param('tau', 'tau', 0.1, 0.0, 2.0))
 
         self.add_parameter(Choice(
-            'source shape', 'stf', 'Gauss', ['Gauss', 'Impulse', 'Step']))
+            'source shape', 'stf', 'Impulse', ['Gauss', 'Impulse']))
         self.add_parameter(Choice(
             'Waveform type', 'quantity', 'Displacement [m]',
             ['Displacement [m]', 'Velocity [m/s]', 'Acceleration [m/s2]']))
-        self.add_parameter(Switch('near field', 'nf', True))
-        self.add_parameter(Switch('far field', 'ff', True))
+        self.add_parameter(Switch('near field', 'n_f', True))
+        self.add_parameter(Switch('intermediate field', 'i_f', True))
+        self.add_parameter(Switch('far field', 'f_f', True))
         self.add_trigger('Set Params from Event', self.mechanism_from_event)
 
         self.offline_config = None
@@ -56,8 +55,6 @@ class Ahfullgreen(Snuffling):
         deltat = 0.001
         if self.stf == 'Gauss':
             stf = Gauss(self.tau)
-        elif self.stf == 'Step':
-            stf = Step()
         elif self.stf == 'Impulse':
             stf = Impulse()
 
@@ -96,22 +93,24 @@ class Ahfullgreen(Snuffling):
             strike=source.strike, dip=source.dip, rake=source.rake,
             magnitude=source.magnitude)
 
+        integration = trace.IntegrationResponse()
         traces = []
         for station in stations:
             xyz = (self.north_km*km, self.east_km*km, self.depth_km*km)
             r = num.sqrt(xyz[0]**2 + xyz[1]**2 + xyz[2]**2)
-            ns = math.ceil(r/self.vp)*10
+            ns = math.ceil(r/self.vs*0.75)*2.+2./deltat
             outs = [num.zeros(int(ns)), num.zeros(int(ns)), num.zeros(int(ns))]
             nsl = station.nsl()
             quantity = self.quantity.split()[0].lower()
             add_seismogram(
                 self.vp*km, self.vs*km, self.density, self.qp, self.qs, xyz, f,
                 mt.m6(), quantity, 0.001, 0., outs[0], outs[1], outs[2],
-                stf=stf, nf=self.nf, ff=self.ff)
+                stf=stf, n_f=self.n_f, i_f=self.i_f, f_f=self.f_f)
 
             for channel, out in zip('NEZ', outs):
                 tr = trace.Trace('', station.station, '', channel, deltat=deltat,
                                  tmin=source.time, ydata=out)
+                tr = tr.transfer(2., (0.02, 0.04, 4./deltat, 2./deltat), integration)
                 traces.append(tr)
         self.add_traces(traces)
 
