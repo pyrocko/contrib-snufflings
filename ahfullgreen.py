@@ -91,9 +91,8 @@ class Ahfullgreen(Snuffling):
         targets = []
         mt = moment_tensor.MomentTensor(
             strike=source.strike, dip=source.dip, rake=source.rake,
-            magnitude=source.magnitude)
+            magnitude=self.magnitude)
 
-        integration = trace.IntegrationResponse()
         traces = []
         for station in stations:
             xyz = (self.north_km*km, self.east_km*km, self.depth_km*km)
@@ -110,7 +109,6 @@ class Ahfullgreen(Snuffling):
             for channel, out in zip('NEZ', outs):
                 tr = trace.Trace('', station.station, '', channel, deltat=deltat,
                                  tmin=source.time, ydata=out)
-                tr = tr.transfer(2., (0.02, 0.04, 4./deltat, 2./deltat), integration)
                 traces.append(tr)
         self.add_traces(traces)
 
