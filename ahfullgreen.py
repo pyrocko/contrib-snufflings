@@ -23,10 +23,12 @@ class Ahfullgreen(Snuffling):
         self.add_parameter(Param('North shift [km]', 'north_km', 10.0, -100., 100.))
         self.add_parameter(Param('East shift [km]', 'east_km', 10.0, -100., 100.))
         self.add_parameter(Param('Depth', 'depth_km', 10.0, 0.0, 600.0))
-        self.add_parameter(Param('Magnitude', 'magnitude', 6.0, 0.0, 10.0))
+        self.add_parameter(Param('Moment', 'moment', 1., 1., 1E10))
         self.add_parameter(Param('Strike', 'strike', 0., -180., 180.))
         self.add_parameter(Param('Dip', 'dip', 90., 0., 90.))
         self.add_parameter(Param('Rake', 'rake', 0., -180., 180.))
+        self.add_parameter(Param('sampling rate [Hz]', 'fsampling', 1000., 1.,
+                                 10000.0))
         self.add_parameter(Param('vp [km/s]', 'vp', 6.0, 0.0, 10.0))
         self.add_parameter(Param('vs [km/s]', 'vs', 3.0, 0.0, 10.0))
         self.add_parameter(Param('Density [kg/m3]', 'density', 3000. , 0.0, 10000.0))
@@ -39,9 +41,9 @@ class Ahfullgreen(Snuffling):
         self.add_parameter(Choice(
             'Waveform type', 'quantity', 'Displacement [m]',
             ['Displacement [m]', 'Velocity [m/s]', 'Acceleration [m/s2]']))
-        self.add_parameter(Switch('near field', 'n_f', True))
-        self.add_parameter(Switch('intermediate field', 'i_f', True))
-        self.add_parameter(Switch('far field', 'f_f', True))
+        self.add_parameter(Switch('near field', 'want_near', True))
+        self.add_parameter(Switch('intermediate field', 'want_intermediate', True))
+        self.add_parameter(Switch('far field', 'want_far', True))
         self.add_trigger('Set Params from Event', self.mechanism_from_event)
 
         self.offline_config = None
@@ -52,7 +54,7 @@ class Ahfullgreen(Snuffling):
         olat = 0.
         olon = 0.
         f = (0., 0., 0.)
-        deltat = 0.001
+        deltat = 1./self.fsampling
         if self.stf == 'Gauss':
             stf = Gauss(self.tau)
         elif self.stf == 'Impulse':
@@ -78,7 +80,7 @@ class Ahfullgreen(Snuffling):
             north_shift=self.north_km*km,
             east_shift=self.east_km*km,
             depth=self.depth_km*km,
-            magnitude=self.magnitude,
+            magnitude=moment_tensor.moment_to_magnitude(self.moment),
             strike=self.strike,
             dip=self.dip,
             rake=self.rake)
@@ -89,24 +91,31 @@ class Ahfullgreen(Snuffling):
         self.add_marker(m)
 
         targets = []
+
         mt = moment_tensor.MomentTensor(
-            strike=source.strike, dip=source.dip, rake=source.rake,
-            magnitude=self.magnitude)
+            strike=source.strike,
+            dip=source.dip,
+            rake=source.rake,
+            moment=self.moment)
 
         traces = []
         for station in stations:
             xyz = (self.north_km*km, self.east_km*km, self.depth_km*km)
             r = num.sqrt(xyz[0]**2 + xyz[1]**2 + xyz[2]**2)
-            ns = math.ceil(r/self.vs*0.75)*2.+2./deltat
-            outs = [num.zeros(int(ns)), num.zeros(int(ns)), num.zeros(int(ns))]
+            ns = math.ceil(r/self.vs/1.6)*2
+            outx = num.zeros(int(ns))
+            outy = num.zeros(int(ns))
+            outz = num.zeros(int(ns))
             nsl = station.nsl()
             quantity = self.quantity.split()[0].lower()
             add_seismogram(
                 self.vp*km, self.vs*km, self.density, self.qp, self.qs, xyz, f,
-                mt.m6(), quantity, 0.001, 0., outs[0], outs[1], outs[2],
-                stf=stf, n_f=self.n_f, i_f=self.i_f, f_f=self.f_f)
+                mt.m6(), quantity, deltat, 0., outx, outy, outz,
+                stf=stf, want_near=self.want_near,
+                want_intermediate=self.want_intermediate,
+                want_far=self.want_far)
 
-            for channel, out in zip('NEZ', outs):
+            for channel, out in zip('NEZ', [outx, outy, outz]):
                 tr = trace.Trace('', station.station, '', channel, deltat=deltat,
                                  tmin=source.time, ydata=out)
                 traces.append(tr)
