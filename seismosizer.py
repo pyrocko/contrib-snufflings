@@ -117,8 +117,8 @@ class Seismosizer(Snuffling):
             rake=self.rake,
             length=self.length,
             width=self.width,
-            nucleation_x=self.nucleation_x,
-            risetime=self.risetime)
+            nucleation_x=self.nucleation_x)
+            #risetime=self.risetime)
 
         source.regularize()
 
