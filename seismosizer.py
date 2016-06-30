@@ -12,10 +12,12 @@ class Seismosizer(Snuffling):
 
     def __init__(self):
         Snuffling.__init__(self)
-
+        self.stf_types = ['half sin', 'triangular', 'boxcar', 'None']
+        self.stf_instances = [gf.HalfSinusoidSTF(), gf.TriangularSTF(),
+                              gf.BoxcarSTF(), None]
     def setup(self):
         '''Customization of the snuffling.'''
-        
+
         self.set_name('Seismosizer')
         self.add_parameter(Param('Time', 'time', 0.0, -50., 50.))
         #self.add_parameter(Param('Latitude', 'lat', 0.0, -90., 90.))
@@ -30,10 +32,15 @@ class Seismosizer(Snuffling):
         self.add_parameter(Param('Length', 'length', 0., 0., 1000*km))
         self.add_parameter(Param('Width', 'width', 0., 0., 500*km))
         self.add_parameter(Param('Nucleation X', 'nucleation_x', -1., -1., 1.))
-        self.add_parameter(Param('Rise-time', 'risetime', 0.0, 0.0, 20.0))
+        self.add_parameter(Param('Rupture velocity', 'velocity', 3500.0, 0.0, 5000.0))
+        self.add_parameter(Param('STF duration', 'stf_duration', 0., 0., 20.))
+        self.add_parameter(
+            Choice('STF type', 'stf_type', self.stf_types[0], self.stf_types))
         self.add_parameter(Choice('GF Store', 'store_id', '<not loaded yet>', ['<not loaded yet>']))
-        
-        self.add_parameter(Choice('Waveform type', 'waveform_type', 'Displacement', ['Displacement [m]', 'Displacement [nm]', 'Velocity [m/s]', 'Velocity [nm/s]']))
+        self.add_parameter(
+            Choice('Waveform type', 'waveform_type', 'Displacement',
+                   ['Displacement [m]', 'Displacement [nm]', 'Velocity [m/s]',
+                    'Velocity [nm/s]']))
 
         self.add_trigger('Set Engine', self.set_engine)
         self.add_trigger('Set Params from Event', self.mechanism_from_event)
@@ -52,7 +59,8 @@ class Seismosizer(Snuffling):
         self._engine = None
         self.store_ids = self.get_store_ids()
         if self.store_ids==[]:
-            return 
+            return
+
         self.set_parameter_choices('store_id', self.store_ids)
         self.store_id = self.store_ids[0]
 
@@ -64,7 +72,14 @@ class Seismosizer(Snuffling):
 
     def get_store_ids(self):
         return self.get_engine().get_store_ids()
-        
+
+    def get_stf(self):
+        stf = dict(zip(self.stf_types, self.stf_instances))[self.stf_type]
+        if stf is not None:
+            stf.duration = self.stf_duration
+
+        return stf
+
     def call(self):
         '''Main work routine of the snuffling.'''
         self.cleanup()
@@ -117,8 +132,9 @@ class Seismosizer(Snuffling):
             rake=self.rake,
             length=self.length,
             width=self.width,
-            nucleation_x=self.nucleation_x)
-            #risetime=self.risetime)
+            nucleation_x=self.nucleation_x,
+            velocity=self.velocity,
+            stf=self.get_stf())
 
         source.regularize()
 
