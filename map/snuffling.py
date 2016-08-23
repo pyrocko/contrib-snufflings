@@ -168,7 +168,6 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
         event_station_list.validate()
 
         tempdir = tempfile.mkdtemp(dir=self.tempdir())
-
         if self.map_kind == 'Google Maps':
             map_fn = 'map_googlemaps.html'
         elif self.map_kind == 'OpenStreetMap':
@@ -176,7 +175,7 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
 
         url = 'file://' + tempdir + '/' + map_fn
 
-        for entry in ['loadxmldoc.js', map_fn]:
+        for entry in ['loadxmldoc.js', 'plates.kml', map_fn]:
             if cli_mode:
                 snuffling_dir = os.environ['HOME']+'/.snufflings/map/'
             else:
