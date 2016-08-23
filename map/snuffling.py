@@ -1,15 +1,15 @@
-import subprocess
 import os
 import tempfile
 import shutil
-from pyrocko.snuffling import Snuffling, Param, Switch, Choice, NoViewerSet
-from pyrocko import util, gui_util, guts, model
-from xmlMarker import (XMLEventMarker, EventMarkerList, XMLStationMarker,
-    StationMarkerList, MarkerLists, dump_xml)
-from PyQt4.QtCore import QUrl 
+from pyrocko.snuffling import Snuffling, Switch, Choice, NoViewerSet
+from pyrocko import util, gui_util, model
+from xmlMarker import XMLEventMarker, EventMarkerList, XMLStationMarker
+from xmlMarker import StationMarkerList, MarkerLists, dump_xml
+from PyQt4.QtCore import QUrl
 from PyQt4.QtGui import QDesktopServices
 
 g_counter = 0
+
 
 def get_magnitude(event):
     if event.magnitude:
@@ -19,6 +19,7 @@ def get_magnitude(event):
     else:
         mag = 0.
     return float(mag)
+
 
 def convert_event_marker(marker):
     ev = marker.get_event()
@@ -31,25 +32,26 @@ def convert_event_marker(marker):
     if depth is None:
         depth = 0.0
     ev_name = ev.name if ev.name else '(Event)'
-    xmleventmarker = XMLEventMarker(eventname=ev_name,
-                            longitude=float(ev.lon),
-                            latitude=float(ev.lat),
-                            origintime=util.time_to_str(ev.time),
-                            depth=float(depth),
-                            magnitude=float(get_magnitude(ev)),
-                            active=['no', 'yes'][marker._active])
+    xmleventmarker = XMLEventMarker(
+        eventname=ev_name,
+        longitude=float(ev.lon),
+        latitude=float(ev.lat),
+        origintime=util.time_to_str(ev.time),
+        depth=float(depth),
+        magnitude=float(get_magnitude(ev)),
+        active=['no', 'yes'][marker._active])
 
     return xmleventmarker
+
 
 class MapMaker(Snuffling):
     '''
     <html>
     <body>
     <h1>Map event and stations with OpenStreetMap or Google Maps</h1>
-
     <p>
     Invokes the standard browser if "Open in external browser" is selected.
-    Some browsers do not allow javascript to open and read the xml-file 
+    Some browsers do not allow javascript to open and read the xml-file
     containing the necessary information due to the "Same-Origin-Policy".
     In that case you need to reset your standard browser. I.e.: Firefox on
     Linux do: <tt>xdg-settings set default-web-browser firefox.desktop</tt>
@@ -59,28 +61,36 @@ class MapMaker(Snuffling):
     plate boundary.
     </p>
     <p>
-    The plate boundary database is based on the work done by Peter Bird, who kindly permitted usage. <br>
-    See: <i>50. Bird, P. (2003) An updated digital model of plate boundaries, Geochemistry Geophysics Geosystems, 4(3), 1027, doi:10.1029/2001GC000252.</i>
-    <br>
-    Also available at 
-    <a href="http://peterbird.name/publications/2003_PB2002/2003_PB2002.htm">http://www.peterbird.name</a>
-    <br>
-    Please note, that in the current implementation the orogens (cross-hatched
-    areas in 
-    <a href="http://peterbird.name/publications/2003_PB2002/Figure_01.gif">figure 1</a>)
-    are not distinguished from plate boundaries.  The orogens are meant to 
-    mark areas where the plate model is known to be incomplete (and/or inapplicable).<br>
-    This matter will be pointed out in future releases of this snuffling. 
-    </p>
+    The plate boundary database is based on the work done by Peter Bird, who
+    kindly permitted usage. <br>
     <p>
     This snuffling can also be called from the command line, if it is stored in
     the default pyrocko location under $HOME/.snufflings<br>
     e.g.:
+    <p>
     <code>
 python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
 --events=events_test.pf
 </code>
-</p>
+    <h2>References</h2>
+    <i>50. Bird, P. (2003) An updated digital model of plate
+    boundaries, Geochemistry Geophysics Geosystems, 4(3), 1027,
+    doi:10.1029/2001GC000252.
+    </i>
+    </p>
+    <br>
+    Also available at
+    <a href="http://peterbird.name/publications/2003_PB2002/2003_PB2002.htm">
+        http://www.peterbird.name</a>
+    <p>
+    Please note, that in the current implementation the orogens (cross-hatched
+    areas in
+    <a href="http://peterbird.name/publications/2003_PB2002/Figure_01.gif">
+    figure 1</a>)
+    are not distinguished from plate boundaries.  The orogens are meant to
+    mark areas where the plate model is known to be incomplete
+    (and/or inapplicable).<br>
+    This matter will be pointed out in future releases of this snuffling.
     </body>
     </html>
     '''
@@ -106,23 +116,23 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
 
         if not cli_mode:
             if self.only_active:
-                active_event, active_stations = \
-                self.get_active_event_and_stations()
+                _, active_stations = \
+                    self.get_active_event_and_stations()
             else:
-                active_event = None
                 active_stations = viewer.stations.values()
         elif cli_mode:
             active_stations = self.stations
 
-        station_list=[]
+        station_list = []
         if active_stations:
             for stat in active_stations:
-                if (viewer and not util.match_nslc(viewer.blacklist, stat.nsl())) or cli_mode:
+                is_blacklisted = util.match_nslc(viewer.blacklist, stat.nsl())
+                if (viewer and not is_blacklisted) or cli_mode:
                     xml_station_marker = XMLStationMarker(
                         nsl='.'.join(stat.nsl()),
-                        longitude = float(stat.lon),
-                        latitude = float(stat.lat),
-                        active = 'yes')
+                        longitude=float(stat.lon),
+                        latitude=float(stat.lat),
+                        active='yes')
 
                     station_list.append(xml_station_marker)
 
@@ -135,14 +145,16 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
                 markers = self.markers
             else:
                 markers = self.get_selected_markers()
-                if len(markers)==0:
+                if len(markers) == 0:
                     tmin, tmax = self.get_selected_time_range(fallback=True)
                     markers = [m for m in viewer.get_markers()
-                               if isinstance(m, gui_util.EventMarker) and\
-                              m.tmin>=tmin and m.tmax<=tmax]
+                               if isinstance(m, gui_util.EventMarker) and
+                               m.tmin >= tmin and m.tmax <= tmax]
 
         ev_marker_list = []
         for m in markers:
+            if not isinstance(m, gui_util.EventMarker):
+                continue
             xmleventmarker = convert_event_marker(m)
             if xmleventmarker is None:
                 continue
@@ -171,7 +183,7 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
                 snuffling_dir = self.module_dir()
 
             shutil.copy(os.path.join(snuffling_dir, entry),
-                    os.path.join(tempdir, entry))
+                        os.path.join(tempdir, entry))
 
         markers_fn = os.path.join(tempdir, 'markers.xml')
         dump_xml(event_station_list, filename=markers_fn)
@@ -185,31 +197,30 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
                 url,
                 name='Map %i (%s)' % (g_counter, self.map_kind))
 
-
     def configure_cli_parser(self, parser):
 
-         parser.add_option(
+        parser.add_option(
             '--events',
             dest='events_filename',
-            default=None, 
+            default=None,
             metavar='FILENAME',
             help='Read markers from FILENAME')
 
-         parser.add_option(
+        parser.add_option(
             '--markers',
             dest='markers_filename',
-            default=None, 
+            default=None,
             metavar='FILENAME',
             help='Read markers from FILENAME')
 
-         parser.add_option(
+        parser.add_option(
             '--stations',
             dest='stations_filename',
             default=None,
             metavar='FILENAME',
             help='Read stations from FILENAME')
 
-         parser.add_option(
+        parser.add_option(
             '--provider',
             dest='map_provider',
             default='google',
@@ -217,14 +228,14 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
 
 
 def __snufflings__():
-    return [ MapMaker() ]
+    return [MapMaker()]
 
 
 if __name__ == '__main__':
     util.setup_logging('map.py', 'info')
     s = MapMaker()
     options, args, parser = s.setup_cli()
-    s.markers = [] 
+    s.markers = []
 
     if options.stations_filename:
         stations = model.load_stations(options.stations_filename)
