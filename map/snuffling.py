@@ -22,7 +22,12 @@ def get_magnitude(event):
 
 def convert_event_marker(marker):
     ev = marker.get_event()
-    depth = ev.depth
+    depth = None
+    if ev is not None:
+        depth = ev.depth
+    else:
+        return None
+
     if depth is None:
         depth = 0.0
     ev_name = ev.name if ev.name else '(Event)'
@@ -139,9 +144,11 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
         ev_marker_list = []
         for m in markers:
             xmleventmarker = convert_event_marker(m)
+            if xmleventmarker is None:
+                continue
             ev_marker_list.append(xmleventmarker)
 
-        event_list=EventMarkerList(events= ev_marker_list)
+        event_list = EventMarkerList(events=ev_marker_list)
         event_station_list = MarkerLists(
             station_marker_list=active_station_list,
             event_marker_list=event_list)
