@@ -300,7 +300,16 @@ class Hyposat(Snuffling):
 
         env = dict(os.environ)
         env['HYPOSAT_DATA'] = self.hyposat_data_dir
-        p = Popen(['hyposat'], env=env, stdout=PIPE)
+        try:
+            p = Popen(['hyposat'], env=env, stdout=PIPE)
+        except OSError as e:
+            import errno
+            if e.errno == errno.ENOENT:
+                self.fail('hyposat not found')
+                return
+            else:
+                raise e
+
         (out, err) = p.communicate()
         os.chdir(old_wd)
 
