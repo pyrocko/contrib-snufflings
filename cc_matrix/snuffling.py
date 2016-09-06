@@ -1,6 +1,4 @@
 import sys
-import matplotlib
-matplotlib.use('Qt4Agg')
 import logging
 import os.path as op
 import numpy as num
