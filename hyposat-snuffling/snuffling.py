@@ -218,6 +218,9 @@ class Hyposat(Snuffling):
 
         viewer = self.get_viewer()
         markers = self.get_selected_markers()
+        if len(markers) == 0:
+            self.fail('No markers selected.')
+
         event = viewer.get_active_event()
 
         if len( viewer.stations) == 0:
