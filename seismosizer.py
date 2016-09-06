@@ -1,7 +1,6 @@
 import numpy as num
 import os 
 
-from PyQt4.QtCore import *
 from pyrocko import moment_tensor, model
 from pyrocko.snuffling import Snuffling, Param, Choice, Switch, EventMarker
 from pyrocko import gf
@@ -9,9 +8,6 @@ from pyrocko import gf
 km = 1000.
 
 class Seismosizer(Snuffling):
-
-    def __init__(self):
-        Snuffling.__init__(self)
 
     def setup(self):
         '''Customization of the snuffling.'''
@@ -33,7 +29,14 @@ class Seismosizer(Snuffling):
         self.add_parameter(Param('Rise-time', 'risetime', 0.0, 0.0, 20.0))
         self.add_parameter(Choice('GF Store', 'store_id', '<not loaded yet>', ['<not loaded yet>']))
         
-        self.add_parameter(Choice('Waveform type', 'waveform_type', 'Displacement', ['Displacement [m]', 'Displacement [nm]', 'Velocity [m/s]', 'Velocity [nm/s]']))
+        self.add_parameter(Choice(
+            'Waveform type', 'waveform_type', 'Displacement [m]', [
+                'Displacement [m]',
+                'Displacement [nm]',
+                'Velocity [m/s]',
+                'Velocity [nm/s]',
+                'Acceleration [m/s^2]',
+                'Acceleration [nm/s^2]']))
 
         self.add_trigger('Set Engine', self.set_engine)
         self.add_trigger('Set Params from Event', self.mechanism_from_event)
@@ -81,7 +84,7 @@ class Seismosizer(Snuffling):
             stations = []
 
         s2c = {}
-        for traces in self.chopper_selected_traces(fallback=True):
+        for traces in self.chopper_selected_traces(fallback=True, mode='visible'):
             for tr in traces:
                 net, sta, loc, cha = tr.nslc_id
                 ns = net, sta
@@ -118,7 +121,7 @@ class Seismosizer(Snuffling):
             length=self.length,
             width=self.width,
             nucleation_x=self.nucleation_x,
-            risetime=self.risetime)
+            stf=gf.HalfSinusoidSTF(effective_duration=self.risetime))
 
         source.regularize()
 
@@ -143,9 +146,10 @@ class Seismosizer(Snuffling):
                     quantity='displacement',
                     lat=station.lat,
                     lon=station.lon,
+                    depth=station.depth,
                     store_id=self.store_id,
                     optimization='enable',
-                    interpolation='multilinear')
+                    interpolation='nearest_neighbor')
 
                 _, bazi = source.azibazi_to(target)
 
@@ -183,7 +187,14 @@ class Seismosizer(Snuffling):
             for tr in traces:
                 tr.set_ydata(num.diff(tr.ydata) / tr.deltat)
 
-        if self.waveform_type.endswith('[nm]') or self.waveform_type.endswith('[nm/s]'):
+        elif self.waveform_type.startswith('Acceleration'):
+            for tr in traces:
+                tr.set_ydata(num.diff(num.diff(tr.ydata)) / tr.deltat**2)
+
+        if self.waveform_type.endswith('[nm]') or \
+                self.waveform_type.endswith('[nm/s]') or \
+                self.waveform_type.endswith('[nm/s^2]'):
+
             for tr in traces:
                 tr.set_ydata(tr.ydata * 1e9)
 
