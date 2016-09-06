@@ -2,7 +2,7 @@
 from pyrocko.snuffling import Snuffling, Switch, Param, Choice
 from pyrocko.pile_viewer import EventMarker, PhaseMarker
 from pyrocko import util, model, orthodrome
-from subprocess import Popen, PIPE, call
+from subprocess import Popen, PIPE, check_call
 import os
 import tempfile
 import math
@@ -177,7 +177,7 @@ class Hyposat(Snuffling):
     '''
     def setup(self):
 
-        self.hyposat_data_dir = pjoin(self._path, 'data')
+        self.hyposat_data_dir = self._path
 
         locreg_models = [os.path.basename(x) for x in glob.glob(
             pjoin(self.hyposat_data_dir, 'model_*.dat'))]
@@ -210,6 +210,8 @@ class Hyposat(Snuffling):
         self.add_parameter(Param('RG group velocity', 'rg_group_velocity',  2.6, 1., 10.))
         self.add_parameter(Switch('Show location plot', 'show_location_plot', False))
         self.set_live_update(False)
+        self.pdf_viewer = 'evince'
+
 
     def call(self):
         '''Main work routine of the snuffling.'''
@@ -439,7 +441,14 @@ class Hyposat(Snuffling):
             fn_plot = pjoin(dir, 'location.pdf')
             p.save(fn_plot)
 
-            call(['evince', fn_plot])
+            try:
+                check_call([self.pdf_viewer, fn_plot])
+
+            except OSError as e:
+                if e.errno == 2:
+                    self.warn('could not open pdf viewer: %s' % self.pdf_viewer)
+                else:
+                    raise e
 
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
