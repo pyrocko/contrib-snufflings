@@ -10,7 +10,7 @@ from grid_topo import setup_vtk_map_actor
 
 class VtkTest(Snuffling):
 
-    ''' Create 3D interactive plots of events and stations using vtk.
+    ''' Create 3D interactive plots of events and stations
 
     This snuffling requires VTK to be installed including Python wrappers.
     On debian using apt-get:
@@ -19,9 +19,10 @@ class VtkTest(Snuffling):
 
     def setup(self):
         self.set_name('VTK 3D-Map')
-        self.add_parameter(Param('Superelevation', 'z_scale', 1., 1., 1000.))
+        self.add_parameter(Param('Vertical exaggeration', 'z_scale', 1., 1., 1000.))
         self.add_parameter(Param(
-            'Topographic decimation', 'z_decimation', 1, 1, 12))
+            'Topographic decimation', 'z_decimation', 1, 1, 12,
+            low_is_none=True))
         self.add_parameter(Switch('Stations', 'want_stations', True))
         self.add_parameter(Switch('Events', 'want_events', True))
         self.add_parameter(Switch('Topography', 'want_topo', True))
@@ -69,12 +70,12 @@ class VtkTest(Snuffling):
 
         return actors
 
-    def events_to_vtksphere_actors(self, data):
+    def events_to_vtksphere_actors(self, data, size=500.):
         actors = []
         for i in xrange(data.GetNumberOfTuples()):
             source = vtk.vtkSphereSource()
             source.SetCenter(*data.GetTuple3(i))
-            source.SetRadius(50)
+            source.SetRadius(size)
             source.Update()
             mapper = vtk.vtkPolyDataMapper()
             mapper.SetInputConnection(source.GetOutputPort())
@@ -89,60 +90,61 @@ class VtkTest(Snuffling):
         self.cleanup()
         stations = []
         events = []
-
-        if self.want_events:
-            markers = self.get_selected_event_markers()
-            if len(markers) != 0:
-                events = [m.get_event() for m in markers]
-
-                ns, es, depths = self.locations_to_ned(events)
-                adata = num.array((es, ns, -depths))
-                adata = adata.flatten(order='F')
-                data = numpy_support.numpy_to_vtk(
-                    adata, deep=True, array_type=vtk.VTK_FLOAT)
-                data.SetNumberOfComponents(3)
-
-                sphere_actors = self.events_to_vtksphere_actors(data)
-            else:
-                sphere_actors = []
+        cone_actors = []
+        sphere_actors = []
 
         if self.want_stations:
             stations = self.get_stations()
-            if len(stations) != 0:
-                ns, es, depths = self.locations_to_ned(stations,
-                                                       has_elevation=True)
-                adata = num.array((es, ns, -depths)).flatten(order='F')
-                data = numpy_support.numpy_to_vtk(
-                    adata, deep=True, array_type=vtk.VTK_FLOAT)
-                data.SetNumberOfComponents(3)
 
-                cone_actors = self.stations_to_vtkcone_actors(data)
-            else:
-                cone_actors = []
+        if self.want_events:
+            markers = self.get_selected_event_markers()
+            events = [m.get_event() for m in markers]
+
+        all_lats = []
+        all_lons = []
+
+        for s in stations:
+            all_lats.append(s.lat)
+            all_lons.append(s.lon)
+
+        for e in events:
+            all_lats.append(e.lat)
+            all_lons.append(e.lon)
+
+        center_lat, center_lon = ortho.geographic_midpoint(
+            num.array(all_lats), num.array(all_lons))
+
+        center_lats = num.array([center_lat]*len(all_lats))
+        center_lons = num.array([center_lon]*len(all_lons))
+        distances = ortho.distance_accurate50m_numpy(
+            num.array(all_lats), num.array(all_lons),
+            center_lats, center_lons)
+        distance_max = num.max(distances)
+        size = distance_max / 50.
+
+        if len(events) != 0:
+            ns, es, depths = self.locations_to_ned(events)
+            adata = num.array((es, ns, -depths))
+            adata = adata.flatten(order='F')
+            data = numpy_support.numpy_to_vtk(
+                adata, deep=True, array_type=vtk.VTK_FLOAT)
+            data.SetNumberOfComponents(3)
+
+            sphere_actors = self.events_to_vtksphere_actors(data, size=size/2.)
+
+        if len(stations) != 0:
+            ns, es, depths = self.locations_to_ned(stations,
+                                                   has_elevation=True)
+            adata = num.array((es, ns, -depths)).flatten(order='F')
+            data = numpy_support.numpy_to_vtk(
+                adata, deep=True, array_type=vtk.VTK_FLOAT)
+            data.SetNumberOfComponents(3)
+
+            cone_actors = self.stations_to_vtkcone_actors(data, size=size)
+
         if self.want_topo:
-
-            all_lats = []
-            all_lons = []
-
-            for s in stations:
-                all_lats.append(s.lat)
-                all_lons.append(s.lon)
-
-            for e in events:
-                all_lats.append(e.lat)
-                all_lons.append(e.lon)
-
-            center_lat, center_lon = ortho.geographic_midpoint(
-                num.array(all_lats), num.array(all_lons))
-
-            center_lats = num.array([center_lat]*len(all_lats))
-            center_lons = num.array([center_lon]*len(all_lons))
-            distances = ortho.distance_accurate50m_numpy(
-                num.array(all_lats), num.array(all_lons),
-                center_lats, center_lons)
-
-            topo_actor = setup_vtk_map_actor(center_lat, center_lon,
-                                             num.max(distances),
+            self.topo_actor = setup_vtk_map_actor(center_lat, center_lon,
+                                             distance_max,
                                              super_elevation=self.z_scale,
                                              decimation=int(self.z_decimation),
                                              smoothing=self.smoothing)
@@ -157,7 +159,8 @@ class VtkTest(Snuffling):
             actor.GetProperty().SetColor(1., 0., 0.)
             frame.add_actor(actor)
 
-        frame.add_actor(topo_actor)
+        if self.topo_actor:
+            frame.add_actor(self.topo_actor)
         frame.renderer.SetBackground(0.1, 0.2, 0.4)
         frame.init()
 
