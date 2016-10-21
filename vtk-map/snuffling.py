@@ -15,6 +15,16 @@ class VtkTest(Snuffling):
     This snuffling requires VTK to be installed including Python wrappers.
     On debian using apt-get:
     apt-get install python-vtk
+
+    You need access to the SRTMGL3 database from
+
+    https://earthdata.nasa.gov
+
+    which requires username and password. If you do not have an account, yet
+    follow the given link and create one. Username and password have
+    to be added to be your ~/.pyrocko/config.pf as follows:
+
+    earthdata_credentials: [username, password]
     '''
 
     def setup(self):
@@ -146,7 +156,8 @@ class VtkTest(Snuffling):
             self.topo_actor = setup_vtk_map_actor(center_lat, center_lon,
                                              distance_max,
                                              super_elevation=self.z_scale,
-                                             decimation=int(self.z_decimation),
+                                             decimation=int(self.z_decimation
+                                                            or 1),
                                              smoothing=self.smoothing)
 
         frame = self.vtk_frame()
