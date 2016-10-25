@@ -6,7 +6,7 @@ try:
     from obspy.signal import array_analysis
     from obspy.imaging.cm import obspy_sequential as cmap
     _obspy = True
-except ImportError as _importError:
+except ImportError as _import_error:
     _obspy = False
 
 from matplotlib.colorbar import ColorbarBase
@@ -103,7 +103,7 @@ class FK(Snuffling):
 
     def call(self):
         if not _obspy:
-            self.fail('ImportError:\n%s'% _importError)
+            self.fail('ImportError:\n%s'% _import_error)
         self.cleanup()
         viewer = self.get_viewer()
 
