@@ -1,8 +1,13 @@
 from pyrocko.snuffling import Param, Snuffling, Choice
 from pyrocko import trace
-from obspy.core import UTCDateTime, stream
-from obspy.signal import array_analysis
-from obspy.imaging.cm import obspy_sequential as cmap
+
+try:
+    from obspy.core import UTCDateTime, stream
+    from obspy.signal import array_analysis
+    from obspy.imaging.cm import obspy_sequential as cmap
+    _obspy = True
+except ImportError as _importError:
+    _obspy = False
 
 from matplotlib.colorbar import ColorbarBase
 from matplotlib.colors import Normalize
@@ -97,7 +102,8 @@ class FK(Snuffling):
         self.set_live_update(False)
 
     def call(self):
-
+        if not _obspy:
+            self.fail('ImportError:\n%s'% _importError)
         self.cleanup()
         viewer = self.get_viewer()
 
