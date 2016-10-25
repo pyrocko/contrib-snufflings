@@ -8,9 +8,12 @@ from pyrocko import moment_tensor, model, catalog, eventdata
 logger = logging.getLogger('seismosizer')
 #logger.setLevel(logging.DEBUG)
 
-from tunguska import seismosizer, gfdb, source, receiver, glue, filtering, misfit, config
-from tunguska.phase import Taper, Timing
-
+try:
+    from tunguska import seismosizer, gfdb, source, receiver, glue, filtering, misfit, config
+    from tunguska.phase import Taper, Timing
+    _tunguska = True
+except ImportError as _import_error:
+    _tunguska = False
 #seismosizer.logger.setLevel(logging.DEBUG)
 
 config.exit_on_fatal = False
@@ -203,7 +206,8 @@ class KiwiSeismosizer(Snuffling):
 
     def call(self):
         '''Main work routine of the snuffling.'''
-
+        if not _tunguska:
+            self.fail('ImportError:\n%s '% _import_error)
         self.cleanup()
         self.adjust_event()
 
