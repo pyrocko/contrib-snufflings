@@ -1,11 +1,14 @@
 import numpy as num
-import vtk
-from vtk.util import numpy_support
+
+try:
+    import vtk
+    from vtk.util import numpy_support
+    from grid_topo import setup_vtk_map_actor
+except ImportError as _import_error:
+    vtk = None
 
 from pyrocko.snuffling import Snuffling, Param, Switch
 from pyrocko import orthodrome as ortho
-
-from grid_topo import setup_vtk_map_actor
 
 
 class VtkTest(Snuffling):
@@ -29,7 +32,8 @@ class VtkTest(Snuffling):
 
     def setup(self):
         self.set_name('VTK 3D-Map')
-        self.add_parameter(Param('Vertical exaggeration', 'z_scale', 1., 1., 1000.))
+        self.add_parameter(Param(
+            'Vertical exaggeration', 'z_scale', 1., 1., 1000.))
         self.add_parameter(Param(
             'Topographic decimation', 'z_decimation', 1, 1, 12,
             low_is_none=True))
@@ -97,6 +101,8 @@ class VtkTest(Snuffling):
         return actors
 
     def call(self):
+        if not vtk:
+            self.fail('\nImportError:\n%s' % _import_error)
         self.cleanup()
         stations = []
         events = []
@@ -153,12 +159,11 @@ class VtkTest(Snuffling):
             cone_actors = self.stations_to_vtkcone_actors(data, size=size)
 
         if self.want_topo:
-            self.topo_actor = setup_vtk_map_actor(center_lat, center_lon,
-                                             distance_max,
-                                             super_elevation=self.z_scale,
-                                             decimation=int(self.z_decimation
-                                                            or 1),
-                                             smoothing=self.smoothing)
+            self.topo_actor = setup_vtk_map_actor(
+                center_lat, center_lon, distance_max,
+                super_elevation=self.z_scale,
+                decimation=int(self.z_decimation or 1),
+                smoothing=self.smoothing)
 
         frame = self.vtk_frame()
 
