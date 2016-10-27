@@ -1,9 +1,6 @@
 from pyrocko.snuffling import Snuffling, Param, Switch, NoViewerSet, Choice
-from pyrocko.trace import Trace
 from pyrocko.pile_viewer import Marker, EventMarker
-from pyrocko import io, trace, util, model
-import numpy as num
-import logging, math
+from pyrocko import io, trace, model
 
 class CorrsearchSnuffling(Snuffling):
     

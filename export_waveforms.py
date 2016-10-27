@@ -1,6 +1,6 @@
 from pyrocko import io, io_common
 from pyrocko import model
-from pyrocko.snuffling import Snuffling, NoViewerSet, Choice, Switch, Param
+from pyrocko.snuffling import Snuffling, Choice, Switch, Param
 
 
 class ExportWaveforms(Snuffling):
@@ -94,7 +94,6 @@ class ExportWaveforms(Snuffling):
             fn = self.output_filename('Save Stations', 'stations.pf')
             model.dump_stations(stations, fn)
 
+
 def __snufflings__():
     return [ExportWaveforms()]
-
-

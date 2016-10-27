@@ -1,12 +1,10 @@
-from pyrocko import pile, trace, util, io
-import sys, os, math, time
+from pyrocko import trace
+import math
 import numpy as num
-from pyrocko.snuffling import Param, Snuffling, Switch, Choice
+from pyrocko.snuffling import Param, Snuffling, Switch
 import scipy.signal as S
 import scipy.stats as SS
-import  scipy.signal.filter_design as F
 
-from scipy import signal
 
 def detrend_data(x_axis,data):
     

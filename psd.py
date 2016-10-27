@@ -1,4 +1,4 @@
-from pyrocko.snuffling import Snuffling, Param, Choice, Switch
+from pyrocko.snuffling import Snuffling, Param, Switch
 import numpy as num
 
 from pyrocko.plot import graph_colors as colors

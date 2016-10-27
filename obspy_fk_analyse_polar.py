@@ -1,5 +1,4 @@
 from pyrocko.snuffling import Param, Snuffling, Choice
-from pyrocko import trace
 
 try:
     from obspy.core import UTCDateTime, stream

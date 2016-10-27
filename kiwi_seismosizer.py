@@ -1,15 +1,16 @@
 
-import re, copy, logging
+import re
+import copy
+import logging
 
-from pyrocko.snuffling import Snuffling, Param, Choice
-from pyrocko.gui_util import Marker, EventMarker
-from pyrocko import moment_tensor, model, catalog, eventdata
+from pyrocko.snuffling import Snuffling, Param
+from pyrocko import model, eventdata
 
 logger = logging.getLogger('seismosizer')
-#logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 try:
-    from tunguska import seismosizer, gfdb, source, receiver, glue, filtering, misfit, config
+    from tunguska import seismosizer, gfdb, source, glue, filtering, misfit, config
     from tunguska.phase import Taper, Timing
     _tunguska = True
 except ImportError as _import_error:

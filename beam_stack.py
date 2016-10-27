@@ -1,4 +1,3 @@
-from mpl_toolkits.mplot3d import Axes3D
 from pyrocko.snuffling import Snuffling, Param, Switch, Choice
 from pyrocko.model import Station, dump_stations
 from pyrocko import orthodrome as ortho

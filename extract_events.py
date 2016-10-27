@@ -1,8 +1,7 @@
-import sys, logging
+import sys
 from pyrocko import util, io
 from pyrocko.snuffling import Snuffling, load_markers, Param, NoViewerSet
 
-logger = logging.getLogger()
 
 default_output_filename = '%(eventname)s_%(network)s.%(station)s.%(location)s.%(channel)s.mseed'
 
@@ -62,6 +61,8 @@ def __snufflings__():
 
 
 if __name__ == '__main__':
+    import logging
+    logger = logging.getLogger()
     util.setup_logging('extract_events.py', 'info')
     s = ExtractEvents()
     options, args, parser = s.setup_cli()

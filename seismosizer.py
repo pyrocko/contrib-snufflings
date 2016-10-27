@@ -1,8 +1,8 @@
 import numpy as num
-import os 
+import os
 
 from pyrocko import moment_tensor, model
-from pyrocko.snuffling import Snuffling, Param, Choice, Switch, EventMarker
+from pyrocko.snuffling import Snuffling, Param, Choice, EventMarker
 from pyrocko import gf
 
 km = 1000.

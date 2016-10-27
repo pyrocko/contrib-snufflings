@@ -1,4 +1,4 @@
-from pyrocko.snuffling import Snuffling, Param, Choice, Switch
+from pyrocko.snuffling import Snuffling, Param
 from pyrocko.gui_util import EventMarker
 from pyrocko.orthodrome import distance_accurate50m as distance
 from pyrocko import util, model
