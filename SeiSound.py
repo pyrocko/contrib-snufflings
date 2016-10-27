@@ -5,7 +5,6 @@ from pyrocko.trace import CosFader
 from scipy.io.wavfile import write
 from scipy.signal import resample
 import numpy as num
-import os
 import tempfile
 
 
