@@ -12,19 +12,21 @@ logger = logging.getLogger('seismosizer')
 try:
     from tunguska import seismosizer, gfdb, source, glue, filtering, misfit, config
     from tunguska.phase import Taper, Timing
+    config.exit_on_fatal = False
     _tunguska = True
+    d2u = source.d2u
+    u2d = source.u2d
+    EventDataToKiwi = glue.EventDataToKiwi
 except ImportError as _import_error:
     _tunguska = False
+    EventDataToKiwi = object
 #seismosizer.logger.setLevel(logging.DEBUG)
 
-config.exit_on_fatal = False
 
 km = 1000.
-d2u = source.d2u
-u2d = source.u2d
 
 
-class EventDataConverter(glue.EventDataToKiwi):
+class EventDataConverter(EventDataToKiwi):
     
     def __init__(self, *args, **kwargs):
         self._gfdb = kwargs.pop('gfdb')
@@ -61,9 +63,10 @@ class KiwiSeismosizer(Snuffling):
         '''Customization of the snuffling.'''
         
         self.set_name('Kiwi Seismosizer (%s)' % self.sourcetype)
-        for pname in source.param_names(self.sourcetype):
-            si = source.source_infos(self.sourcetype)[pname]
-            self.add_parameter(Param('%s [ %s ]:' % (si.name.title(), si.unit), d2u(si.name), si.default, si.soft_min, si.soft_max))
+        if _tunguska:
+            for pname in source.param_names(self.sourcetype):
+                si = source.source_infos(self.sourcetype)[pname]
+                self.add_parameter(Param('%s [ %s ]:' % (si.name.title(), si.unit), d2u(si.name), si.default, si.soft_min, si.soft_max))
 
         self.add_trigger('Configure view settings', self.compare_mode)
         self.add_trigger('Open GFDB...', self.open_gfdb)
@@ -313,5 +316,4 @@ class KiwiSeismosizer(Snuffling):
 
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
-    
     return [ KiwiSeismosizer('moment_tensor'), KiwiSeismosizer('bilateral') ]
