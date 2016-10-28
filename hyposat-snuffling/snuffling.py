@@ -1,13 +1,12 @@
 
 from pyrocko.snuffling import Snuffling, Switch, Param, Choice
 from pyrocko.pile_viewer import EventMarker, PhaseMarker
-from pyrocko import util, model, orthodrome
+from pyrocko import util, model, orthodrome, gmtpy
 from subprocess import Popen, PIPE, check_call
 import os
 import tempfile
 import math
 import glob
-import gmtpy
 import numpy as num
 
 
