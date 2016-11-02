@@ -1,12 +1,5 @@
 import numpy as num
 
-try:
-    import vtk
-    from vtk.util import numpy_support
-    from grid_topo import setup_vtk_map_actor
-except ImportError as _import_error:
-    vtk = None
-
 from pyrocko.snuffling import Snuffling, Param, Switch
 from pyrocko import orthodrome as ortho
 
@@ -37,6 +30,8 @@ class VtkTest(Snuffling):
         self.add_parameter(Param(
             'Topographic decimation', 'z_decimation', 1, 1, 12,
             low_is_none=True))
+        self.add_parameter(Param(
+            'Margin Radius [km]', 'margin_radius', 1, 1, 100))
         self.add_parameter(Switch('Stations', 'want_stations', True))
         self.add_parameter(Switch('Events', 'want_events', True))
         self.add_parameter(Switch('Topography', 'want_topo', True))
@@ -101,8 +96,17 @@ class VtkTest(Snuffling):
         return actors
 
     def call(self):
-        if not vtk:
+        try:
+            global vtk
+            import vtk
+            from vtk.util import numpy_support
+            import sys
+            sys.path[0:0] = [self.module_dir()]
+            from grid_topo import setup_vtk_map_actor
+            sys.path[0:1] = []
+        except ImportError as _import_error:
             self.fail('\nImportError:\n%s' % _import_error)
+            vtk = None
         self.cleanup()
         stations = []
         events = []
@@ -159,6 +163,7 @@ class VtkTest(Snuffling):
             cone_actors = self.stations_to_vtkcone_actors(data, size=size)
 
         if self.want_topo:
+            distance_max += self.margin_radius * 1000
             self.topo_actor = setup_vtk_map_actor(
                 center_lat, center_lon, distance_max,
                 super_elevation=self.z_scale,
