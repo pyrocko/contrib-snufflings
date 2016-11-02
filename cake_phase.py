@@ -27,7 +27,7 @@ class CakePhase(Snuffling):
     </p>
     <p>
     Instructions and information on Cake's syntax of seismic rays can be found in the <a href="http://emolch.github.io/pyrocko/v0.3/cake_doc.html#cmdoption-cake--phase">Cake documentation</a>.
-    
+
     </p>
     </body>
     </html>
@@ -42,17 +42,13 @@ class CakePhase(Snuffling):
 
         for iphase, name in enumerate(self._phase_names):
             self.add_parameter(Switch(name, 'wantphase_%i' % iphase, iphase==0))
-        
 
         self._models = cake.builtin_models()
-        self._engine = gf.LocalEngine(use_config=True)
-        store_ids = self._engine.get_store_ids()
-        self._models.extend(store_ids)
-
         self.model_choice = Choice('Model', 'chosen_model', 
                 'ak135-f-continental.m', self._models)
 
         self.add_parameter(self.model_choice)
+
         self.add_parameter(Param('Global shift', 'tshift', 0., -20., 20.))
         self.add_trigger('Add Phase', self.add_phase_definition)
         self.add_trigger('Add Model', self.add_model_to_choice)
@@ -61,7 +57,14 @@ class CakePhase(Snuffling):
 
         self._phases = {}
         self._model = None
-    
+
+    def panel_visibility_changed(self, bool):
+        if bool:
+            self._engine = gf.LocalEngine(use_config=True)
+            store_ids = self._engine.get_store_ids()
+            self._models.extend(store_ids)
+            self.update_model_choices()
+
     def wanted_phases(self):
         try:
             wanted = []
