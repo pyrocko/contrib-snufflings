@@ -1,4 +1,4 @@
-/*
+/* Modified by Andreas Steinberg, 2016, 11.December
  * Copyright (c) 2010 Gertjan van Zwieten
  * Copyright (c) 2010 Delft University of Technology, The Netherlands
  *
