@@ -36,27 +36,27 @@ class okadaforward(Snuffling):
     def setup(self):
         self.set_name("Geodetic Okada forward modelling")
         self.add_parameter(Param(
-            'Dip', 't_dip', 45., 0., 90.))
+            'Dip [deg.]', 't_dip', 45., 0., 90.))
         self.add_parameter(Param(
-            'Strike', 't_strike', 130., 0.1, 360.))
+            'Strike [deg.]', 't_strike', 130., 0.1, 360.))
         self.add_parameter(Param(
-            'Rake', 't_rake', 120., -180., 180.))
+            'Rake [deg.]', 't_rake', 120., -180., 180.))
         self.add_parameter(Param(
-            'Slip', 't_slip', 1., 0.1, 20.))
+            'Slip [m]', 't_slip', 1., 0.1, 20.))
         self.add_parameter(Param(
-            'Depth of Top edge', 't_ztop', -1.5e3, -50e3, 0.))
+            'Depth of Top edge [m]', 't_ztop', -1.5e3, -50e3, 0.))
         self.add_parameter(Param(
-            'Depth of bottom edge', 't_zbot', -4e3, -50e3, 0.))
+            'Depth of bottom edge [m]', 't_zbot', -4e3, -50e3, 0.))
         self.add_parameter(Param(
-            'Length', 't_length', 10e3, 1, 50e3))
+            'Length [m]', 't_length', 10e3, 1, 50e3))
         self.add_parameter(Param(
-            'Grid extent', 't_ext', 25e3, 10e3, 200e3))
+            'Grid extent [m]', 't_ext', 25e3, 10e3, 200e3))
         self.add_parameter(Param(
-            'X-shift of fault centre from 0', 't_xtrace', 0, 0., 200e3))
+            'X-shift of fault centre from 0 [m]', 't_xtrace', 0, 0., 200e3))
         self.add_parameter(Param(
-            'Y-shfit of fault centre from 0', 't_ytrace', 0, 0., 200e3))
+            'Y-shfit of fault centre from 0 [m]', 't_ytrace', 0, 0., 200e3))
         self.add_parameter(Param(
-            'Wavelength for rewrapping', 't_wavelength', 0.056, 0., 0.325))
+            'Wavelength for rewrapping [m]', 't_wavelength', 0.056, 0., 0.325))
         self.add_parameter(Param(
             'LOS 1', 't_los1', 0.3815, 0., 1.))
         self.add_parameter(Param(
