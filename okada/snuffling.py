@@ -38,31 +38,31 @@ class okadaforward(Snuffling):
         self.add_parameter(Param(
             'Dip [deg.]', 't_dip', 45., 0., 90.))
         self.add_parameter(Param(
-            'Strike [deg.]', 't_strike', 130., 0.1, 360.))
+            'Strike [deg.]', 't_strike', 130., 1., 360.))
         self.add_parameter(Param(
             'Rake [deg.]', 't_rake', 120., -180., 180.))
         self.add_parameter(Param(
             'Slip [m]', 't_slip', 1., 0.1, 20.))
         self.add_parameter(Param(
-            'Depth of Top edge [m]', 't_ztop', -1.5e3, -50e3, 0.))
+            'Depth of Top edge [m]', 't_ztop', 1.5e3, 0., 50e3))
         self.add_parameter(Param(
-            'Depth of bottom edge [m]', 't_zbot', -4e3, -50e3, 0.))
+            'Depth of bottom edge [m]', 't_zbot', 4e3, 0, 50e3))
         self.add_parameter(Param(
             'Length [m]', 't_length', 10e3, 1, 50e3))
         self.add_parameter(Param(
-            'Grid extent [m]', 't_ext', 25e3, 10e3, 200e3))
+            'Grid extent [m]', 't_ext', 25e3, 10e3, 400e3))
         self.add_parameter(Param(
-            'X-shift of fault centre from 0 [m]', 't_xtrace', 0, 0., 200e3))
+            'X-shift of fault centre from 0 [m]', 't_xtrace', 0, 0., 400e3))
         self.add_parameter(Param(
-            'Y-shfit of fault centre from 0 [m]', 't_ytrace', 0, 0., 200e3))
+            'Y-shfit of fault centre from 0 [m]', 't_ytrace', 0, 0., 400e3))
         self.add_parameter(Param(
             'Wavelength for rewrapping [m]', 't_wavelength', 0.056, 0., 0.325))
         self.add_parameter(Param(
-            'LOS 1', 't_los1', 0.3815, 0., 1.))
+            'LOS E', 't_los1', 0.3815, -1., 1.))
         self.add_parameter(Param(
-            'LOS 2', 't_los2', 0.0843, 0., 1.))
+            'LOS N', 't_los2', 0.0843, -1., 1.))
         self.add_parameter(Param(
-            'LOS 3', 't_los3', 0.9205, 0., 1.))
+            'LOS U', 't_los3', 0.9205, -1., 1.))
 
 
 
@@ -77,14 +77,14 @@ class okadaforward(Snuffling):
         viewer = self.get_viewer()
         
 
-        los = self.t_los1, self.t_los2, self.t_los3 # unit vector
+        los = self.t_los1, self.t_los2, self.t_los3 # unit vector (ENU)
         wavelength = self.t_wavelength # meter C-Band
         extent = -self.t_ext, self.t_ext, -self.t_ext, self.t_ext # meter (xmin,xmax,ymin,ymax)
         
         fault = okada.OkadaSource(
           strike=self.t_strike, dip=self.t_dip, rake=self.t_strike, # degree
           slip=self.t_slip, # meter
-          ztop=self.t_ztop, zbottom=self.t_zbot, length=self.t_length, # meter
+          ztop=-self.t_ztop, zbottom=-self.t_zbot, length=self.t_length, # meter
           xtrace=self.t_xtrace, ytrace=self.t_ytrace ) # meter
         
         
@@ -135,7 +135,7 @@ class okadaforward(Snuffling):
         fault = okada.OkadaSource(
           strike=self.t_strike, dip=self.t_dip, rake=self.t_strike, # degree
           slip=self.t_slip, # meter
-          ztop=self.t_ztop, zbottom=self.t_zbot, length=self.t_length, # meter
+          ztop=-self.t_ztop, zbottom=-self.t_zbot, length=self.t_length, # meter
           xtrace=self.t_xtrace, ytrace=self.t_ytrace ) # meter
         
         
