@@ -2,11 +2,36 @@ import numpy as num
 from pyrocko.snuffling import Snuffling, Param, Choice, Switch
 import okada, numpy
 from pyrocko import io
+from scipy.integrate import trapz
 
 from pyrocko import gf, util
 from pyrocko.parimap import parimap
 from pyrocko.gf import Range
 from pyrocko import gf, moment_tensor as mtm, trace
+
+
+
+def find_nearest(array,value):
+    idx = (num.abs(array-value)).argmin()
+    return array[idx]
+
+# Simple mouse click function to store coordinates
+def onclick(event):
+    global ix, iy
+    ix, iy = event.xdata, event.ydata
+
+    # print 'x = %d, y = %d'%(
+    #     ix, iy)
+
+    # assign global variable to access outside of function
+    global coords
+    coords.append((ix, iy))
+
+    
+    
+
+
+coords = []
 
 
 class okadaforward(Snuffling):
@@ -69,7 +94,11 @@ class okadaforward(Snuffling):
         self.add_trigger('Save as displ. Traces', self.save)
         self.add_trigger('Save as LOS displ. Traces', self.savelos)
         self.set_live_update(False)
+
+
         self.fig = None
+        
+        
 
     def call(self):
 
@@ -81,7 +110,25 @@ class okadaforward(Snuffling):
         wavelength = self.t_wavelength # meter C-Band
         extent = -self.t_ext, self.t_ext, -self.t_ext, self.t_ext # meter (xmin,xmax,ymin,ymax)
         
-        fault = okada.OkadaSource(
+        if len(coords) == 2:
+         print  self.t_strike
+         import math
+         pick_length=math.sqrt (math.pow((coords[0][0] - coords[1][0]),2) +  math.pow((coords[0][1] - coords[1][1]),2))
+         distance= [coords[0][0] - coords[1][0], coords[0][1] - coords[1][1]]
+         norm = math.sqrt(distance[0] ** 2 + distance[1] ** 2)
+         direction = [distance[0] / norm, distance[1] / norm]
+         print direction, self.t_strike, pick_length
+         fault = okada.OkadaSource(
+          strike=direction[0], dip=self.t_dip, rake=self.t_strike, # degree
+          slip=self.t_slip, # meter
+          ztop=-self.t_ztop, zbottom=-self.t_zbot, length=pick_length, # meter
+          xtrace=self.t_xtrace, ytrace=self.t_ytrace ) # meter
+         del coords[:] 
+        
+
+        else:
+            
+         fault = okada.OkadaSource(
           strike=self.t_strike, dip=self.t_dip, rake=self.t_strike, # degree
           slip=self.t_slip, # meter
           ztop=-self.t_ztop, zbottom=-self.t_zbot, length=self.t_length, # meter
@@ -98,7 +145,7 @@ class okadaforward(Snuffling):
         disp = fault.displacement( XYZ, poisson=.25 )
         
 
-        
+    
         disp_los = numpy.dot( disp, los )
         phase = ( numpy.mod( disp_los / ( .5 * wavelength ) * 2 + 1, 2 ) - 1 ) * numpy.pi
         
@@ -106,8 +153,8 @@ class okadaforward(Snuffling):
         from matplotlib import pylab as plt
 
         plt.ion()
-        plt.subplot(111)
-        plt.imshow( phase, extent=extent, cmap=plt.cm.jet, origin='lower' )
+        fig = plt.figure(1)
+        ax=plt.imshow( phase, extent=extent, cmap=plt.cm.jet, origin='lower' )
         plt.clim( [ -numpy.pi, numpy.pi ] )
         
         if not self._live_update:
@@ -125,12 +172,26 @@ class okadaforward(Snuffling):
         plt.axis( extent )
         plt.grid()
         
-        plt.show()
-       
 
-      #  self.fig.canvas.draw()
-        if self._live_update:
-            plt.canvas.show()
+
+        # Call click func
+       #  if self._live_update:
+        cid = fig.canvas.mpl_connect('button_press_event', onclick)
+
+        
+
+
+
+       #  fig.canvas.mpl_connect('pick_event', onclick)
+
+        
+        # limits for integration
+        
+        plt.show(1)
+
+      #  self.fig.canvas.dr            
+ 
+
     def save(self):
         fault = okada.OkadaSource(
           strike=self.t_strike, dip=self.t_dip, rake=self.t_strike, # degree
