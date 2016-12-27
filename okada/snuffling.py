@@ -2,14 +2,14 @@ import numpy as num
 from pyrocko.snuffling import Snuffling, Param, Choice, Switch
 import okada, numpy
 from pyrocko import io
-from scipy.integrate import trapz
-
 from pyrocko import gf, util
 from pyrocko.parimap import parimap
 from pyrocko.gf import Range
 from pyrocko import gf, moment_tensor as mtm, trace
-
-
+from matplotlib.lines import Line2D
+import matplotlib.pyplot as plt
+import numpy as num
+import math
 
 def find_nearest(array,value):
     idx = (num.abs(array-value)).argmin()
@@ -111,13 +111,11 @@ class okadaforward(Snuffling):
         extent = -self.t_ext, self.t_ext, -self.t_ext, self.t_ext # meter (xmin,xmax,ymin,ymax)
         
         if len(coords) == 2:
-         print  self.t_strike
-         import math
+
          pick_length=math.sqrt (math.pow((coords[0][0] - coords[1][0]),2) +  math.pow((coords[0][1] - coords[1][1]),2))
          distance= [coords[0][0] - coords[1][0], coords[0][1] - coords[1][1]]
          norm = math.sqrt(distance[0] ** 2 + distance[1] ** 2)
          direction = [distance[0] / norm, distance[1] / norm]
-         print direction, self.t_strike, pick_length
          fault = okada.OkadaSource(
           strike=direction[0], dip=self.t_dip, rake=self.t_strike, # degree
           slip=self.t_slip, # meter
@@ -149,11 +147,11 @@ class okadaforward(Snuffling):
         disp_los = numpy.dot( disp, los )
         phase = ( numpy.mod( disp_los / ( .5 * wavelength ) * 2 + 1, 2 ) - 1 ) * numpy.pi
         
-            
-        from matplotlib import pylab as plt
-
+        
         plt.ion()
         fig = plt.figure(1)
+      #  fig= plt.subplots()
+
         ax=plt.imshow( phase, extent=extent, cmap=plt.cm.jet, origin='lower' )
         plt.clim( [ -numpy.pi, numpy.pi ] )
         
@@ -171,22 +169,12 @@ class okadaforward(Snuffling):
         
         plt.axis( extent )
         plt.grid()
-        
 
-
-        # Call click func
-       #  if self._live_update:
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
+     #   line = Line2D([-5,10], [10,10], marker = 'o', markerfacecolor = 'red')
+     #   ax.add_line(line)
 
-        
-
-
-
-       #  fig.canvas.mpl_connect('pick_event', onclick)
-
-        
-        # limits for integration
-        
+     #   linebuilder = LineBuilder(line)
         plt.show(1)
 
       #  self.fig.canvas.dr            
@@ -242,6 +230,75 @@ class okadaforward(Snuffling):
         tr_N = trace.Trace(station='disp_los', channel='E', deltat=0.5, tmin=tmint, ydata=disp_los[:,2])
         io.save([tr_N], 'east_displacement_los.mseed')
         
+        
+
+
+class LineBuilder(object):
+
+    epsilon = 0.5
+
+    def __init__(self, line):
+        canvas = line.figure.canvas
+        self.canvas = canvas
+        self.line = line
+        self.axes = line.axes
+        self.xs = list(line.get_xdata())
+        self.ys = list(line.get_ydata())
+
+        self.ind = None
+
+        canvas.mpl_connect('button_press_event', self.button_press_callback)
+        canvas.mpl_connect('button_release_event', self.button_release_callback)
+        canvas.mpl_connect('motion_notify_event', self.motion_notify_callback)
+
+    def get_ind(self, event):
+        x = num.array(self.line.get_xdata())
+        y = num.array(self.line.get_ydata())
+        d = num.sqrt((x-event.xdata)**2 + (y - event.ydata)**2)
+        if min(d) > self.epsilon:
+            return None
+        if d[0] < d[1]:
+            return 0
+        else:
+            return 1
+
+    def button_press_callback(self, event):
+        if event.button != 1:
+            return
+        self.ind = self.get_ind(event)
+        print(self.ind)
+
+        self.line.set_animated(True)
+        self.canvas.draw()
+        self.background = self.canvas.copy_from_bbox(self.line.axes.bbox)
+
+        self.axes.draw_artist(self.line)
+        self.canvas.blit(self.axes.bbox)
+
+    def button_release_callback(self, event):
+        if event.button != 1:
+            return
+        self.ind = None
+        self.line.set_animated(False)
+        self.background = None
+        self.line.figure.canvas.draw()
+
+    def motion_notify_callback(self, event):
+        if event.inaxes != self.line.axes:
+            return
+        if event.button != 1:
+            return
+        if self.ind is None:
+            return
+        self.xs[self.ind] = event.xdata
+        self.ys[self.ind] = event.ydata
+        self.line.set_data(self.xs, self.ys)
+
+        self.canvas.restore_region(self.background)
+        self.axes.draw_artist(self.line)
+        self.canvas.blit(self.axes.bbox)
+
+
         
 
 def __snufflings__():
