@@ -73,8 +73,8 @@ class TracePlotter(Snuffling):
         if self._live_update:
             self.fig.clf()
 
-        ymin = mind-0.03*(maxd-mind)
-        ymax = maxd+0.03*(maxd-mind)
+        ymin = mind-0.06*(maxd-mind)
+        ymax = maxd+0.06*(maxd-mind)
         ax = self.fig.add_subplot(111)
         xmin = 9E9
         xmax = -xmin
@@ -132,6 +132,13 @@ class TracePlotter(Snuffling):
                                 horizontalalignment='right')
         for txt in texts:
             txt.set_x(xmax)
+        vred_str = '= '+str(round(self.t_red, 2)) + 'km/s' if self.t_red \
+                else 'off'
+        ax.text(0.5, 0.01, 'time window: %s - %s  |   Reduction velocity %s' %
+                (util.tts(vtmin), util.tts(vtmax), vred_str),
+                verticalalignment='bottom', horizontalalignment='center',
+                transform=self.fig.transFigure)
+
         ax.set_ylim([ymin, ymax])
         ax.set_xlim([xmin, xmax])
         ax.set_ylabel('Distance [km]')
