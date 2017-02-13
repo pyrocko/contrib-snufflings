@@ -148,3 +148,11 @@ Spectrogram
 file: [spectrogram.py](spectrogram.py)
 
 ![screenshot](screenshots/spectrogram.png)
+
+Geodetic forward modelling
+----------------------------
+Visuialize and output of a data trace for a rectangular dislocation source in an elastic halfspace.
+
+directory: [okada](okada)
+
+![screenshot](screenshots/okada.png)

@@ -1,17 +1,7 @@
 from pyrocko.snuffling import Param, Snuffling, Choice
 
-try:
-    from obspy.core import UTCDateTime, stream
-    from obspy.signal import array_analysis
-    from obspy.imaging.cm import obspy_sequential as cmap
-    _obspy = True
-except ImportError as _import_error:
-    _obspy = False
-
-from matplotlib.colorbar import ColorbarBase
-from matplotlib.colors import Normalize
-import matplotlib.dates as mdates
 import numpy as num
+
 
 def p2o_trace(ptrace, station):
     '''Convert Pyrocko trace to ObsPy trace.'''
@@ -101,8 +91,16 @@ class FK(Snuffling):
         self.set_live_update(False)
 
     def call(self):
-        if not _obspy:
+        try:
+            from obspy.core import UTCDateTime, stream
+            from obspy.signal import array_analysis
+            from obspy.imaging.cm import obspy_sequential as cmap
+        except ImportError as _import_error:
             self.fail('ImportError:\n%s'% _import_error)
+
+        from matplotlib.colorbar import ColorbarBase
+        from matplotlib.colors import Normalize
+        import matplotlib.dates as mdates
         self.cleanup()
         viewer = self.get_viewer()
 
