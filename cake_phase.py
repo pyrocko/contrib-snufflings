@@ -1,3 +1,4 @@
+import os
 from pyrocko.snuffling import Snuffling, Param, Switch, Choice
 from pyrocko.pile_viewer import PhaseMarker
 from pyrocko import orthodrome
@@ -54,6 +55,7 @@ class CakePhase(Snuffling):
 
         self.add_parameter(self.model_choice)
         self.add_parameter(Param('Global shift', 'tshift', 0., -20., 20.))
+        self.add_parameter(Switch('Use station depth', 'use_station_depth', False))
         self.add_trigger('Add Phase', self.add_phase_definition)
         self.add_trigger('Add Model', self.add_model_to_choice)
         self.add_trigger('Plot Model', self.plot_model)
@@ -115,7 +117,10 @@ class CakePhase(Snuffling):
             dist = orthodrome.distance_accurate50m(event, station)
             alldists.append(dist)
 
-            rays = model.arrivals(phases=wanted, distances=[dist*cake.m2d], zstart=depth)
+            if self.use_station_depth:
+                rdepth = station.depth
+
+            rays = model.arrivals(phases=wanted, distances=[dist*cake.m2d], zstart=depth, zstop=rdepth)
 
             for ray in rays:
                 time = ray.t
@@ -139,7 +144,7 @@ class CakePhase(Snuffling):
 
     def update_model(self):
         if not self._model or self._model[0] != self.chosen_model:
-            if self.chosen_model in cake.builtin_models():
+            if self.chosen_model in cake.builtin_models() or os.path.exists(self.chosen_model):
                 load_model = cake.load_model(self.chosen_model)
             else:
                 load_model = self._engine.get_store(self.chosen_model).config.earthmodel_1d 
