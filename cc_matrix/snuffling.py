@@ -5,7 +5,7 @@ import numpy as num
 import progressbar
 
 from pyrocko import model, trace, util, orthodrome, cake, gui_util
-from pyrocko.gf.seismosizer import Target, SeismosizerTrace
+from pyrocko.gf import Target
 from pyrocko.snuffling import Snuffling, Choice, Param, Switch
 from similarity import SimilarityMatrix, Similarity
 import matplotlib.pyplot as plt

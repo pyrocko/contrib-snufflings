@@ -1,6 +1,6 @@
 from pyrocko import trace, model
 from pyrocko.guts import *
-from pyrocko.gf.seismosizer import SeismosizerTrace, Target
+from pyrocko.gf import SeismosizerTrace, Target
 
 class Similarity(Object):
     '''CC result of one event pair at one target.'''
