@@ -103,7 +103,7 @@ class CakePhase(Snuffling):
         pile = self.get_pile()
 
         event, stations = self.get_active_event_and_stations()
-        
+
         if not stations:
             self.fail('No station information available.')
 
@@ -122,6 +122,8 @@ class CakePhase(Snuffling):
 
             if self.use_station_depth:
                 rdepth = station.depth
+            else:
+                rdepth = 0
 
             rays = model.arrivals(phases=wanted, distances=[dist*cake.m2d], zstart=depth, zstop=rdepth)
 
