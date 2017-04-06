@@ -6,7 +6,14 @@ from pyrocko import io
 from pyrocko import util
 from pyrocko import trace
 
-import okada
+import logging
+logger = logging.getLogger('pyrocko.snuffling.okada')
+
+try:
+    import okada
+except OSError as e:
+    logger.warn('''\n %s
+--> run 'make' in okada snuffling directory <--''' % e)
 
 
 class okadaforward(Snuffling):
