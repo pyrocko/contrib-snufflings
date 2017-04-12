@@ -262,8 +262,8 @@ class FK(Snuffling):
                 continue
 
             # should be correct
-            t_min = traces[0].tmin + tpad
-            t_max = traces[0].tmax + tpad
+            t_min = traces[0].tmin
+            t_max = traces[0].tmax
 
             use_stations = []
             for tr in traces:
@@ -478,7 +478,7 @@ class FK(Snuffling):
                     ax_playground.plot(ybeam*ybeam_weighted/len(arrays))
                     ax_playground.set_title('Phase Weighted Stack')
 
-                beam_tr = trace.Trace(tmin=t_min-tpad_fade, ydata=ybeam, deltat=deltat_cf)
+                beam_tr = trace.Trace(tmin=t_min+tpad, ydata=ybeam, deltat=deltat_cf)
                 self.add_trace(beam_tr)
 
                 self.irun += 1
