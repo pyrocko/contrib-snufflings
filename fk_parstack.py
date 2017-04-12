@@ -7,7 +7,10 @@ from pyrocko import orthodrome as ortho
 from pyrocko import parstack
 from pyrocko import util
 from pyrocko import trace
+import logging
 
+
+logger = logging.getLogger('pyrocko.snufflings.fk_parstack.py')
 d2r = num.pi/180.
 km = 1000.
 
@@ -152,8 +155,6 @@ class FK(Snuffling):
 
     Picinbono, et. al, 1997, On Instantaneous Amplitude and Phase of Signals, 552
     IEEE TRANSACTIONS ON SIGNAL PROCESSING, 45, 3, March 1997
-
-
     </body>
     </html>
     '''
@@ -208,7 +209,7 @@ class FK(Snuffling):
         else:
             deltat_cf = deltats[0]
 
-        tinc_use = self.get_tinc_use()
+        tinc_use = self.get_tinc_use(precision=deltat_cf)
 
         if self.ntaper:
             taper = num.hanning(int(self.ntaper))
@@ -243,7 +244,7 @@ class FK(Snuffling):
         tpad = npad * deltat_cf
 
         # additional padding for cross over fading
-        npad_fade = 30
+        npad_fade = 0
         tpad_fade = npad_fade * deltat_cf
 
         npad += npad_fade
@@ -257,7 +258,7 @@ class FK(Snuffling):
                 want_incomplete=False, trace_selector=trace_selector):
 
             if len(traces) == 0:
-                print 'No traces matched'
+                self.fail('No traces matched')
                 continue
 
             # should be correct
@@ -266,7 +267,10 @@ class FK(Snuffling):
 
             use_stations = []
             for tr in traces:
-                use_stations.append(stations_dict[viewer.station_key(tr)])
+                try:
+                    use_stations.append(stations_dict[viewer.station_key(tr)])
+                except KeyError:
+                    self.fail('no trace %s' % ('.'.join(tr.nslc_id)))
 
             shift_table = get_shifts(
                 stations=use_stations,
@@ -289,10 +293,11 @@ class FK(Snuffling):
                 tr = tr.copy()
                 if viewer.highpass:
                     tr.highpass(4, viewer.highpass, demean=True)
+                else:
+                    self.fail('Main controls highpass is required')
                 if viewer.lowpass:
                     tr.lowpass(4, viewer.lowpass)
 
-                # FAKE NEWS
                 arrays[itr] = tr.get_ydata()
 
             ntraces = len(traces)
@@ -343,12 +348,12 @@ class FK(Snuffling):
             # --------------------------------------------------------------
             # Windowed maxima search
             # --------------------------------------------------------------
-            fig1 = self.pylab(name='FK: Power (%i)'%self.irun, get='figure')
-            power_vs_t = num.amax(num.amax(frames, axis=1), axis=0)
-            #print power_vs_t
-            axs = []
-            for i in range(2):
-                axs.append(fig1.add_subplot(2, 1, i+1))
+            #fig1 = self.pylab(name='FK: Power (%i)'%self.irun, get='figure')
+            #power_vs_t = num.amax(num.amax(frames, axis=1), axis=0)
+            ##print power_vs_t
+            #axs = []
+            #for i in range(2):
+            #    axs.append(fig1.add_subplot(2, 1, i+1))
 
             #plot_back_slow_time(
                 #bazis=bazis, slownesses=slownesses, times=times, frames=frames_reshaped,
@@ -484,18 +489,19 @@ class FK(Snuffling):
         ax.set_xticks([0, num.pi/2., num.pi, 3*num.pi/2])
         ax.set_xticklabels(['N', 'E', 'S', 'W'])
 
-    def get_tinc_use(self):
+    def get_tinc_use(self, precision=1.):
         '''
         Set increment time for data processing.
         '''
         if self.tinc is not None:
-            return self.tinc
+            tinc = self.tinc
         else:
             tmin, tmax = self.get_selected_time_range(fallback=True)
             if tmin == tmax:
                 # selected event marker
                 tmin, tmax = self.get_viewer().get_time_range()
-            return tmax-tmin
+            tinc = tmax-tmin
+        return num.floor(tinc/precision) * precision
 
 
 def plot_back_slow_time(bazis, slownesses, times, frames, axs, window_length):
