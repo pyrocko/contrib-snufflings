@@ -3,11 +3,13 @@ import time
 
 from pyrocko.snuffling import Param, Snuffling, Choice, Switch
 from scipy.signal import fftconvolve, argrelextrema, lfilter, hilbert
+from scipy.interpolate import UnivariateSpline
 from pyrocko import orthodrome as ortho
 from pyrocko import parstack
 from pyrocko import util
 from pyrocko import trace
 import logging
+#from kalman import Kalman
 
 
 logger = logging.getLogger('pyrocko.snufflings.fk_parstack.py')
@@ -178,6 +180,7 @@ class FK(Snuffling):
         self.add_parameter(Choice(
             'Use channels', 'want_channel', '*',
             ['*', '*Z', '*E', '*N', 'SHZ', 'BHZ', 'p0']))
+        self.add_parameter(Choice('method', 'method', 'stack', ['stack', 'correlate']))
         self.add_parameter(Switch('Show', 'want_all', True))
         self.add_parameter(Switch('Phase weighted stack', 'want_pws', False))
         self.set_live_update(False)
@@ -219,10 +222,8 @@ class FK(Snuffling):
         frames = None
         t1 = time.time()
 
-        if self.want_all:
-            method = 0
-        else:
-            method = 1
+        method = {'stack': 0,
+                  'correlate': 2}[self.method]
 
         def trace_selector(x):
             return util.match_nslc('*.*.*.%s' % self.want_channel, x.nslc_id)
@@ -279,7 +280,7 @@ class FK(Snuffling):
                 slownesses=slownesses)
 
             shifts = num.round(shift_table / deltat_cf).astype(num.int32)
-
+            print 'XXXX', num.max(shifts) * deltat_cf
             wmin = traces[0].tmin
             wmax = wmin + tinc_add
 
@@ -344,31 +345,28 @@ class FK(Snuffling):
 
             frames_reshaped = frames.reshape((n_bazis, n_slow, lengthout))
             times = num.linspace(t_min-tpad_fade, t_max+tpad_fade, lengthout)
-
-            # --------------------------------------------------------------
-            # Windowed maxima search
-            # --------------------------------------------------------------
-            #fig1 = self.pylab(name='FK: Power (%i)'%self.irun, get='figure')
-            #power_vs_t = num.amax(num.amax(frames, axis=1), axis=0)
-            ##print power_vs_t
-            #axs = []
-            #for i in range(2):
-            #    axs.append(fig1.add_subplot(2, 1, i+1))
-
-            #plot_back_slow_time(
-                #bazis=bazis, slownesses=slownesses, times=times, frames=frames_reshaped,
-            #    bazis=bazis, slownesses=slownesses, times=times, frames=frames,
-            #    axs=axs, window_length=self.win_length*deltat_cf)
-            #ax.plot(power_vs_t)
-            #i_best_t = num.argmax(num.argmax(frames, axis=0), axis=0)
-            #i_best_bazi_slow = num.argmax(power_vs_t)
-            #imax_bazi, imax_slow = num.unravel_index(
-            #i_best_bazi_slow, dims=(n_bazis, n_slow))
-
-            # --------------------------------------------------------------
-            # coherence maps
-            # --------------------------------------------------------------
             if self.want_all:
+                # ---------------------------------------------------------
+                # maxima search
+                # ---------------------------------------------------------
+                fig1 = self.pylab(name='FK: Max Power (%i)'%self.irun, get='figure')
+
+                nsubplots = 1
+                ax = fig1.add_subplot(nsubplots, 1, 1)
+                ax.plot(num.max(frames, axis=0))
+                _argmax = num.argmax(frames, axis=0)
+                max_powers = num.max(frames, axis=0)
+                imax_bazi_all, imax_slow_all = num.unravel_index(
+                    _argmax,
+                    dims=(n_bazis, n_slow))
+                    #dims=(n_slow, n_bazis))
+
+                max_powers += (num.min(max_powers)*-1)
+                max_powers /= num.max(max_powers)
+                max_powers *= 10.
+                # --------------------------------------------------------------
+                # coherence maps
+                # --------------------------------------------------------------
 
                 max_time = num.amax(frames, axis=0)
                 imax_time = num.argmax(max_time)
@@ -387,6 +385,12 @@ class FK(Snuffling):
                 ax.set_ylabel('slowness [s/km]')
                 ax.pcolormesh(times, slownesses*km, data)
                 ax.plot(times[imax_time], slownesses[imax_slow]*km, 'b.')
+                #spline_slow = UnivariateSpline(
+                #    times, slownesses[imax_slow_all]*km, w=max_powers, s=10)
+                #slow_fitted = spline_slow(times)
+                #ax.plot(times, num.clip(slow_fitted, self.slowness_min, self.slowness_max))
+
+                ax.scatter(times, slownesses[imax_slow_all]*km, s=max_powers)
 
                 ax = fig.add_subplot(212, sharey=ax)
                 ax.set_ylabel('abs(grad(slowness))')
@@ -401,6 +405,7 @@ class FK(Snuffling):
                 ax.set_ylabel('back-azimuth')
                 ax.pcolormesh(times, bazis, data)
                 ax.plot(times[imax_time], bazis[imax_bazi], 'b.')
+                ax.scatter(times, bazis[imax_bazi_all], s=max_powers)
                 ax.set_title('')
 
                 ax = fig.add_subplot(212, sharex=ax, sharey=ax)
@@ -443,6 +448,9 @@ class FK(Snuffling):
 
                 fig1.colorbar(m)
 
+                # ---------------------------------------------------------
+                # CF and beam forming
+                # ---------------------------------------------------------
                 fig1 = self.pylab(name='FK: Beam(%i)'%self.irun, get='figure')
 
                 nsubplots = 4
