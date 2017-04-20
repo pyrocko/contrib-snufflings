@@ -1,20 +1,45 @@
 import numpy as num
 import time
+from matplotlib.animation import FuncAnimation
 
 from pyrocko.snuffling import Param, Snuffling, Choice, Switch
-from scipy.signal import fftconvolve, argrelextrema, lfilter, hilbert
+from scipy.signal import fftconvolve, lfilter, hilbert
 from scipy.interpolate import UnivariateSpline
 from pyrocko import orthodrome as ortho
 from pyrocko import parstack
 from pyrocko import util
 from pyrocko import trace
+from pyrocko import model
 import logging
-#from kalman import Kalman
 
 
 logger = logging.getLogger('pyrocko.snufflings.fk_parstack.py')
 d2r = num.pi/180.
 km = 1000.
+
+
+def search_max_block(n_maxsearch, data):
+    '''
+    Find indices of maxima of *data* in groups of *n_maxsearch*
+    samples.
+
+    returns an array of indices.
+
+    If length of *data* is not a multiple of *n_maxsearch*, *data* will be
+    padded.
+    '''
+    n = len(data)
+    n_dim2 = (int(n/n_maxsearch)+1) * n_maxsearch
+    n_missing = n_dim2 - n
+    print n_maxsearch
+    print n_missing
+    if n % n_maxsearch != 0:
+        a = num.pad(data, [0, n_missing], mode='minimum')
+    else:
+        a = data
+
+    return num.argmax(a.reshape((-1, n_maxsearch)), axis=1) +\
+        num.arange(0, (n+n_missing)/n_maxsearch) * n_maxsearch
 
 
 def instantaneous_phase(signal):
@@ -41,14 +66,17 @@ def get_center_station(stations, select_closest=False):
     if select_closest:
         center_lats = num.ones(n)*center_lat
         center_lons = num.ones(n)*center_lon
-        dists = ortho.distance_accurate50m_numpy(center_lats, center_lons, slats, slons)
+        dists = ortho.distance_accurate50m_numpy(
+            center_lats, center_lons, slats, slons)
+
         return stations[num.argmin(dists)]
     else:
         return model.Station(center_lat, center_lon)
 
 
 def get_theoretical_backazimuth(event, stations, center_station):
-    return (ortho.azimuth_numpy(event.lat, event.lon, center_station.lat, center_station.lon)\
+    return (ortho.azimuth_numpy(
+        event.lat, event.lon, center_station.lat, center_station.lon)
             + 180.) % 360.
 
 
@@ -70,6 +98,7 @@ def get_shifts(stations, center_station, bazis, slownesses):
             ishift += 1
 
     return shifts
+
 
 def to_db(d):
     return 10*num.log10(d/num.max(d))
@@ -122,6 +151,16 @@ def highpass_array(ydata_array, deltat, order, corner, demean=True, axis=1):
     return lfilter(b, a, data)
 
 
+def value_to_index(value, range_min, range_max, range_delta, clip=True):
+    ''' map a(n array of) *values* to its' index in a continuous data range
+    defined by *range_min*, *range_max* and *range_delta*.
+    '''
+    indices = num.round((value-range_min)/range_delta)
+    if clip:
+        indices = num.clip(indices, 0, (range_max-range_min)/range_delta)
+
+    return num.asarray(indices, dtype=num.int)
+
 
 class FK(Snuffling):
     '''
@@ -155,8 +194,8 @@ class FK(Snuffling):
     show the coherence in the slowness and back-azimuth domain for that
     specific maximum of that processing block.<br>
 
-    Picinbono, et. al, 1997, On Instantaneous Amplitude and Phase of Signals, 552
-    IEEE TRANSACTIONS ON SIGNAL PROCESSING, 45, 3, March 1997
+    Picinbono, et. al, 1997, On Instantaneous Amplitude and Phase of Signals,
+    552 IEEE TRANSACTIONS ON SIGNAL PROCESSING, 45, 3, March 1997
     </body>
     </html>
     '''
@@ -168,19 +207,20 @@ class FK(Snuffling):
         self.add_parameter(Param(
             'min slowness [s/km]', 'slowness_min', 0.01, 0., 1.))
         self.add_parameter(Param(
-            'delta slowness [s/km]', 'slowness_delta', 0.001, 0., 1.))
+            'delta slowness [s/km]', 'slowness_delta', 0.002, 0., 0.2))
         self.add_parameter(Param(
-            'delta backazimut', 'delta_bazi', 1, 1, 20))
+            'delta backazimut', 'delta_bazi', 2, 1, 20))
         self.add_parameter(Param(
             'Increment [s]', 'tinc', 10., 0.5, 10.,
             high_is_none=True))
         self.add_parameter(Param(
             'Smoothing length [N]', 'ntaper', 0, 0, 30, low_is_none=True))
-        self.add_parameter(Param('Window length [s]', 'win_length', 2, 0, 30))
         self.add_parameter(Choice(
             'Use channels', 'want_channel', '*',
             ['*', '*Z', '*E', '*N', 'SHZ', 'BHZ', 'p0']))
-        self.add_parameter(Choice('method', 'method', 'stack', ['stack', 'correlate']))
+        self.add_parameter(
+            Choice('method', 'method', 'stack', ['stack', 'correlate'])
+        )
         self.add_parameter(Switch('Show', 'want_all', True))
         self.add_parameter(Switch('Phase weighted stack', 'want_pws', False))
         self.set_live_update(False)
@@ -280,7 +320,7 @@ class FK(Snuffling):
                 slownesses=slownesses)
 
             shifts = num.round(shift_table / deltat_cf).astype(num.int32)
-            print 'XXXX', num.max(shifts) * deltat_cf
+
             wmin = traces[0].tmin
             wmax = wmin + tinc_add
 
@@ -289,25 +329,23 @@ class FK(Snuffling):
             lengthout = iwmax - iwmin
             arrays = num.zeros((len(traces), lengthout + npad*2))
 
-            # add lowpass/highpass array!!
             for itr, tr in enumerate(traces):
                 tr = tr.copy()
                 if viewer.highpass:
                     tr.highpass(4, viewer.highpass, demean=True)
                 else:
-                    self.fail('Main controls highpass is required')
+                    tr.ydata = num.asarray(
+                        tr.ydata, dtype=num.float) - num.mean(tr.ydata)
                 if viewer.lowpass:
                     tr.lowpass(4, viewer.lowpass)
 
                 arrays[itr] = tr.get_ydata()
 
-            ntraces = len(traces)
-
-            #if viewer.highpass:
-            #    arrays = highpass_array(arrays, deltat_cf, 4, viewer.highpass)
-            #if viewer.lowpass:
-            #    arrays = lowpass_array(arrays, deltat_cf, 4, viewer.lowpass)
-            #arrays *= arrays
+            # if viewer.highpass:
+            #     arrays = highpass_array(
+            #            arrays, deltat_cf, 4, viewer.highpass)
+            # if viewer.lowpass:
+            #     arrays = lowpass_array(arrays, deltat_cf, 4, viewer.lowpass)
 
             _arrays = []
             for itr, tr in enumerate(traces):
@@ -334,7 +372,8 @@ class FK(Snuffling):
 
             # theoretical bazi
             if event is not None:
-                azi_theo = get_theoretical_backazimuth(event, use_stations, center_station)
+                azi_theo = get_theoretical_backazimuth(
+                    event, use_stations, center_station)
                 print('theoretical azimuth %s degrees' % (azi_theo))
 
             print('processing time: %s seconds' % (time.time()-t1))
@@ -345,25 +384,32 @@ class FK(Snuffling):
 
             frames_reshaped = frames.reshape((n_bazis, n_slow, lengthout))
             times = num.linspace(t_min-tpad_fade, t_max+tpad_fade, lengthout)
+            max_powers = num.max(frames, axis=0)
+
+            # power maxima in blocks
+            i_max_blocked = search_max_block(
+                n_maxsearch=npad, data=max_powers)
+
             if self.want_all:
+
                 # ---------------------------------------------------------
                 # maxima search
                 # ---------------------------------------------------------
-                fig1 = self.pylab(name='FK: Max Power (%i)'%self.irun, get='figure')
+                fig1 = self.pylab(name='FK: Max Power (%i)' %
+                                  self.irun, get='figure')
 
                 nsubplots = 1
                 ax = fig1.add_subplot(nsubplots, 1, 1)
                 ax.plot(num.max(frames, axis=0))
                 _argmax = num.argmax(frames, axis=0)
-                max_powers = num.max(frames, axis=0)
                 imax_bazi_all, imax_slow_all = num.unravel_index(
-                    _argmax,
-                    dims=(n_bazis, n_slow))
-                    #dims=(n_slow, n_bazis))
+                    _argmax, dims=(n_bazis, n_slow))
 
                 max_powers += (num.min(max_powers)*-1)
                 max_powers /= num.max(max_powers)
-                max_powers *= 10.
+                max_powers *= 10.  # Maximum has pixel size of 10
+
+                block_max_times = times[i_max_blocked]
                 # --------------------------------------------------------------
                 # coherence maps
                 # --------------------------------------------------------------
@@ -376,44 +422,86 @@ class FK(Snuffling):
                     num.argmax(best_frame),
                     dims=(n_bazis, n_slow))
 
-                fig = self.pylab(name='FK: Slowness (%i)' % self.irun, get='figure')
+                fig = self.pylab(name='FK: Slowness (%i)' %
+                                 self.irun, get='figure')
 
                 data = frames_reshaped[imax_bazi, :, :]
-                grad = num.abs(num.gradient(data, edge_order=2)[1])**2
+                data_max = num.amax(frames_reshaped, axis=0)
 
                 ax = fig.add_subplot(211)
+                ax.set_title('Global maximum slize')
                 ax.set_ylabel('slowness [s/km]')
                 ax.pcolormesh(times, slownesses*km, data)
-                ax.plot(times[imax_time], slownesses[imax_slow]*km, 'b.')
-                #spline_slow = UnivariateSpline(
-                #    times, slownesses[imax_slow_all]*km, w=max_powers, s=10)
-                #slow_fitted = spline_slow(times)
-                #ax.plot(times, num.clip(slow_fitted, self.slowness_min, self.slowness_max))
 
-                ax.scatter(times, slownesses[imax_slow_all]*km, s=max_powers)
+                ax = fig.add_subplot(212, sharex=ax, sharey=ax)
+                ax.set_ylabel('slowness [s/km]')
+                ax.pcolormesh(times, slownesses*km, data_max)
+                ax.set_title('Maximum')
 
-                ax = fig.add_subplot(212, sharey=ax)
-                ax.set_ylabel('abs(grad(slowness))')
-                ax.set_xlabel('time')
-                ax.pcolormesh(times, slownesses*km, grad)
+                # highlight block maxima
+                local_max_slow = slownesses[imax_slow_all]*km
+                ax.plot(block_max_times, local_max_slow[i_max_blocked], 'wo')
 
-                fig = self.pylab(name='FK: Back-Azimuth (%i)' % self.irun, get='figure')
+                # spline
+                spline_slow = UnivariateSpline(
+                    block_max_times,
+                    local_max_slow[i_max_blocked],
+                    w=max_powers[i_max_blocked],
+                )
+
+                slow_fitted = spline_slow(times)
+                ax.plot(times, num.clip(
+                    slow_fitted, self.slowness_min, self.slowness_max)
+                )
+
+                fig = self.pylab(name='FK: Back-Azimuth (%i)' %
+                                 self.irun, get='figure')
                 data = frames_reshaped[:, imax_slow, :]
-                grad = num.gradient(data, edge_order=2)[1]**2
+                data_max = num.amax(frames_reshaped, axis=1)
 
                 ax = fig.add_subplot(211, sharex=ax)
+                ax.set_title('Global maximum slize')
                 ax.set_ylabel('back-azimuth')
                 ax.pcolormesh(times, bazis, data)
                 ax.plot(times[imax_time], bazis[imax_bazi], 'b.')
-                ax.scatter(times, bazis[imax_bazi_all], s=max_powers)
-                ax.set_title('')
 
                 ax = fig.add_subplot(212, sharex=ax, sharey=ax)
-                ax.set_ylabel('abs(grad(back-azimuth))')
-                ax.pcolormesh(times, bazis, grad)
-
                 ax.set_ylabel('back-azimuth')
-                ax.set_xlabel('time')
+                ax.set_title('Maximum')
+                ax.pcolormesh(times, bazis, data_max)
+
+                # highlight block maxima
+                local_max_bazi = bazis[imax_bazi_all]
+                ax.plot(block_max_times, local_max_bazi[i_max_blocked], 'wo')
+
+                spline_bazi = UnivariateSpline(
+                    block_max_times,
+                    local_max_bazi[i_max_blocked],
+                    w=max_powers[i_max_blocked],
+                    k=3,
+                    s=4e7
+                )
+
+                bazi_fitted = spline_bazi(times)
+                ax.plot(times, num.clip(bazi_fitted, 0, 360.))
+
+                i_bazi_fitted = value_to_index(
+                    bazi_fitted, 0., 360., self.delta_bazi)
+                i_slow_fitted = value_to_index(
+                    slow_fitted, self.slowness_min, self.slowness_max,
+                    self.slowness_delta)
+
+                i_shift = num.ravel_multi_index(
+                    num.vstack((i_bazi_fitted, i_slow_fitted)),
+                    (n_bazis, n_slow),
+                )
+
+                stack_trace = num.zeros(lengthout)
+                i_base = num.arange(lengthout, dtype=num.int)
+                for itr, tr in enumerate(traces):
+                    isorting = num.clip(
+                        i_base+shifts[i_shift, itr], 0, lengthout)
+                    stack_trace += tr.ydata[isorting]
 
                 # xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
                 # ax.xaxis.set_major_formatter(xfmt)
@@ -422,7 +510,8 @@ class FK(Snuffling):
 
                 semblance = best_frame.reshape((n_bazis, n_slow))
 
-                fig1 = self.pylab(name='FK: Max (%i)'%self.irun, get='figure')
+                fig1 = self.pylab(name='FK: Max (%i)' % self.irun,
+                                  get='figure')
 
                 theta, r = num.meshgrid(bazis, slownesses)
                 theta *= (num.pi/180.)
@@ -430,15 +519,16 @@ class FK(Snuffling):
                 ax = fig1.add_subplot(111, projection='polar')
                 m = ax.pcolormesh(theta.T, r.T*km, to_db(semblance))
 
-                self.adjust_polar_axis(ax)
                 ax.plot(bazis[imax_bazi]*d2r, slownesses[imax_slow]*km, 'o')
 
                 bazi_max = bazis[imax_bazi]*d2r
                 slow_max = slownesses[imax_slow]*km
                 ax.plot(bazi_max, slow_max, 'b.')
                 ax.text(0.5, 0.01, 'Maximum at %s degrees, %s s/km' %
-                        (num.round(bazi_max, 1), slow_max), transform=fig1.transFigure,
-                        horizontalalignment='center', verticalalignment='bottom')
+                        (num.round(bazi_max, 1), slow_max),
+                        transform=fig1.transFigure,
+                        horizontalalignment='center',
+                        verticalalignment='bottom')
 
                 if azi_theo:
                     ax.arrow(azi_theo/180.*num.pi, num.min(slownesses), 0,
@@ -446,17 +536,22 @@ class FK(Snuffling):
                              edgecolor='black', facecolor='green', lw=2,
                              zorder=5)
 
+                self.adjust_polar_axis(ax)
                 fig1.colorbar(m)
 
                 # ---------------------------------------------------------
                 # CF and beam forming
                 # ---------------------------------------------------------
-                fig1 = self.pylab(name='FK: Beam(%i)'%self.irun, get='figure')
+                fig1 = self.pylab(name='FK: Beam(%i)' %
+                                  self.irun, get='figure')
 
                 nsubplots = 4
+                nsubplots += self.want_pws
+
                 ax_raw = fig1.add_subplot(nsubplots, 1, 1)
                 ax_shifted = fig1.add_subplot(nsubplots, 1, 2)
                 ax_beam = fig1.add_subplot(nsubplots, 1, 3)
+                ax_beam_new = fig1.add_subplot(nsubplots, 1, 4)
 
                 axkwargs = dict(alpha=0.3, linewidth=0.3, color='grey')
 
@@ -465,7 +560,8 @@ class FK(Snuffling):
                 for i, (shift, array) in enumerate(zip(shifts.T, arrays)):
                     ax_raw.plot(times, array[npad: -npad], **axkwargs)
                     ishift = shift[imax_bazi_slow]
-                    ax_shifted.plot(times, array[npad-ishift: -npad-ishift], **axkwargs)
+                    ax_shifted.plot(
+                        times, array[npad-ishift: -npad-ishift], **axkwargs)
 
                     ydata = traces[i].get_ydata()[npad-ishift: -npad-ishift]
                     ybeam += ydata
@@ -475,7 +571,9 @@ class FK(Snuffling):
                         ph_inst = instantaneous_phase(ydata)
                         ybeam_weighted += num.abs(num.exp(ph_inst))**4
 
-                #ax_beam.plot(times, ybeam, color='black')
+                ax_beam_new.plot(stack_trace)
+                ax_beam_new.set_title('continuous mode')
+                # ax_beam.plot(times, ybeam, color='black')
                 ax_beam.plot(ybeam, color='black')
                 ax_raw.set_title('Characteristic Function')
                 ax_shifted.set_title('Shifted CF')
@@ -486,10 +584,74 @@ class FK(Snuffling):
                     ax_playground.plot(ybeam*ybeam_weighted/len(arrays))
                     ax_playground.set_title('Phase Weighted Stack')
 
-                beam_tr = trace.Trace(tmin=t_min+tpad, ydata=ybeam, deltat=deltat_cf)
+                # beam_tr = trace.Trace(
+                #     tmin=t_min+tpad, ydata=ybeam, deltat=deltat_cf)
+                beam_tr = trace.Trace(
+                    tmin=t_min+tpad, ydata=stack_trace, deltat=deltat_cf)
+
+                # -----------------------------------------------------------
+                # polar movie:
+                # -----------------------------------------------------------
+                fig = self.pylab(name='FK: Beam(%i)' % self.irun, get='figure')
+                self.polar_movie(
+                    fig=fig,
+                    frames=frames,
+                    times=times,
+                    theta=theta.T,
+                    r=r.T*km,
+                    nth_frame=2,
+                    n_bazis=n_bazis,
+                    n_slow=n_slow,
+                )
+
                 self.add_trace(beam_tr)
 
                 self.irun += 1
+
+    def polar_movie(self, fig, frames, times, theta, r, nth_frame,
+                    n_bazis, n_slow):
+        frame_artists = []
+        # progress_artists = []
+        ax = fig.add_subplot(111, projection='polar')
+        iframe_min = 0
+        iframe_max = len(times)-1
+        vmin = num.min(frames)
+        vmax = num.max(frames)
+        self.adjust_polar_axis(ax)
+
+        def update(iframe):
+            # if iframe is not None:
+            if False:
+                frame = frames[:, iframe]
+                '''
+                if not progress_artists:
+                    progress_artists[:] = [axes2.axvline(
+                        tmin_frames - t0 + deltat_cf * iframe,
+                        color=scolor('scarletred3'),
+                        alpha=0.5,
+                        lw=2.)]
+
+                else:
+                    progress_artists[0].set_xdata(
+                        tmin_frames - t0 + deltat_cf * iframe)
+                '''
+            else:
+                frame = frames[:, iframe].reshape((n_bazis, n_slow))
+
+            frame_artists[:] = [ax.pcolormesh(theta, r, frame, vmin=vmin,
+                                              vmax=vmax)]
+
+            # return frame_artists + progress_artists + static_artists
+            return frame_artists
+
+        FuncAnimation(
+            fig, update,
+            frames=list(
+                xrange(iframe_min, iframe_max+1))[::nth_frame] + [None],
+            interval=20.,
+            repeat=False,
+            blit=True)
+        fig.canvas.draw()
 
     def adjust_polar_axis(self, ax):
         ax.set_theta_zero_location('N')
@@ -510,41 +672,6 @@ class FK(Snuffling):
                 tmin, tmax = self.get_viewer().get_time_range()
             tinc = tmax-tmin
         return num.floor(tinc/precision) * precision
-
-
-def plot_back_slow_time(bazis, slownesses, times, frames, axs, window_length):
-    '''
-    :param window_length: in samples
-    '''
-    nbazis = len(bazis)
-    nslow = len(slownesses)
-    ntimes = len(times)
-
-    #maxvals = num.argmax(frames, axis=0)
-    maxvals = num.amax(frames, axis=0)
-    # find maxima of *window_length* consecutive values:
-    n = maxvals.size
-    i_greatest_divisor = int(window_length/n)*n
-    #imax = num.argmax(num.reshape(maxvals, (i_greatest_divisor, -1)), axis=1)
-
-    # evaluate local extrema:
-    #ilocal_max = argrelextrema(maxvals, num.greater)[0]
-
-    #max_vs_t = num.argmax(frames[:, ilocal_max], axis=0)
-    #ilocal_max_b, ilocal_max_s = num.unravel_index(max_vs_t, (nbazis, nslow))
-
-    #ilocal_max_b, ilocal_max_s = num.unravel_index(imax, (nbazis, nslow))
-
-    #max_times = times[ilocal_max]
-    #max_semblance = maxvals[ilocal_max]
-    #max_slownesses = slownesses[ilocal_max_s]
-    #max_bazimuths = bazis[ilocal_max_b]
-    #axs[0].plot(times, maxvals)
-    axs[0].plot(maxvals)
-    #axs[0].plot(max_times, max_semblance, 'x')
-    #axs[1].scatter(max_times, max_slownesses, c=max_semblance, s=45)
-    #axs[1].set_ylim((min(slownesses), max(slownesses)))
-    #axs[2].scatter(max_times, max_bazimuths, c=max_semblance, s=45)
 
 
 def __snufflings__():
