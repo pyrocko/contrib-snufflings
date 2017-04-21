@@ -644,7 +644,7 @@ class FK(Snuffling):
             # return frame_artists + progress_artists + static_artists
             return frame_artists
 
-        FuncAnimation(
+        axf = FuncAnimation(  # noqa
             fig, update,
             frames=list(
                 xrange(iframe_min, iframe_max+1))[::nth_frame] + [None],
