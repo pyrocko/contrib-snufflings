@@ -414,6 +414,60 @@ class FK(Snuffling):
             i_max_blocked = search_max_block(
                 n_maxsearch=npad, data=max_powers)
 
+            max_powers += (num.min(max_powers)*-1)
+            max_powers /= num.max(max_powers)
+            max_powers *= 10.  # Maximum has pixel size of 10
+            max_powers *= max_powers
+            block_max_times = times[i_max_blocked]
+
+            _argmax = num.argmax(frames, axis=0)
+            imax_bazi_all, imax_slow_all = num.unravel_index(
+                _argmax, dims=(n_bazis, n_slow))
+
+            local_max_bazi = bazis[imax_bazi_all]
+            spline_bazi = UnivariateSpline(
+                block_max_times,
+                local_max_bazi[i_max_blocked],
+                w=max_powers[i_max_blocked],
+                k=3,
+                s=4e7
+            )
+
+            local_max_slow = slownesses[imax_slow_all]*km
+            spline_slow = UnivariateSpline(
+                block_max_times,
+                local_max_slow[i_max_blocked],
+                w=max_powers[i_max_blocked],
+            )
+
+            bazi_fitted = spline_bazi(times)
+            slow_fitted = spline_slow(times)
+
+            i_bazi_fitted = value_to_index(
+                bazi_fitted, 0., 360., self.delta_bazi)
+            i_slow_fitted = value_to_index(
+                slow_fitted, self.slowness_min, self.slowness_max,
+                self.slowness_delta)
+
+            i_shift = num.ravel_multi_index(
+                num.vstack((i_bazi_fitted, i_slow_fitted)),
+                (n_bazis, n_slow),
+            )
+
+            print 'XX', lengthout
+            stack_trace = num.zeros(lengthout)
+            i_base = num.arange(lengthout, dtype=num.int) + npad
+            for itr, tr in enumerate(traces):
+                print 'XXX', len(tr.ydata)
+                isorting = num.clip(
+                    i_base-shifts[i_shift, itr], npad, lengthout+npad)
+                stack_trace += tr.ydata[isorting]
+
+            beam_tr = trace.Trace(
+                tmin=t_min+tpad, ydata=stack_trace, deltat=deltat_cf)
+
+            self.add_trace(beam_tr)
+
             if self.want_all:
 
                 # ---------------------------------------------------------
@@ -423,15 +477,6 @@ class FK(Snuffling):
                 nsubplots = 1
                 ax = fig1.add_subplot(nsubplots, 1, 1)
                 ax.plot(num.max(frames, axis=0))
-                _argmax = num.argmax(frames, axis=0)
-                imax_bazi_all, imax_slow_all = num.unravel_index(
-                    _argmax, dims=(n_bazis, n_slow))
-
-                max_powers += (num.min(max_powers)*-1)
-                max_powers /= num.max(max_powers)
-                max_powers *= 10.  # Maximum has pixel size of 10
-                max_powers *= max_powers
-                block_max_times = times[i_max_blocked]
                 # --------------------------------------------------------------
                 # coherence maps
                 # --------------------------------------------------------------
@@ -459,17 +504,8 @@ class FK(Snuffling):
                 ax.set_title('Maximum')
 
                 # highlight block maxima
-                local_max_slow = slownesses[imax_slow_all]*km
                 ax.plot(block_max_times, local_max_slow[i_max_blocked], 'wo')
 
-                # spline
-                spline_slow = UnivariateSpline(
-                    block_max_times,
-                    local_max_slow[i_max_blocked],
-                    w=max_powers[i_max_blocked],
-                )
-
-                slow_fitted = spline_slow(times)
                 ax.plot(times, num.clip(
                     slow_fitted, self.slowness_min, self.slowness_max)
                 )
@@ -490,39 +526,9 @@ class FK(Snuffling):
                 ax.pcolormesh(times, bazis, data_max)
 
                 # highlight block maxima
-                local_max_bazi = bazis[imax_bazi_all]
                 ax.plot(block_max_times, local_max_bazi[i_max_blocked], 'wo')
 
-                spline_bazi = UnivariateSpline(
-                    block_max_times,
-                    local_max_bazi[i_max_blocked],
-                    w=max_powers[i_max_blocked],
-                    k=3,
-                    s=4e7
-                )
-
-                bazi_fitted = spline_bazi(times)
                 ax.plot(times, num.clip(bazi_fitted, 0, 360.))
-
-                i_bazi_fitted = value_to_index(
-                    bazi_fitted, 0., 360., self.delta_bazi)
-                i_slow_fitted = value_to_index(
-                    slow_fitted, self.slowness_min, self.slowness_max,
-                    self.slowness_delta)
-
-                i_shift = num.ravel_multi_index(
-                    num.vstack((i_bazi_fitted, i_slow_fitted)),
-                    (n_bazis, n_slow),
-                )
-
-                print 'XX', lengthout
-                stack_trace = num.zeros(lengthout)
-                i_base = num.arange(lengthout, dtype=num.int) + npad
-                for itr, tr in enumerate(traces):
-                    print 'XXX', len(tr.ydata)
-                    isorting = num.clip(
-                        i_base-shifts[i_shift, itr], npad, lengthout+npad)
-                    stack_trace += tr.ydata[isorting]
 
                 # xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
                 # ax.xaxis.set_major_formatter(xfmt)
@@ -603,9 +609,6 @@ class FK(Snuffling):
 
                 # beam_tr = trace.Trace(
                 #     tmin=t_min+tpad, ydata=ybeam, deltat=deltat_cf)
-                beam_tr = trace.Trace(
-                    tmin=t_min+tpad, ydata=stack_trace, deltat=deltat_cf)
-
                 # -----------------------------------------------------------
                 # polar movie:
                 # -----------------------------------------------------------
@@ -621,7 +624,6 @@ class FK(Snuffling):
                     n_slow=n_slow,
                 )
 
-                self.add_trace(beam_tr)
                 self.draw_figures()
 
                 self.irun += 1
