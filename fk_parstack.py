@@ -31,8 +31,6 @@ def search_max_block(n_maxsearch, data):
     n = len(data)
     n_dim2 = (int(n/n_maxsearch)+1) * n_maxsearch
     n_missing = n_dim2 - n
-    print n_maxsearch
-    print n_missing
     if n % n_maxsearch != 0:
         a = num.pad(data, [0, n_missing], mode='minimum')
     else:
@@ -223,14 +221,42 @@ class FK(Snuffling):
         )
         self.add_parameter(Switch('Show', 'want_all', True))
         self.add_parameter(Switch('Phase weighted stack', 'want_pws', False))
+        self.add_trigger('Clear Figures', self.cleanup_figures)
         self.set_live_update(False)
         self.irun = 0
+        self.figure_frames = []
+        self.figs2draw = []
+
+    def cleanup_figures(self):
+        '''close all figures.'''
+        parent = self._panel_parent
+        for fframe in self.figure_frames:
+            parent.remove_tab(fframe)
+        self.figure_frames = []
+
+    def new_figure(self, title=''):
+        '''Return a new Figure instance'''
+        fig_frame = self.pylab(name='FK: %s (%i)' %
+                          (title, self.irun), get='figure_frame')
+        self.figure_frames.append(fig_frame)
+        self.figs2draw.append(fig_frame.gcf())
+        return self.figs2draw[-1]
+
+    def draw_figures(self):
+        ''' Draw all new figures and clear list.'''
+        for fig in self.figs2draw:
+            fig.canvas.draw()
+
+        self.figs2draw = []
 
     def call(self):
 
         self.cleanup()
-        fig1 = None
+        figs = []
         azi_theo = None
+        method = {'stack': 0,
+                  'correlate': 2}[self.method]
+
         bazis = num.arange(0., 360.+self.delta_bazi, self.delta_bazi)
         slownesses = num.arange(self.slowness_min/km,
                                 self.slowness_max/km,
@@ -262,12 +288,6 @@ class FK(Snuffling):
         frames = None
         t1 = time.time()
 
-        method = {'stack': 0,
-                  'correlate': 2}[self.method]
-
-        def trace_selector(x):
-            return util.match_nslc('*.*.*.%s' % self.want_channel, x.nslc_id)
-
         # make sure that only visible stations are used
         use_stations = stations
         center_station = get_center_station(use_stations, select_closest=True)
@@ -293,6 +313,9 @@ class FK(Snuffling):
 
         frames = None
         tinc_add = tinc_use or 0
+
+        def trace_selector(x):
+            return util.match_nslc('*.*.*.%s' % self.want_channel, x.nslc_id)
 
         for traces in self.chopper_selected_traces(
                 tinc=tinc_use, tpad=tpad, fallback=True,
@@ -395,9 +418,7 @@ class FK(Snuffling):
                 # ---------------------------------------------------------
                 # maxima search
                 # ---------------------------------------------------------
-                fig1 = self.pylab(name='FK: Max Power (%i)' %
-                                  self.irun, get='figure')
-
+                fig1 = self.new_figure('Max Power')
                 nsubplots = 1
                 ax = fig1.add_subplot(nsubplots, 1, 1)
                 ax.plot(num.max(frames, axis=0))
@@ -422,18 +443,16 @@ class FK(Snuffling):
                     num.argmax(best_frame),
                     dims=(n_bazis, n_slow))
 
-                fig = self.pylab(name='FK: Slowness (%i)' %
-                                 self.irun, get='figure')
-
+                fig2 = self.new_figure('Slowness')
                 data = frames_reshaped[imax_bazi, :, :]
                 data_max = num.amax(frames_reshaped, axis=0)
 
-                ax = fig.add_subplot(211)
+                ax = fig2.add_subplot(211)
                 ax.set_title('Global maximum slize')
                 ax.set_ylabel('slowness [s/km]')
                 ax.pcolormesh(times, slownesses*km, data)
 
-                ax = fig.add_subplot(212, sharex=ax, sharey=ax)
+                ax = fig2.add_subplot(212, sharex=ax, sharey=ax)
                 ax.set_ylabel('slowness [s/km]')
                 ax.pcolormesh(times, slownesses*km, data_max)
                 ax.set_title('Maximum')
@@ -454,18 +473,17 @@ class FK(Snuffling):
                     slow_fitted, self.slowness_min, self.slowness_max)
                 )
 
-                fig = self.pylab(name='FK: Back-Azimuth (%i)' %
-                                 self.irun, get='figure')
+                fig3 = self.new_figure('Back-Azimuth')
                 data = frames_reshaped[:, imax_slow, :]
                 data_max = num.amax(frames_reshaped, axis=1)
 
-                ax = fig.add_subplot(211, sharex=ax)
+                ax = fig3.add_subplot(211, sharex=ax)
                 ax.set_title('Global maximum slize')
                 ax.set_ylabel('back-azimuth')
                 ax.pcolormesh(times, bazis, data)
                 ax.plot(times[imax_time], bazis[imax_bazi], 'b.')
 
-                ax = fig.add_subplot(212, sharex=ax, sharey=ax)
+                ax = fig3.add_subplot(212, sharex=ax, sharey=ax)
                 ax.set_ylabel('back-azimuth')
                 ax.set_title('Maximum')
                 ax.pcolormesh(times, bazis, data_max)
@@ -496,9 +514,11 @@ class FK(Snuffling):
                     (n_bazis, n_slow),
                 )
 
+                print 'XX', lengthout
                 stack_trace = num.zeros(lengthout)
                 i_base = num.arange(lengthout, dtype=num.int)
                 for itr, tr in enumerate(traces):
+                    print 'XXX', len(tr.ydata)
                     isorting = num.clip(
                         i_base-shifts[i_shift, itr], 0, lengthout)
                     stack_trace += tr.ydata[isorting]
@@ -510,13 +530,11 @@ class FK(Snuffling):
 
                 semblance = best_frame.reshape((n_bazis, n_slow))
 
-                fig1 = self.pylab(name='FK: Max (%i)' % self.irun,
-                                  get='figure')
-
+                fig4 = self.new_figure('Max')
                 theta, r = num.meshgrid(bazis, slownesses)
                 theta *= (num.pi/180.)
 
-                ax = fig1.add_subplot(111, projection='polar')
+                ax = fig4.add_subplot(111, projection='polar')
                 m = ax.pcolormesh(theta.T, r.T*km, to_db(semblance))
 
                 ax.plot(bazis[imax_bazi]*d2r, slownesses[imax_slow]*km, 'o')
@@ -526,7 +544,7 @@ class FK(Snuffling):
                 ax.plot(bazi_max, slow_max, 'b.')
                 ax.text(0.5, 0.01, 'Maximum at %s degrees, %s s/km' %
                         (num.round(bazi_max, 1), slow_max),
-                        transform=fig1.transFigure,
+                        transform=fig4.transFigure,
                         horizontalalignment='center',
                         verticalalignment='bottom')
 
@@ -537,21 +555,19 @@ class FK(Snuffling):
                              zorder=5)
 
                 self.adjust_polar_axis(ax)
-                fig1.colorbar(m)
+                fig4.colorbar(m)
 
                 # ---------------------------------------------------------
                 # CF and beam forming
                 # ---------------------------------------------------------
-                fig1 = self.pylab(name='FK: Beam(%i)' %
-                                  self.irun, get='figure')
-
+                fig5 = self.new_figure('Beam')
                 nsubplots = 4
                 nsubplots += self.want_pws
 
-                ax_raw = fig1.add_subplot(nsubplots, 1, 1)
-                ax_shifted = fig1.add_subplot(nsubplots, 1, 2)
-                ax_beam = fig1.add_subplot(nsubplots, 1, 3)
-                ax_beam_new = fig1.add_subplot(nsubplots, 1, 4)
+                ax_raw = fig5.add_subplot(nsubplots, 1, 1)
+                ax_shifted = fig5.add_subplot(nsubplots, 1, 2)
+                ax_beam = fig5.add_subplot(nsubplots, 1, 3)
+                ax_beam_new = fig5.add_subplot(nsubplots, 1, 4)
 
                 axkwargs = dict(alpha=0.3, linewidth=0.3, color='grey')
 
@@ -580,7 +596,7 @@ class FK(Snuffling):
                 ax_beam.set_title('Linear Stack')
 
                 if self.want_pws:
-                    ax_playground = fig1.add_subplot(nsubplots, 1, 4)
+                    ax_playground = fig5.add_subplot(nsubplots, 1, 4)
                     ax_playground.plot(ybeam*ybeam_weighted/len(arrays))
                     ax_playground.set_title('Phase Weighted Stack')
 
@@ -592,9 +608,9 @@ class FK(Snuffling):
                 # -----------------------------------------------------------
                 # polar movie:
                 # -----------------------------------------------------------
-                fig = self.pylab(name='FK: Beam(%i)' % self.irun, get='figure')
+                fig6 = self.new_figure('Beam')
                 self.polar_movie(
-                    fig=fig,
+                    fig=fig6,
                     frames=frames,
                     times=times,
                     theta=theta.T,
@@ -605,6 +621,7 @@ class FK(Snuffling):
                 )
 
                 self.add_trace(beam_tr)
+                self.draw_figures()
 
                 self.irun += 1
 
@@ -651,6 +668,7 @@ class FK(Snuffling):
             interval=20.,
             repeat=False,
             blit=True)
+
         fig.canvas.draw()
 
     def adjust_polar_axis(self, ax):
