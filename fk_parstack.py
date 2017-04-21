@@ -209,7 +209,7 @@ class FK(Snuffling):
         self.add_parameter(Param(
             'delta backazimut', 'delta_bazi', 2, 1, 20))
         self.add_parameter(Param(
-            'Increment [s]', 'tinc', 10., 0.5, 10.,
+            'Increment [s]', 'tinc', 10., 0.5, 60.,
             high_is_none=True))
         self.add_parameter(Param(
             'Smoothing length [N]', 'ntaper', 0, 0, 30, low_is_none=True))
@@ -221,7 +221,7 @@ class FK(Snuffling):
         )
         self.add_parameter(Switch('Show', 'want_all', True))
         self.add_parameter(Switch('Phase weighted stack', 'want_pws', False))
-        self.add_trigger('Clear Figures', self.cleanup_figures)
+        self.add_trigger('Close Figures', self.remove_frames)
         self.set_live_update(False)
         self.irun = 0
         self.figure_frames = []
@@ -231,7 +231,8 @@ class FK(Snuffling):
         '''close all figures.'''
         parent = self._panel_parent
         for fframe in self.figure_frames:
-            parent.remove_tab(fframe)
+            if fframe:
+                parent.remove_tab(fframe)
         self.figure_frames = []
 
     def new_figure(self, title=''):
@@ -516,11 +517,11 @@ class FK(Snuffling):
 
                 print 'XX', lengthout
                 stack_trace = num.zeros(lengthout)
-                i_base = num.arange(lengthout, dtype=num.int)
+                i_base = num.arange(lengthout, dtype=num.int) + npad
                 for itr, tr in enumerate(traces):
                     print 'XXX', len(tr.ydata)
                     isorting = num.clip(
-                        i_base-shifts[i_shift, itr], 0, lengthout)
+                        i_base-shifts[i_shift, itr], npad, lengthout+npad)
                     stack_trace += tr.ydata[isorting]
 
                 # xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
