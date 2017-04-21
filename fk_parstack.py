@@ -408,7 +408,7 @@ class FK(Snuffling):
                 max_powers += (num.min(max_powers)*-1)
                 max_powers /= num.max(max_powers)
                 max_powers *= 10.  # Maximum has pixel size of 10
-
+                max_powers *= max_powers
                 block_max_times = times[i_max_blocked]
                 # --------------------------------------------------------------
                 # coherence maps
@@ -500,7 +500,7 @@ class FK(Snuffling):
                 i_base = num.arange(lengthout, dtype=num.int)
                 for itr, tr in enumerate(traces):
                     isorting = num.clip(
-                        i_base+shifts[i_shift, itr], 0, lengthout)
+                        i_base-shifts[i_shift, itr], 0, lengthout)
                     stack_trace += tr.ydata[isorting]
 
                 # xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
