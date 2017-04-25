@@ -209,10 +209,12 @@ class FK(Snuffling):
         self.add_parameter(Param(
             'delta backazimut', 'delta_bazi', 2, 1, 20))
         self.add_parameter(Param(
-            'Increment [s]', 'tinc', 10., 0.5, 60.,
+            'Increment [s]', 'tinc', 60., 0.5, 60.,
             high_is_none=True))
         self.add_parameter(Param(
             'Smoothing length [N]', 'ntaper', 0, 0, 30, low_is_none=True))
+        self.add_parameter(Param(
+            'Maximum search factor', 'search_factor', 1, 0, 3))
         self.add_parameter(Choice(
             'Use channels', 'want_channel', '*',
             ['*', '*Z', '*E', '*N', 'SHZ', 'BHZ', 'p0']))
@@ -412,39 +414,54 @@ class FK(Snuffling):
 
             # power maxima in blocks
             i_max_blocked = search_max_block(
-                n_maxsearch=npad, data=max_powers)
+                n_maxsearch=int(npad*self.search_factor), data=max_powers)
 
             max_powers += (num.min(max_powers)*-1)
             max_powers /= num.max(max_powers)
-            max_powers *= 10.  # Maximum has pixel size of 10
             max_powers *= max_powers
+            weights = max_powers[i_max_blocked]
             block_max_times = times[i_max_blocked]
 
             _argmax = num.argmax(frames, axis=0)
             imax_bazi_all, imax_slow_all = num.unravel_index(
                 _argmax, dims=(n_bazis, n_slow))
 
-            local_max_bazi = bazis[imax_bazi_all]
-            spline_bazi = UnivariateSpline(
-                block_max_times,
-                local_max_bazi[i_max_blocked],
-                w=max_powers[i_max_blocked],
-                k=3,
-                s=4e7
+            local_max_bazi = bazis[imax_bazi_all][i_max_blocked]
+            local_max_slow = slownesses[imax_slow_all][i_max_blocked]*km
+
+            k_north = num.sin(local_max_bazi * d2r) * local_max_slow
+            k_east = num.cos(local_max_bazi * d2r) * local_max_slow
+
+            smooth = 4e7
+
+            spline_north = UnivariateSpline(
+                block_max_times, k_north, w=weights,
+                s=smooth
             )
 
-            local_max_slow = slownesses[imax_slow_all]*km
+            spline_east = UnivariateSpline(
+                block_max_times, k_east, w=weights,
+                s=smooth,
+            )
+
+            k_north_fit = spline_north(times)
+            k_east_fit = spline_east(times)
+
+            bazi_fitted = num.arctan2(k_east_fit, k_north_fit) / d2r
+            bazi_fitted -= 90.
+            bazi_fitted *= -1.
+            bazi_fitted[num.where(bazi_fitted<0.)] += 360.
+
             spline_slow = UnivariateSpline(
                 block_max_times,
-                local_max_slow[i_max_blocked],
-                w=max_powers[i_max_blocked],
+                local_max_slow,
+                w=weights,
             )
 
-            bazi_fitted = spline_bazi(times)
             slow_fitted = spline_slow(times)
-
             i_bazi_fitted = value_to_index(
                 bazi_fitted, 0., 360., self.delta_bazi)
+
             i_slow_fitted = value_to_index(
                 slow_fitted, self.slowness_min, self.slowness_max,
                 self.slowness_delta)
@@ -454,11 +471,9 @@ class FK(Snuffling):
                 (n_bazis, n_slow),
             )
 
-            print 'XX', lengthout
             stack_trace = num.zeros(lengthout)
             i_base = num.arange(lengthout, dtype=num.int) + npad
             for itr, tr in enumerate(traces):
-                print 'XXX', len(tr.ydata)
                 isorting = num.clip(
                     i_base-shifts[i_shift, itr], npad, lengthout+npad)
                 stack_trace += tr.ydata[isorting]
@@ -496,6 +511,7 @@ class FK(Snuffling):
                 ax = fig2.add_subplot(211)
                 ax.set_title('Global maximum slize')
                 ax.set_ylabel('slowness [s/km]')
+                ax.plot(times[imax_time], slownesses[imax_slow]*km, 'b.')
                 ax.pcolormesh(times, slownesses*km, data)
 
                 ax = fig2.add_subplot(212, sharex=ax, sharey=ax)
@@ -504,7 +520,7 @@ class FK(Snuffling):
                 ax.set_title('Maximum')
 
                 # highlight block maxima
-                ax.plot(block_max_times, local_max_slow[i_max_blocked], 'wo')
+                ax.plot(block_max_times, local_max_slow, 'wo')
 
                 ax.plot(times, num.clip(
                     slow_fitted, self.slowness_min, self.slowness_max)
@@ -526,8 +542,7 @@ class FK(Snuffling):
                 ax.pcolormesh(times, bazis, data_max)
 
                 # highlight block maxima
-                ax.plot(block_max_times, local_max_bazi[i_max_blocked], 'wo')
-
+                ax.plot(block_max_times, local_max_bazi, 'wo')
                 ax.plot(times, num.clip(bazi_fitted, 0, 360.))
 
                 # xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
@@ -603,12 +618,10 @@ class FK(Snuffling):
                 ax_beam.set_title('Linear Stack')
 
                 if self.want_pws:
-                    ax_playground = fig5.add_subplot(nsubplots, 1, 4)
+                    ax_playground = fig5.add_subplot(nsubplots, 1, 5)
                     ax_playground.plot(ybeam*ybeam_weighted/len(arrays))
                     ax_playground.set_title('Phase Weighted Stack')
 
-                # beam_tr = trace.Trace(
-                #     tmin=t_min+tpad, ydata=ybeam, deltat=deltat_cf)
                 # -----------------------------------------------------------
                 # polar movie:
                 # -----------------------------------------------------------
