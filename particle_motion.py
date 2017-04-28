@@ -1,9 +1,12 @@
 import logging
 import numpy as num
+import matplotlib.pyplot as plt
+import copy
 
+from matplotlib.collections import LineCollection
 from mpl_toolkits.mplot3d import Axes3D  # noqa
 from pyrocko import util
-from pyrocko.snuffling import Snuffling, Choice
+from pyrocko.snuffling import Snuffling, Choice, Switch
 
 
 logger = logging.getLogger('pyrocko.snuffling.particle_motion')
@@ -42,8 +45,6 @@ class ParticleMotion(Snuffling):
             zlabel = ''
             xlabel = ''
             ylabel = ''
-
-            want_3d = True
 
             def selector(tr):
                 return util.match_nslc("%s.%s.%s.*" % nsl_id, tr.nslc_id)
@@ -97,8 +98,6 @@ class ParticleMotion(Snuffling):
                     ax.set_xlim(num.min(xi), num.max(xi))
                     ax.set_ylim(num.min(yi), num.max(yi))
                     ax.set_aspect('equal')
-                else:
-                    want_3d = False
                 ax.set_xlabel(xilabel)
                 ax.set_ylabel(yilabel)
                 ax.grid(True)
@@ -112,19 +111,33 @@ class ParticleMotion(Snuffling):
                     ax.yaxis.tick_right()
 
                 axs[iax] = ax
-                fig.subplots_adjust(hspace=0.02, wspace=0.02)
 
-            if want_3d:
-                ax = fig.add_subplot(224, projection='3d')
-                ax.set_xlabel(xlabel)
-                ax.set_ylabel(ylabel)
-                ax.set_zlabel(zlabel)
-                ax.scatter(x, y, z, c=time, cmap=self.cmap)
+                ax = fig.add_subplot(224)
+                min_t = num.min(time)
+                max_t = num.max(time)
+                for i, (v, label) in enumerate(zip([x, y, z], [xlabel, ylabel, zlabel])):
+                    v = copy.deepcopy(v)
+                    mean_v = num.mean(v)
+                    v -= mean_v
+                    v /= num.max(v)
+                    v += i
+                    points = num.array([time, v]).T.reshape(-1, 1, 2)
+                    segments = num.concatenate([points[:-1], points[1:]], axis=1)
+                    lc = LineCollection(segments, cmap=plt.get_cmap(self.cmap))
+                    lc.set_array(time)
+                    ax.add_collection(lc)
+                    ax.text(max_t, v[-1], label)
+                    ax.set_xlabel('time [s]')
 
-            cbaxes = fig.add_axes([0.02, 0.07, 0.96, 0.02])
-            fig.colorbar(mapable, cax=cbaxes, orientation='horizontal',
-                         label='time [s]')
+                ax.set_ylim(-1., 3.)
+                ax.set_xlim(min_t, max_t)
+                ax.spines['left'].set_color('none')
+                ax.spines['top'].set_color('none')
+                ax.spines['right'].set_color('none')
+                ax.yaxis.set_ticks([])
+
             fig.suptitle('.'.join(nsl_id))
+            fig.subplots_adjust(hspace=0.05, wspace=0.05, bottom=0.07)
             figs.append(fig)
 
         for fig in figs:
