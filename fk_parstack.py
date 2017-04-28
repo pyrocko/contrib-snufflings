@@ -223,25 +223,14 @@ class FK(Snuffling):
         )
         self.add_parameter(Switch('Show', 'want_all', True))
         self.add_parameter(Switch('Phase weighted stack', 'want_pws', False))
-        self.add_trigger('Close Figures', self.remove_frames)
         self.set_live_update(False)
         self.irun = 0
-        self.figure_frames = []
         self.figs2draw = []
-
-    def cleanup_figures(self):
-        '''close all figures.'''
-        parent = self._panel_parent
-        for fframe in self.figure_frames:
-            if fframe:
-                parent.remove_tab(fframe)
-        self.figure_frames = []
 
     def new_figure(self, title=''):
         '''Return a new Figure instance'''
         fig_frame = self.pylab(name='FK: %s (%i)' %
                           (title, self.irun), get='figure_frame')
-        self.figure_frames.append(fig_frame)
         self.figs2draw.append(fig_frame.gcf())
         return self.figs2draw[-1]
 
