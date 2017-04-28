@@ -151,9 +151,19 @@ file: [spectrogram.py](spectrogram.py)
 
 Geodetic forward modelling
 ----------------------------
-Visuialize and output of a data trace for a rectangular dislocation source in an elastic halfspace.
+
+Visualize and output of a data trace for a rectangular dislocation source in an elastic halfspace.
 You will need to go to the okada dir and type make in order to compile the C-Code.
 
 directory: [okada](okada)
 
 ![screenshot](screenshots/okada.png)
+
+Particle Motion
+----------------------------
+
+Plot combinations of vertical and horizontal channels of selected stations.
+
+file: [particle_motion.py](particle_motion.py)
+
+![screenshot](screenshots/particle_motion.png)
