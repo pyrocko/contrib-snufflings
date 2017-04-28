@@ -98,19 +98,18 @@ class SeiSound(Snuffling):
     <b><pre>
     sudo apt-get install python-qt4-phonon
     </pre></b>
+
     <p>
-    Due to performance reasons of the resampling, the fast forward factor is
-    rounded to one decimal place.
     </body>
     '''
 
     def setup(self):
         self.set_name('Play/Save Audio')
-        self.add_parameter(Param('Fast Forward/Rewind', 'speed_up', 1., -20., 30.))
-        self.add_parameter(Choice('fps', 'fps', '4000',
+        self.add_parameter(Param('Fast Forward/Rewind', 'speed_up', 10., -20., 30.))
+        self.add_parameter(Choice('fps', 'fps', '16000',
                                   ('44100', '32000', '18000', '16000', '9000',
                                    '4000')))
-        self.add_parameter(Param('Highpass [Hz]', 'corner_highpass', 0.1,
+        self.add_parameter(Param('Highpass [Hz]', 'corner_highpass', 0.001,
                                  0.001, 100., low_is_none=True))
 
         self.add_parameter(Param('Lowpass [Hz]', 'corner_lowpass', 100.,
@@ -165,13 +164,13 @@ class SeiSound(Snuffling):
             if ntraces != 1:
                 self.fail('Can only play one selected trace')
             t = tr[0].copy()
+            t.set_ydata(num.asarray(t.ydata-num.mean(t.ydata), dtype=num.float))
             nslc_ids.append(t.nslc_id)
-
-            t.taper(CosFader(xfrac=self.tfade/100.))
             if self.corner_lowpass:
                 t.lowpass(4, self.corner_lowpass)
             if self.corner_highpass:
                 t.highpass(4, self.corner_highpass)
+            t.taper(CosFader(xfrac=self.tfade/100.))
             data = t.get_ydata()
             ntraces += 1
 
@@ -187,7 +186,7 @@ class SeiSound(Snuffling):
         Phonon.createPath(self.m_media, output)
         self.m_media.setCurrentSource(Phonon.MediaSource(tmpfile))
         self.marker_thread.media = self.m_media
-        self.marker_thread.speed_up = speed_up=num.round(self.speed_up, 1) 
+        self.marker_thread.speed_up = int(num.round(self.speed_up))
         self.m_media.stateChanged.connect(self.marker_thread.handle_states)
         self.m_media.play()
 
@@ -201,7 +200,7 @@ class SeiSound(Snuffling):
         n_frac = float(n)/(n+len(data))
         data = num.append(data, num.zeros(n))
         fps = int(self.fps)
-        arg = int(fps*self.ttotal/num.abs(num.round(self.speed_up, 1)))
+        arg = int(fps*self.ttotal/num.abs(num.round(self.speed_up)))
         data = resample(data, arg)
         nnew = len(data)
         data = data[:-int(n_frac*nnew)]
@@ -226,7 +225,7 @@ class SeiSound(Snuffling):
             self.fail(self.no_phonon_warn)
         if self.m_media is None:
             self.call()
-            return 
+            return
 
         state = self.m_media.state()
         if state == Phonon.PlayingState:
@@ -240,6 +239,7 @@ class SeiSound(Snuffling):
         else:
             print 'unexpected state. cleanup....'
             self.m_media.stop()
+
 
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
