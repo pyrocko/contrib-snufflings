@@ -2,7 +2,7 @@ from PyQt4.QtCore import QThread, SIGNAL, QTimer
 from pyrocko.snuffling import Snuffling, Param, Choice, Switch, NoTracesSelected
 import pyrocko.trace as trace
 from pyrocko.trace import CosFader
-from scipy.io.wavfile import write
+from scipy.io.wavfile import write, read
 from scipy.signal import resample
 import numpy as num
 import tempfile
@@ -106,9 +106,9 @@ class SeiSound(Snuffling):
     def setup(self):
         self.set_name('Play/Save Audio')
         self.add_parameter(Param('Fast Forward/Rewind', 'speed_up', 10., -20., 30.))
-        self.add_parameter(Choice('fps', 'fps', '16000',
+        self.add_parameter(Choice('fps', 'fps_choice', '16000',
                                   ('44100', '32000', '18000', '16000', '9000',
-                                   '4000')))
+                                   '4000', 'keep original')))
         self.add_parameter(Param('Highpass [Hz]', 'corner_highpass', 0.001,
                                  0.001, 100., low_is_none=True))
 
@@ -122,20 +122,23 @@ class SeiSound(Snuffling):
         self.add_trigger('Stop', self.stop_play)
         self.add_trigger('Apply Main Control Filters', self.set_from_main)
         self.add_trigger('Export .wav file', self.export_wav)
+        self.add_trigger('Load .wav file', self.load_data)
 
         self.set_live_update(False)
         self._tmpdir = self.tempdir()
-        self.marker = None
         self.output = None
         self.marker_thread = None
         if not no_phonon:
             self.m_media = Phonon.MediaObject(self._panel_parent)
         self.no_phonon_warn = 'Install pyqt4 phonon!\nCan only export wav files.\nCheckout this snuffling\'s help.'
+        self.added_traces = []
 
     def my_cleanup(self):
         if self.marker_thread is not None:
             self.marker_thread.cleanup()
         self.cleanup()
+        for tr in self.added_traces:
+            self.add_trace(tr)
 
     def call(self):
         self.my_cleanup()
@@ -155,6 +158,16 @@ class SeiSound(Snuffling):
                 self.marker_thread.cleanup()
             self.play_phonon()
 
+    def load_data(self):
+        fn = self.input_filename()
+        sampling_rate, data = read(fn)
+        for i, channel in enumerate(data.T):
+            tr = trace.Trace(
+                tmin=0., ydata=channel, deltat=1./sampling_rate, station='wav%s' % i)
+            self.add_trace(tr)
+            self.added_traces.append(tr)
+        self.set_parameter('fps_choice', 'keep original')
+
     def prepare_data(self):
         trange = self.get_selected_time_range()
         self.ttotal = float(trange[1]-trange[0])
@@ -163,6 +176,7 @@ class SeiSound(Snuffling):
         for tr in self.chopper_selected_traces():
             if ntraces != 1:
                 self.fail('Can only play one selected trace')
+            self.fps = 1./tr[0].deltat
             t = tr[0].copy()
             t.set_ydata(num.asarray(t.ydata-num.mean(t.ydata), dtype=num.float))
             nslc_ids.append(t.nslc_id)
@@ -198,18 +212,20 @@ class SeiSound(Snuffling):
         data = num.asarray(data, dtype=num.float)
         n = trace.nextpow2(len(data))-len(data)
         n_frac = float(n)/(n+len(data))
-        data = num.append(data, num.zeros(n))
-        fps = int(self.fps)
-        arg = int(fps*self.ttotal/num.abs(num.round(self.speed_up)))
-        data = resample(data, arg)
-        nnew = len(data)
-        data = data[:-int(n_frac*nnew)]
-        if self.speed_up<0.:
-            data = data[::-1]
-        data[0]  = 0.
+        if not self.fps_choice == 'keep original':
+            fps = int(self.fps_choice)
+            arg = int(fps*self.ttotal/num.abs(num.round(self.speed_up)))
+            data = resample(data, arg)
+            nnew = len(data)
+            data = data[:-int(n_frac*nnew)]
+            if self.speed_up<0.:
+                data = data[::-1]
+            data[0]  = 0.
+            self.fps = fps
+
         self.marker_thread.t_stretch = n_frac
         scaled = num.int16(data/float(num.max(num.abs(data))) * 32767)
-        write(fn, fps, scaled)
+        write(fn, self.fps, scaled)
 
     def set_from_main(self):
         v = self.get_viewer()
