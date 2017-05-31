@@ -84,6 +84,9 @@ class CumEvent(Snuffling):
                 magnitudes.append(e.moment_tensor.magnitude)
             else:
                 magnitudes.append(e.magnitude)
+            if magnitudes[-1] is None:
+                magnitudes.pop()
+                magnitudes.append(0.)
 
         magnitudes = moment_tensor.magnitude_to_moment(num.array(magnitudes))
         cum_events_magnitude = num.cumsum(magnitudes)
