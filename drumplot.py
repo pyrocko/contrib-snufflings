@@ -76,11 +76,10 @@ class DrumPlot(Snuffling):
                 if viewer.lowpass and 1./tr.deltat>2.*viewer.lowpass:
                     tr.lowpass(4, viewer.lowpass)
 
-                t = tr.get_xdata()
+                t = tr.get_xdata() - t0
                 y = num.asarray(tr.get_ydata(), dtype=num.float)
-                nskip = (t-t0) / 3600
-                y += nskip
-                x = (t-t0) % xseconds
+                nskip = t / 3600.
+                x = t % xseconds
                 xdiff = num.diff(x) 
                 itmp = num.where(num.logical_or(xdiff < 0, num.abs(xdiff-tr.deltat) > 1E-4))[0]
                 indices = num.zeros(len(itmp)+2, dtype=num.int)
@@ -102,14 +101,14 @@ class DrumPlot(Snuffling):
             for (t0, x, y, shifts) in lines:
                 fig, ax = figs[key]
                 ax.plot(
-                    x/60,
+                    x/60.,
                     y/((ynorm or ynormalizations[key])/self.yscale) + shifts,
                     color='black')
 
                 ax.set_title(util.tts(t0, format='%Y-%m-%d'))
         
         yticks = range(0, self.nhours+2, 2)
-        xticks = range(0, self.xminutes+1, 1)
+        xticks = range(0, xminutes+1, 1)
         for key, (fig, ax) in figs.items():
             ax.set_xlim(0, xminutes)
             ax.set_ylabel('Hour')
