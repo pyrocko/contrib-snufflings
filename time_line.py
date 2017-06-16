@@ -10,26 +10,31 @@ from datetime import datetime
 cmap = cm.jet
 km = 1000.
 
+
 class TimeLine(Snuffling):
-    
+
     '''
     <html>
     <body>
     <h1>Temporal Evolution of Seismicity</h1>
 
-    The considered region can be limited by defining one central coordinate and a
-    maximum epicentral distance.
+    The considered region can be limited by defining one central coordinate
+    and a maximum epicentral distance.
     </body>
     </html>
     '''
 
     def setup(self):
         '''Customization of the snuffling.'''
-        
+
         self.set_name('Time Line')
-        self.add_parameter(Param('Latitude:', 'lat', 90, -90., 90., high_is_none=True))
-        self.add_parameter(Param('Longitude:', 'lon', 180., -180, 180., high_is_none=True))
-        self.add_parameter(Param('Maximum Distance [km]:', 'maxd', 20000., 0., 20000., high_is_none=True))
+        self.add_parameter(
+            Param('Latitude:', 'lat', 90, -90., 90., high_is_none=True))
+        self.add_parameter(
+            Param('Longitude:', 'lon', 180., -180, 180., high_is_none=True))
+        self.add_parameter(
+            Param('Maximum Distance [km]:', 'maxd', 20000., 0., 20000.,
+                  high_is_none=True))
 
         self.add_trigger('Save Figure', self.save_as)
         self.set_live_update(False)
@@ -39,17 +44,20 @@ class TimeLine(Snuffling):
     def call(self):
         '''Main work routine of the snuffling.'''
         self.cleanup()
-        viewer = self.get_viewer()  
+        viewer = self.get_viewer()
         tmin, tmax = self.get_selected_time_range(fallback=True)
-        event_markers = filter(lambda x: x.tmin>=tmin and x.tmax<=tmax,
+        event_markers = filter(lambda x: x.tmin >= tmin and x.tmax <= tmax,
                                viewer.markers)
 
-        event_markers = filter(lambda x: isinstance(x, EventMarker), event_markers)
-        if self.maxd:
-            event_markers = filter(lambda x: distance(self, x._event)<=self.maxd*km,
-                               event_markers)
+        event_markers = filter(
+            lambda x: isinstance(x, EventMarker), event_markers)
 
-        if event_markers==[]:
+        if self.maxd:
+            event_markers = filter(
+                lambda x: distance(self, x._event) <= self.maxd*km,
+                event_markers)
+
+        if event_markers == []:
             self.fail('No events in selected area found')
         events = [m.get_event() for m in event_markers]
 
@@ -66,7 +74,7 @@ class TimeLine(Snuffling):
         ax1 = self.fig.add_subplot(323)
         ax2 = self.fig.add_subplot(325)
         ax3 = self.fig.add_subplot(324)
-        
+
         num_events = len(events)
         magnitudes = num.zeros(num_events)
         times = num.zeros(num_events)
@@ -75,7 +83,7 @@ class TimeLine(Snuffling):
         depths = num.zeros(num_events)
         for i, e in enumerate(events):
             if e.magnitude:
-                mag = e.magnitude 
+                mag = e.magnitude
             else:
                 mag = 0.
             magnitudes[i] = mag
@@ -83,7 +91,7 @@ class TimeLine(Snuffling):
             lons[i] = e.lon
             depths[i] = e.depth
             times[i] = e.time
-        
+
         tmin = min(times)
         tmax = max(times)
         lon_max = lons.max()
@@ -99,19 +107,19 @@ class TimeLine(Snuffling):
         fds = mdates.date2num(dates)
         tday = 3600*24
         tweek = tday*7
-        if tmax-tmin<1*tday:
+        if tmax-tmin < 1*tday:
             hfmt = mdates.DateFormatter('%Y-%m-%d %H:%M:%S')
-        elif tmax-tmin<tweek*52:
+        elif tmax-tmin < tweek*52:
             hfmt = mdates.DateFormatter('%Y-%m-%d')
         else:
             hfmt = mdates.DateFormatter('%Y/%m')
 
-        ax.scatter(fds, 
-                   magnitudes, 
-                   s=20, 
-                   c=times, 
-                   vmin=tmin, 
-                   vmax=tmax, 
+        ax.scatter(fds,
+                   magnitudes,
+                   s=20,
+                   c=times,
+                   vmin=tmin,
+                   vmax=tmax,
                    cmap=cmap)
 
         ax.xaxis.set_major_formatter(hfmt)
@@ -135,7 +143,8 @@ class TimeLine(Snuffling):
         ax1.get_yaxis().tick_left()
 
         # bottom left plot
-        ax2.scatter(lons, depths, s=20, c=times, vmin=tmin, vmax=tmax, cmap=cmap)
+        ax2.scatter(
+            lons, depths, s=20, c=times, vmin=tmin, vmax=tmax, cmap=cmap)
         ax2.set_xlim((lon_min, lon_max))
         ax2.set_ylim((depths_min, depths_max))
         ax2.grid(True)
@@ -145,7 +154,8 @@ class TimeLine(Snuffling):
         ax2.invert_yaxis()
 
         # top left plot
-        ax3.scatter(depths, lats, s=20, c=times, vmin=tmin, vmax=tmax, cmap=cmap)
+        ax3.scatter(
+            depths, lats, s=20, c=times, vmin=tmin, vmax=tmax, cmap=cmap)
         ax3.set_xlim((depths_min, depths_max))
         ax3.grid(True)
         ax3.set_ylim((lat_min, lat_max))
@@ -153,23 +163,20 @@ class TimeLine(Snuffling):
         ax3.get_xaxis().tick_bottom()
         ax3.get_yaxis().tick_right()
 
-        self.fig.subplots_adjust(bottom=0.1, 
-                            right=0.9, 
-                            top=0.95,
-                            wspace=0.02,
-                            hspace=0.02)
-        init_pos.y0+=0.05
+        self.fig.subplots_adjust(
+            bottom=0.1, right=0.9, top=0.95, wspace=0.02, hspace=0.02)
+        init_pos.y0 += 0.05
         ax.set_position(init_pos)
         if self.cli_mode:
             plt.show()
         else:
             self.fig.canvas.draw()
- 
+
     def save_as(self):
         if self.fig:
             fn = self.output_filename()
             self.fig.savefig(fn,
-                             pad_inches=0.05, 
+                             pad_inches=0.05,
                              bbox_inches='tight')
 
     def configure_cli_parser(self, parser):
@@ -179,13 +186,14 @@ class TimeLine(Snuffling):
             default=None,
             metavar='FILENAME',
             help='Read events from FILENAME')
-    
+
+
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
-    
-    return [ TimeLine() ]
 
-if __name__=='__main__':
+    return [TimeLine()]
+
+if __name__ == '__main__':
     import matplotlib.pyplot as plt
     util.setup_logging('time_line.py', 'info')
     s = TimeLine()
@@ -193,5 +201,5 @@ if __name__=='__main__':
 
     s.cli_mode = True
     if options.events_filename:
-        s.make_time_line(list(model.Event.load_catalog(options.events_filename)))
-
+        s.make_time_line(
+            list(model.Event.load_catalog(options.events_filename)))
