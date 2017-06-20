@@ -230,11 +230,14 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
                              mt[2], mt[3], mt[4], mt[5],
                              1., e.lon, e.lat, e.name))
                     else:
-                        moment = moment_tensor.magnitude_to_moment(e.magnitude)
-                        psmeca_input.append(
-                            (e.lon, e.lat, e.depth/1000.,
-                             moment/3., moment/3., moment/3.,
-                             0., 0., 0., 1., e.lon, e.lat, e.name))
+                        if e.magnitude is None:
+                            moment = -1.
+                        else:
+                            moment = moment_tensor.magnitude_to_moment(e.magnitude)
+                            psmeca_input.append(
+                                (e.lon, e.lat, e.depth/1000.,
+                                 moment/3., moment/3., moment/3.,
+                                 0., 0., 0., 1., e.lon, e.lat, e.name))
 
             lats_all.extend(elats)
             lons_all.extend(elons)
@@ -255,7 +258,7 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
             m = Map(
                 lat=center_lat, lon=center_lon,
                 radius=max(10000., num.max(dists) * 1.1),
-                width=25, height=25,
+                width=35, height=25,
                 show_grid=True,
                 show_topo=True,
                 color_dry=(238, 236, 230),
