@@ -1,8 +1,12 @@
 import os
 import tempfile
 import shutil
+import numpy as num
+
 from pyrocko.snuffling import Snuffling, Switch, Choice, NoViewerSet
-from pyrocko import util, gui_util, model
+from pyrocko import util, gui_util, model, orthodrome as ortho
+from pyrocko import moment_tensor
+from pyrocko.automap import Map
 from xmlMarker import XMLEventMarker, EventMarkerList, XMLStationMarker
 from xmlMarker import StationMarkerList, MarkerLists, dump_xml
 from PyQt4.QtCore import QUrl
@@ -100,9 +104,10 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
         self.add_parameter(Switch('Open in external browser',
                                   'open_external', False))
         self.add_parameter(Choice('Provider', 'map_kind', 'OpenStreetMap',
-                                  ['OpenStreetMap', 'Google Maps']))
+                                  ['OpenStreetMap', 'GMT', 'Google Maps']))
 
         self.set_live_update(False)
+        self.figcount = 0
 
     def call(self):
         self.cleanup()
@@ -166,35 +171,113 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
             event_marker_list=event_list)
 
         event_station_list.validate()
+        if self.map_kind != 'GMT':
+            tempdir = tempfile.mkdtemp(dir=self.tempdir())
+            if self.map_kind == 'Google Maps':
+                map_fn = 'map_googlemaps.html'
+            elif self.map_kind == 'OpenStreetMap':
+                map_fn = 'map_osm.html'
 
-        tempdir = tempfile.mkdtemp(dir=self.tempdir())
-        if self.map_kind == 'Google Maps':
-            map_fn = 'map_googlemaps.html'
-        elif self.map_kind == 'OpenStreetMap':
-            map_fn = 'map_osm.html'
+            url = 'file://' + tempdir + '/' + map_fn
 
-        url = 'file://' + tempdir + '/' + map_fn
+            for entry in ['loadxmldoc.js', 'plates.kml', map_fn]:
+                if cli_mode:
+                    snuffling_dir = os.environ['HOME']+'/.snufflings/map/'
+                else:
+                    snuffling_dir = self.module_dir()
 
-        for entry in ['loadxmldoc.js', 'plates.kml', map_fn]:
-            if cli_mode:
-                snuffling_dir = os.environ['HOME']+'/.snufflings/map/'
+                shutil.copy(os.path.join(snuffling_dir, entry),
+                            os.path.join(tempdir, entry))
+
+            markers_fn = os.path.join(tempdir, 'markers.xml')
+            dump_xml(event_station_list, filename=markers_fn)
+
+            if self.open_external:
+                QDesktopServices.openUrl(QUrl(url))
             else:
-                snuffling_dir = self.module_dir()
-
-            shutil.copy(os.path.join(snuffling_dir, entry),
-                        os.path.join(tempdir, entry))
-
-        markers_fn = os.path.join(tempdir, 'markers.xml')
-        dump_xml(event_station_list, filename=markers_fn)
-
-        if self.open_external:
-            QDesktopServices.openUrl(QUrl(url))
+                global g_counter
+                g_counter += 1
+                self.web_frame(
+                    url,
+                    name='Map %i (%s)' % (g_counter, self.map_kind))
         else:
-            global g_counter
-            g_counter += 1
-            self.web_frame(
-                url,
-                name='Map %i (%s)' % (g_counter, self.map_kind))
+            lats_all = []
+            lons_all = []
+
+            slats = []
+            slons = []
+            slabels = []
+            for s in active_stations:
+                slats.append(s.lat)
+                slons.append(s.lon)
+                slabels.append('.'.join(s.nsl()))
+
+            elats = []
+            elons = []
+            elats = []
+            elons = []
+            psmeca_input = []
+            markers = self.get_selected_markers()
+            for m in markers:
+                if isinstance(m, gui_util.EventMarker):
+                    e = m.get_event()
+                    elats.append(e.lat)
+                    elons.append(e.lon)
+                    if e.moment_tensor is not None:
+                        mt = e.moment_tensor.m6()
+                        psmeca_input.append(
+                            (e.lon, e.lat, e.depth/1000., mt[0], mt[1],
+                             mt[2], mt[3], mt[4], mt[5],
+                             1., e.lon, e.lat, e.name))
+                    else:
+                        moment = moment_tensor.magnitude_to_moment(e.magnitude)
+                        psmeca_input.append(
+                            (e.lon, e.lat, e.depth/1000.,
+                             moment/3., moment/3., moment/3.,
+                             0., 0., 0., 1., e.lon, e.lat, e.name))
+
+            lats_all.extend(elats)
+            lons_all.extend(elons)
+            lats_all.extend(slats)
+            lons_all.extend(slons)
+
+            lats_all = num.array(lats_all)
+            lons_all = num.array(lons_all)
+
+            center_lat, center_lon = ortho.geographic_midpoint(
+                lats_all, lons_all)
+            ntotal = len(lats_all)
+            clats = num.ones(ntotal) * center_lat
+            clons = num.ones(ntotal) * center_lon
+            dists = ortho.distance_accurate50m_numpy(
+                clats, clons, lats_all, lons_all)
+
+            m = Map(
+                lat=center_lat, lon=center_lon,
+                radius=max(10000., num.max(dists) * 1.1),
+                width=25, height=25,
+                show_grid=True,
+                show_topo=True,
+                color_dry=(238, 236, 230),
+                topo_cpt_wet='light_sea_uniform',
+                topo_cpt_dry='light_land_uniform',
+                illuminate=True,
+                illuminate_factor_ocean=0.15,
+                show_rivers=False,
+                show_plates=False)
+
+            m.gmt.psxy(in_columns=(slons, slats), S='t15p', G='black', *m.jxyr)
+            for i in xrange(len(active_stations)):
+                m.add_label(slats[i], slons[i], slabels[i])
+
+            m.gmt.psmeca(
+                in_rows=psmeca_input, S='m1.0', G='red', C='5p,0/0/0', *m.jxyr)
+
+            tmpdir = self.tempdir()
+
+            self.outfn = os.path.join(tmpdir, '%i.png' % self.figcount)
+            m.save(self.outfn)
+            self.pixmap_frame(self.outfn)
 
     def configure_cli_parser(self, parser):
 
