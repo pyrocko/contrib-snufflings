@@ -8,8 +8,9 @@ from pyrocko import guts, orthodrome, trace, util
 from pyrocko.gui_util import to01
 from pyrocko.plot import graph_colors
 
-km = 1000.
+__author__ = 'Catarina Matos (cpfcmatos@gmail.com)'
 
+km = 1000.
 wood_anderson_response = trace.PoleZeroResponse(
     zeros=[0., 0.],
     poles=[(-5.49779 - 5.60886j), (-5.49779 + 5.60886j)],
