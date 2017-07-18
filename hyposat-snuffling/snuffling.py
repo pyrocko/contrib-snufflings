@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 from pyrocko.snuffling import Snuffling, Switch, Param, Choice
 from pyrocko.pile_viewer import EventMarker, PhaseMarker
@@ -259,9 +260,9 @@ class Hyposat(Snuffling):
         hypo_in.sort()
 
         dir = tempfile.mkdtemp(prefix='hyposat-%s-' % os.environ['USER'])
-        print
-        print '=== Running HYPOSAT ' + '=' * 80
-        print 'temp dir:', dir
+        print()
+        print('=== Running HYPOSAT ' + '=' * 80)
+        print('temp dir: %s' % dir)
 
         fn = pjoin(dir, 'hyposat-in')
         f = open(fn, 'w')
@@ -322,7 +323,7 @@ class Hyposat(Snuffling):
         hypo_out = f.read()
         f.close()
 
-        print 'HYPOSAT output:\n\n', hypo_out
+        print('HYPOSAT output:\n\n %s' % hypo_out)
         evhead = 'T0 LAT LON Z VPVS DLAT DLON DZ DT0 DVPVS DEF RMS'.split()
         phhead = 'Stat Delta Azi Phase [used] Onset time Res Baz Res Rayp Res Used'.split()
         ellipsehead = 'Epicenter error ellipse:'.split()
@@ -412,8 +413,8 @@ class Hyposat(Snuffling):
                 elif toks[0] == 'Azimuth:':
                     ellipse_azimuth = float(toks[1])
 
-        print '='*100
-        print
+        print('='*100)
+        print()
 
         if self.show_location_plot:
             cm = gmtpy.cm
