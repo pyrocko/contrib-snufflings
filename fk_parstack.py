@@ -1,3 +1,7 @@
+from __future__ import print_function
+from builtins import zip
+from builtins import range
+
 import numpy as num
 import time
 from matplotlib.animation import FuncAnimation
@@ -283,7 +287,7 @@ class FK(Snuffling):
         # make sure that only visible stations are used
         use_stations = stations
         center_station = get_center_station(use_stations, select_closest=True)
-        print 'Center station: ', center_station
+        print('Center station: ', center_station)
         shift_table = get_shifts(
             stations=use_stations,
             center_station=center_station,
@@ -669,7 +673,7 @@ class FK(Snuffling):
         axf = FuncAnimation(  # noqa
             fig, update,
             frames=list(
-                xrange(iframe_min, iframe_max+1))[::nth_frame] + [None],
+                range(iframe_min, iframe_max+1))[::nth_frame] + [None],
             interval=20.,
             repeat=False,
             blit=True)
