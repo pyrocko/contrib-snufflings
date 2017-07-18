@@ -85,7 +85,7 @@ class DrumPlot(Snuffling):
                 indices = num.zeros(len(itmp)+2, dtype=num.int)
                 indices[1:-1] = itmp
                 indices[-1] = len(y)-1
-                for i in xrange(len(indices)-1):
+                for i in range(len(indices)-1):
                     istart = indices[i] + 1
                     istop = indices[i+1]
                     lines_data[key].append(
