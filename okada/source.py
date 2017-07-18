@@ -1,7 +1,7 @@
 import numpy
 
 
-class Source( object ):
+class Source(object):
 
   def strain( self, xyz, poisson ):
     grad = self.gradient( xyz, poisson )
@@ -34,7 +34,7 @@ class Source( object ):
     return self.__mul__( other )
 
 
-class AddSource( Source ):
+class AddSource(Source):
 
   def __init__( self, source1, source2 ):
     assert isinstance( source1, Source )
@@ -51,7 +51,7 @@ class AddSource( Source ):
          + self.source2.gradient( xyz, poisson )
 
 
-class ScaleSource( Source ):
+class ScaleSource(Source):
 
   def __init__( self, source, scale ):
     assert isinstance( source, Source )
@@ -69,7 +69,7 @@ class ScaleSource( Source ):
     return self.source.__mul__( self.scale * scale )
 
 
-def diag( A ):
+def diag(A):
 
   assert A.shape[-1] == A.shape[-2]
   return numpy.lib.stride_tricks.as_strided( A, shape=A.shape[:-1], strides=A.strides[:-2]+(A.strides[-2]+A.strides[-1],) )
