@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import range
 
 from pyrocko.snuffling import Snuffling, Param, Switch, NoViewerSet, Choice
 from pyrocko.trace import Trace
@@ -10,7 +12,7 @@ km = 1000.
 d2r = math.pi / 180.
 
 class CorrelateEvents(Snuffling):
-    
+
     def setup(self):
         self.set_name('Cross correlation relocation')
         self.add_parameter(Param('Highpass [Hz]', 'corner_highpass', 1.0,
@@ -88,12 +90,12 @@ class CorrelateEvents(Snuffling):
 
             self.model_key = model_key
 
-        phases = { 
+        phases = {
                 'P': ([ cake.PhaseDef(x) for x in 'P p'.split() ], 'Z'),
                 'S': ([ cake.PhaseDef(x) for x in 'S s'.split() ], 'NE'),
             }
 
-        phasenames = phases.keys()
+        phasenames = list(phases.keys())
         phasenames.sort()
 
         # synthetic arrivals and ray geometry for master event
@@ -183,7 +185,7 @@ class CorrelateEvents(Snuffling):
 
         # print timing information
 
-        print 'timing stats'
+        print('timing stats')
 
         for iphasename, phasename in enumerate(phasenames):
             data = []
@@ -203,11 +205,11 @@ class CorrelateEvents(Snuffling):
 
                 data = num.array(data, dtype=num.float).T
 
-                print 'event %10s %3s %3i %15.2g %15.2g %15.2g' % (
+                print('event %10s %3s %3i %15.2g %15.2g %15.2g' % (
                         (ev.name, phasename, data.shape[1]) + 
-                            tuple( num.mean(num.abs(x)) for x in data ))
+                            tuple( num.mean(num.abs(x)) for x in data )))
             else:
-                print 'event %10s %3s no picks' % (ev.name, phasename)
+                print('event %10s %3s no picks' % (ev.name, phasename))
 
         # extract and preprocess waveforms
 
@@ -366,7 +368,8 @@ class CorrelateEvents(Snuffling):
 
         for iphase, phasename in enumerate(phasenames):
             for istation, station in enumerate(stations):
-                print 'station %-5s %s %15.2g' % (station.station, phasename, csum_sta[iphase,istation])
+                print('station %-5s %s %15.2g' %
+                      (station.station, phasename, csum_sta[iphase,istation]))
 
         coefssum = num.nansum(coefs, axis=1) / num.sum(num.isfinite(coefs), axis=1)
         csumevent = num.nansum(coefssum, axis=2) / num.sum(num.isfinite(coefssum), axis=2)
@@ -376,13 +379,13 @@ class CorrelateEvents(Snuffling):
 
         coefssum = num.ma.masked_invalid(coefssum)
 
-        print 'correlation stats'
+        print('correlation stats')
 
         for iphase, phasename in enumerate(phasenames):
             for ievent, event in enumerate(events):
-                print 'event %10s %3s %8i %15.2g' % (
-                        event.name, phasename, 
-                        csumabove[iphase,ievent], csumevent[iphase,ievent])
+                print('event %10s %3s %8i %15.2g' % (
+                        event.name, phasename,
+                        csumabove[iphase,ievent], csumevent[iphase,ievent]))
 
         # plot event correlation matrix
 
@@ -409,10 +412,10 @@ class CorrelateEvents(Snuffling):
         data = []
         rows = []
         weights = []
-        for iphase in xrange(nphases):
-            for istation in xrange(nstations):
-                for ia in xrange(nevents):
-                    for ib in xrange(ia+1,nevents):
+        for iphase in range(nphases):
+            for istation in range(nstations):
+                for ia in range(nevents):
+                    for ib in range(ia+1,nevents):
                         k = iphase, istation, ia, ib
                         w = coefs[k]
                         if not num.isfinite(tshifts[k]) \
@@ -424,7 +427,6 @@ class CorrelateEvents(Snuffling):
                         row[ia*4+3] = -1.0
                         row[ib*4:ib*4+3] = -g[iphase,istation]
                         row[ib*4+3] = 1.0
-                        
                         weights.append(w)
 
                         rows.append(row)
@@ -463,13 +465,13 @@ class CorrelateEvents(Snuffling):
 
         x0 = num.zeros(nevents*4)
         x0[3::4] = tevents_corr
-        mean_abs_residual0 = num.mean( 
+        mean_abs_residual0 = num.mean(
                 num.abs((num.dot(a[:nsamp], x0) - d[:nsamp])/w[:nsamp]))
-        
-        mean_abs_residual = num.mean( 
+
+        mean_abs_residual = num.mean(
                 num.abs((num.dot(a[:nsamp],x) - d[:nsamp])/w[:nsamp]))
 
-        print mean_abs_residual0, mean_abs_residual
+        print(mean_abs_residual0, mean_abs_residual)
 
         # distorted solutions
 
