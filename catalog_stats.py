@@ -42,15 +42,13 @@ class CumEvent(Snuffling):
         self.cleanup()
         viewer = self.get_viewer()
         tmin, tmax = self.get_selected_time_range(fallback=True)
-        event_markers = filter(lambda x: x.tmin >= tmin and x.tmax <= tmax,
-                               viewer.markers)
+        event_markers = [x for x in viewer.markers if x.tmin >= tmin and
+                         x.tmax <= tmax]
 
-        event_markers = filter(
-            lambda x: isinstance(x, EventMarker), event_markers)
+        event_markers = [x for x in event_markers if isinstance(x, EventMarker)]
         if self.maxd:
-            event_markers = filter(
-                lambda x: distance(self, x._event) <= self.maxd*1000,
-                event_markers)
+            event_markers = [x for x in event_markers if
+                             distance(self, x._event) <= self.maxd*1000.]
 
         if event_markers == []:
             self.fail('No events in selected area found')

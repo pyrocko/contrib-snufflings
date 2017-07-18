@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from PyQt4.QtCore import QThread, SIGNAL, QTimer
 from pyrocko.snuffling import Snuffling, Param, Choice, Switch, NoTracesSelected
 import pyrocko.trace as trace
@@ -253,7 +255,7 @@ class SeiSound(Snuffling):
         elif state == Phonon.StoppedState:
             self.call()
         else:
-            print 'unexpected state. cleanup....'
+            print('unexpected state. cleanup....')
             self.m_media.stop()
 
 

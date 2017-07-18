@@ -278,9 +278,10 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
 
             tmpdir = self.tempdir()
 
-            self.outfn = os.path.join(tmpdir, '%i.png' % self.figcount)
+            self.outfn = os.path.join(tmpdir, '%i.svg' % self.figcount)
             m.save(self.outfn)
-            self.pixmap_frame(self.outfn)
+            #self.pixmap_frame(self.outfn)
+            f = self.svg_frame(self.outfn, name='XX')
 
     def configure_cli_parser(self, parser):
 
