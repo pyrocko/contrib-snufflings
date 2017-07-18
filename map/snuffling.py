@@ -233,7 +233,8 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
                         if e.magnitude is None:
                             moment = -1.
                         else:
-                            moment = moment_tensor.magnitude_to_moment(e.magnitude)
+                            moment = moment_tensor.magnitude_to_moment(
+                                e.magnitude)
                             psmeca_input.append(
                                 (e.lon, e.lat, e.depth/1000.,
                                  moment/3., moment/3., moment/3.,
@@ -255,9 +256,10 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
             dists = ortho.distance_accurate50m_numpy(
                 clats, clons, lats_all, lons_all)
 
+            maxd = num.max(dists) or 0.
             m = Map(
                 lat=center_lat, lon=center_lon,
-                radius=max(10000., num.max(dists) * 1.1),
+                radius=max(10000., maxd) * 1.1,
                 width=35, height=25,
                 show_grid=True,
                 show_topo=True,
@@ -270,7 +272,7 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
                 show_plates=False)
 
             m.gmt.psxy(in_columns=(slons, slats), S='t15p', G='black', *m.jxyr)
-            for i in xrange(len(active_stations)):
+            for i in range(len(active_stations)):
                 m.add_label(slats[i], slons[i], slabels[i])
 
             m.gmt.psmeca(
@@ -278,10 +280,10 @@ python $HOME/.snufflings/map/snuffling.py --stations=stations.pf
 
             tmpdir = self.tempdir()
 
-            self.outfn = os.path.join(tmpdir, '%i.svg' % self.figcount)
+            self.outfn = os.path.join(tmpdir, '%i.png' % self.figcount)
             m.save(self.outfn)
-            #self.pixmap_frame(self.outfn)
-            f = self.svg_frame(self.outfn, name='XX')
+            f = self.pixmap_frame(self.outfn) # noqa
+            # f = self.svg_frame(self.outfn, name='XX')
 
     def configure_cli_parser(self, parser):
 
