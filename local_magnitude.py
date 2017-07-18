@@ -1,10 +1,12 @@
+from __future__ import print_function
+from builtins import str
 import os
 import copy
 import numpy as num
 from collections import defaultdict
 from pyrocko.snuffling import Snuffling, Param, PhaseMarker, Switch, Choice, \
     EventMarker
-from pyrocko import guts, orthodrome, trace, util
+from pyrocko import guts, orthodrome, trace
 from pyrocko.gui_util import to01
 from pyrocko.plot import graph_colors
 
@@ -16,6 +18,7 @@ wood_anderson_response = trace.PoleZeroResponse(
     poles=[(-5.49779 - 5.60886j), (-5.49779 + 5.60886j)],
     constant=1.
 )
+
 
 class LocalMagnitudeSnuffling(Snuffling):
 
@@ -40,9 +43,13 @@ class LocalMagnitudeSnuffling(Snuffling):
     browser to read responses.
 
     References:
-    - Bormann,  P. and Dewey J., 2012. The new IASPEI standards for determining magnitudes from digital data and their relation to classical magnitudes. doi:
-    - Hutton, K.L. and Boore D.M., 1987. The ML scale in southern California. Bull. seism. Soc. Am., 77, 2074-2094
-    - Richter C.F., 1935. An instrumental earthquake magnitude scale, Bull. seism. Soc. Am., 25, 1-32.
+    - Bormann,  P. and Dewey J., 2012. The new IASPEI standards for determining
+            magnitudes from digital data and their relation to classical
+            magnitudes. doi:
+    - Hutton, K.L. and Boore D.M., 1987. The ML scale in southern California.
+            Bull. seism. Soc. Am., 77, 2074-2094
+    - Richter C.F., 1935. An instrumental earthquake magnitude scale, Bull.
+            seism. Soc. Am., 25, 1-32.
     '''
     def setup(self):
         self._responses = None
@@ -210,13 +217,13 @@ class LocalMagnitudeSnuffling(Snuffling):
                 try:
                     tr.highpass(4, fmin, nyquist_exception=True)
                     tr.lowpass(4, fmax, nyquist_exception=True)
-                except trace.AboveNyquist, e:
+                except trace.AboveNyquist as e:
                     self.fail(str(e))
 
                 try:
                     station = stations_dict[nslc[:3]]
                 except KeyError as e:
-                    print e
+                    print(e)
 
                 if self.needs_restitution:
                     resp = self.get_response(nslc)
@@ -229,7 +236,7 @@ class LocalMagnitudeSnuffling(Snuffling):
                                 fmax, fmax*2.0),
                             transfer_function=resp,
                             invert=True)
-                    except trace.TraceTooShort, e:
+                    except trace.TraceTooShort as e:
                         self.fail(str(e))
                         continue
 
@@ -242,7 +249,7 @@ class LocalMagnitudeSnuffling(Snuffling):
                                 fmax, fmax*2.0),
                             transfer_function=wood_anderson_response,
                             invert=False)
-                    except trace.TraceTooShort, e:
+                    except trace.TraceTooShort as e:
                         self.fail(str(e))
                         continue
 
@@ -300,8 +307,8 @@ class LocalMagnitudeSnuffling(Snuffling):
                     (round(local_magnitude, 1),
                         round(mag_std, 1))
                 axes.text(max(dists), local_magnitude, msg,
-                        verticalalignment='bottom',
-                        horizontalalignment='right')
+                          verticalalignment='bottom',
+                          horizontalalignment='right')
 
                 axes.axhspan(
                         local_magnitude-mag_std,
