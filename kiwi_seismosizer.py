@@ -27,7 +27,7 @@ km = 1000.
 
 
 class EventDataConverter(EventDataToKiwi):
-    
+
     def __init__(self, *args, **kwargs):
         self._gfdb = kwargs.pop('gfdb')
         glue.EventDataToKiwi.__init__(self, *args, **kwargs)
@@ -37,7 +37,7 @@ class EventDataConverter(EventDataToKiwi):
         event = self._acc.get_events()[0]
         stations = self._acc.get_stations(relative_event=event)
         pile = self._acc.get_pile()
-       
+
         tmin_phase = Timing('begin', -10)
         tmax_phase = Timing('end', +10)
 
@@ -47,7 +47,7 @@ class EventDataConverter(EventDataToKiwi):
         if depth is None:
             depth = 10.*km
         for s in stations_by_distance:
-            tmin, tmax = [ event.time + phase(s.dist_m, depth) for phase in tmin_phase, tmax_phase ]
+            tmin, tmax = [event.time + phase(s.dist_m, depth) for phase in (tmin_phase, tmax_phase)]
             traces = pile.all(tmin=tmin, tmax=tmax, trace_selector=lambda tr: tr.nslc_id[:3] == s.nsl())
             alltraces.extend(traces)
 
@@ -61,7 +61,7 @@ class KiwiSeismosizer(Snuffling):
 
     def setup(self):
         '''Customization of the snuffling.'''
-        
+
         self.set_name('Kiwi Seismosizer (%s)' % self.sourcetype)
         if _tunguska:
             for pname in source.param_names(self.sourcetype):
@@ -79,8 +79,8 @@ class KiwiSeismosizer(Snuffling):
     def used_stations_with_channels(self):
         viewer = self.get_viewer()
         pile = self.get_pile()
-    
-        stations = copy.deepcopy(viewer.stations.values())
+
+        stations = copy.deepcopy(list(viewer.stations.values()))
         if not stations:
             logger.warn('No station information available; using dummy station at lat=2, lon=0')
             stations = [  model.Station('', 'SOUTH', '', lat=-2., lon=0.), model.Station('', 'NORTH', '', lat=2., lon=0.) ]
@@ -102,7 +102,7 @@ class KiwiSeismosizer(Snuffling):
                     comp2channel[sta.network, sta.station, com] = cha 
 
                 channel2comp[cha] = com
-            
+
             return stations, channel2comp, comp2channel
 
         stations_used = set()
@@ -114,7 +114,7 @@ class KiwiSeismosizer(Snuffling):
                 channel2comp[tr.channel] = { 'z': 'u', 'e': 'e', 'n': 'n', 'r': 'a', 't': 'r' }[tr.channel[-1].lower()]
                 stations_used.add(sta)
                 comp2channel[tr.network, tr.station, channel2comp[tr.channel]] = tr.channel
-                
+
                 stacha = sta.get_channel(tr.channel)
                 if stacha is None:
                     sta.add_channel(model.Channel(tr.channel))
@@ -132,18 +132,18 @@ class KiwiSeismosizer(Snuffling):
 
         stations, channel2comp, comp2channel = self.used_stations_with_channels()
         components = ''.join( sorted(list(set( k[2] for k in comp2channel.keys() ))))
-        
+
         ed = eventdata.EventDataAccess(
                 events=[ self.event ],
                 stations=stations,
                 datapile=self.get_pile() )
-        
+
         if not self.db:
             self.open_gfdb()
 
         if not self.db:
             self.fail('No database set.')
-        
+
         db = self.db
 
         ed_to_kiwi = EventDataConverter(ed,
@@ -156,7 +156,7 @@ class KiwiSeismosizer(Snuffling):
             inner_norm = 'l1norm',
             tapers_by_set = [ Taper(timings=(Timing('begin', -10), Timing('begin', 0), Timing('end', 0), Timing('end', 10))) ],
             filters_by_set = [ filtering.Filter((0.01, 0.02, 0.5, 1))  ])
-        
+
         logger.info('Starting up minimizer')
         seis = ed_to_kiwi.make_seismosizer(
                 gfdb = db,
@@ -170,9 +170,9 @@ class KiwiSeismosizer(Snuffling):
 
         self.comp2channel = comp2channel
         self.seis = seis
-   
+
     def adjust_event(self):
-        
+
         viewer = self.get_viewer()
         active_event = viewer.get_active_event()
 
@@ -191,14 +191,14 @@ class KiwiSeismosizer(Snuffling):
                 # restart seismosizer
                 try:
                     self.open_seismosizer()
-                
+
                 except seismosizer.Fatal:
                     self.seis.close()
                     self.seis = None
                     self.fail('Minimizer crashed.')
 
     def get_current_source(self):
-        
+
         d = {}
         for pname in source.param_names(self.sourcetype):
             si = source.source_infos(self.sourcetype)[pname]
@@ -219,10 +219,10 @@ class KiwiSeismosizer(Snuffling):
             km = 1000.
             if not self.seis:
                 self.open_seismosizer()
-            
+
             s = self.get_current_source()
             self.seis.set_source(s)
-             
+
             snapshot = self.seis.get_receivers_snapshot(['syn'], [], 'plain')
             for rec in snapshot:
                 traces = rec.get_traces()
@@ -236,11 +236,10 @@ class KiwiSeismosizer(Snuffling):
             self.seis = None
             self.fail('Minimizer crashed.')
 
-
     def open_gfdb(self):
         fn = self.input_filename()
         fn = re.sub(r'(\.\d+\.chunk|\.index)$', '', fn)
-        
+
         db = gfdb.Gfdb(fn)
         if db:
             depthold = self.depth
@@ -253,7 +252,7 @@ class KiwiSeismosizer(Snuffling):
                 self.set_parameter('depth', 0.5*(depthmin + depthmax))
 
             self.db = db
-            
+
     def mechanism_from_event(self):
 
         self.adjust_event()
@@ -264,7 +263,7 @@ class KiwiSeismosizer(Snuffling):
             logger.info('Moment tensor given with event is:\n%s' % event.moment_tensor)
         else:
             self.fail('No source mechanism available for event %s.' % event.name)
-        
+
         self.set_parameter('depth', event.depth)
 
         if self.sourcetype in ('moment_tensor', 'mt_eikonal'):
@@ -281,7 +280,7 @@ class KiwiSeismosizer(Snuffling):
             self.set_parameter('dip', dip)
             self.set_parameter('slip_rake', slip_rake)
             self.set_parameter('moment', moment)
-        
+
         # set extensions to zero
         if self.sourcetype in ('eikonal', 'mt_eikonal'):
             self.get_paramater('bord_radius').set_value(0.0)
@@ -291,7 +290,7 @@ class KiwiSeismosizer(Snuffling):
             self.set_parameter('width', 0.0)
         elif self.sourcetype == 'circular':
             self.set_parameter('radius', 0.0)
-       
+
         if event.duration is not None:
             self.set_parameter('rise_time', event.duration)
             self.set_parameter_range('rise_time', 0., 200.)
@@ -313,6 +312,7 @@ class KiwiSeismosizer(Snuffling):
         if self.seis:
             logger.info('Shutting down minimizer')
             self.seis.close()
+
 
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
