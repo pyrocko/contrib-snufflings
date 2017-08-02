@@ -4,10 +4,10 @@ import os
 import copy
 import numpy as num
 from collections import defaultdict
-from pyrocko.snuffling import Snuffling, Param, PhaseMarker, Switch, Choice, \
+from pyrocko.gui.snuffling import Snuffling, Param, PhaseMarker, Switch, Choice, \
     EventMarker
 from pyrocko import guts, orthodrome, trace
-from pyrocko.gui_util import to01
+from pyrocko.gui.gui_util import to01
 from pyrocko.plot import graph_colors
 
 __author__ = 'Catarina Matos (cpfcmatos@gmail.com)'

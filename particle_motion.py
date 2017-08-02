@@ -6,10 +6,10 @@ import copy
 from matplotlib.collections import LineCollection
 from mpl_toolkits.mplot3d import Axes3D  # noqa
 from pyrocko import util
-from pyrocko.snuffling import Snuffling, Choice, Switch
+from pyrocko.gui.snuffling import Snuffling, Choice, Switch
 
 
-logger = logging.getLogger('pyrocko.snuffling.particle_motion')
+logger = logging.getLogger('pyrocko.gui.snuffling.particle_motion')
 
 
 class ParticleMotion(Snuffling):

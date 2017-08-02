@@ -1,14 +1,16 @@
 from __future__ import print_function
 
-from pyrocko.snuffling import Snuffling, Switch, Param, Choice
-from pyrocko.pile_viewer import EventMarker, PhaseMarker
-from pyrocko import util, model, orthodrome, gmtpy
-from subprocess import Popen, PIPE, check_call
 import os
 import tempfile
 import math
 import glob
 import numpy as num
+
+from pyrocko.gui.snuffling import Snuffling, Switch, Param, Choice
+from pyrocko.gui.pile_viewer import EventMarker, PhaseMarker
+from pyrocko import util, model, orthodrome
+from pyrocko.plot import gmtpy
+from subprocess import Popen, PIPE, check_call
 
 
 deg2rad = math.pi/180.

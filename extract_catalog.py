@@ -1,5 +1,5 @@
 from pyrocko import model
-from pyrocko.snuffling import Snuffling
+from pyrocko.gui.snuffling import Snuffling
 
 
 class ExtractEvents(Snuffling):

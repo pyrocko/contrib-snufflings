@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 from PyQt4.QtCore import QThread, SIGNAL, QTimer
-from pyrocko.snuffling import Snuffling, Param, Choice, Switch, NoTracesSelected
+from pyrocko.gui.snuffling import Snuffling, Param, Choice, Switch, NoTracesSelected
 import pyrocko.trace as trace
 from pyrocko.trace import CosFader
 from scipy.io.wavfile import write, read

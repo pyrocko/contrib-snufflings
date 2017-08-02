@@ -1,5 +1,5 @@
 import math
-from pyrocko.snuffling import Snuffling, Param, Choice, Switch
+from pyrocko.gui.snuffling import Snuffling, Param, Choice, Switch
 import numpy as num
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import LinearSegmentedColormap

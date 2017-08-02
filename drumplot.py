@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import copy
 
 from pyrocko import util, trace
-from pyrocko.snuffling import Snuffling, Choice, Switch, Param
+from pyrocko.gui.snuffling import Snuffling, Choice, Switch, Param
 
-logger = logging.getLogger('pyrocko.snuffling.drumplot')
+logger = logging.getLogger('pyrocko.gui.snuffling.drumplot')
 
 
 class DrumPlot(Snuffling):

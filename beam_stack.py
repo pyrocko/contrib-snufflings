@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from pyrocko.snuffling import Snuffling, Param, Switch, Choice
+from pyrocko.gui.snuffling import Snuffling, Param, Switch, Choice
 from pyrocko.model import Station, dump_stations
 from pyrocko import orthodrome as ortho
 from pyrocko import util, io, trace

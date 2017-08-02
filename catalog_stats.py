@@ -1,5 +1,5 @@
-from pyrocko.snuffling import Snuffling, Param, Choice
-from pyrocko.gui_util import EventMarker
+from pyrocko.gui.snuffling import Snuffling, Param, Choice
+from pyrocko.gui.gui_util import EventMarker
 from pyrocko import util
 from pyrocko import moment_tensor
 from pyrocko.orthodrome import distance_accurate50m as distance

@@ -3,12 +3,15 @@ import tempfile
 import shutil
 import numpy as num
 
-from pyrocko.snuffling import Snuffling, Switch, Choice, NoViewerSet
-from pyrocko import util, gui_util, model, orthodrome as ortho
+from pyrocko import util, model, orthodrome as ortho
 from pyrocko import moment_tensor
-from pyrocko.automap import Map
+from pyrocko.gui.snuffling import Snuffling, Switch, Choice, NoViewerSet
+from pyrocko.gui import gui_util
+from pyrocko.plot.automap import Map
+
 from xmlMarker import XMLEventMarker, EventMarkerList, XMLStationMarker
 from xmlMarker import StationMarkerList, MarkerLists, dump_xml
+
 from PyQt4.QtCore import QUrl
 from PyQt4.QtGui import QDesktopServices
 
