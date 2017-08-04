@@ -324,14 +324,16 @@ class Hyposat(Snuffling):
         env['HYPOSAT_DATA'] = self.hyposat_data_dir
 
         try:
-            p = Popen([pjoin(self._path, 'hyposat/bin/hyposat')], env=env, stdout=PIPE)
+            hyposat_path = pjoin(self._path, 'hyposat/bin/hyposat')
+            p = Popen([hyposat_path], env=env, stdout=PIPE)
+            print('Using hyposat executable located at: %s' % hyposat_path)
         except OSError as e:
             try:
                 # try included, compiled version:
                 abs_path = os.path.dirname(os.path.abspath(__file__))
                 executable = pjoin(abs_path, 'hyposat', 'bin_l', 'hyposat')
-                print('abspath', executable)
                 p = Popen([executable], env=env, stdout=PIPE)
+                print('Using hyposat executable located at: %s' % executable)
             except OSError as e:
                 import errno
                 if e.errno == errno.ENOENT:
