@@ -27,4 +27,4 @@ configuration file located at `~/.pyrocko/snuffler.pf`.
 
 ##### Reference
 
-*Schweitzer, J. (1997): HYPOSAT - a new routine to locate seismic events, NORSAR Scientific Report 1-97/98, 94-102, NORSAR, Kjeller, Norway, November 1997. *
+*Schweitzer, J. (1997): HYPOSAT - a new routine to locate seismic events, NORSAR Scientific Report 1-97/98, 94-102, NORSAR, Kjeller, Norway, November 1997.*
