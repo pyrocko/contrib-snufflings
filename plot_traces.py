@@ -63,7 +63,7 @@ class TracePlotter(Snuffling):
                             self.get_station_patterns(stations), x.nslc_id)]
         if self.add_markers:
             markers = self.get_markers()
-            markers = [m for m in self.markers if  m.tmax<=vtmax and
+            markers = [m for m in markers if  m.tmax<=vtmax and
                        m.tmin>=vtmin and m.selected]
             markers = dict(zip([tuple(m.nslc_ids) for m in markers], markers))
 
