@@ -152,7 +152,8 @@ class Hyposat(Snuffling):
     &middot; Invoke snuffler with station meta data.
     <br>
     &middot; Pick <i>P</i> and <i>S</i> phases and define them as
-    such by pressing <i>F1</i> and <i>F2</i>, respectively.
+    such by pressing <i>F1</i> and <i>F2</i>, respectively. All phases of one
+    station have to be picked on the same channel.
     <br>
     &middot; Select markers you want to use in the inversion (e.g.: press
     <i>a</i> to select all markers in the visible time range)
