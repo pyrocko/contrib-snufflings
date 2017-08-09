@@ -6,13 +6,15 @@
 #                                                            #
 #  johannes@norsar.no                                        #
 #                                                            #
-#  tested for Linux g77 compiler                             #
+#  tested for Linux f77 compiler                             #
 #                                                            #
 ##############################################################
 
 
 #F77 = /usr/bin/g77 -fno-automatic -W -Wunused -O -fbounds-check
 F77 = f77 -fno-automatic 
+PREFIX = /usr/local
+
 
 CC  = /usr/bin/gcc
 
@@ -26,22 +28,19 @@ L-FLAG = -lm
 # with their own version of the tau-spline software!
 #
 TTLIB = libtau_h.o 
-
 DEST = ../bin_l
-
 prog = hyposat 
 
 obj1 = hyposat.o  
 obj2 = hyposat_lib.o hyposat_geo.o hyposat_name.o hyposat_clib.o hyposat_loc.o
 obj3 = hyposat_crust.o hyposat_crust_mod.o hyposat_mag.o
-#
 obj4 = hyposat_cross.o hyposat_time.o hyposat_gmi.o hyposat_file.o $(TTLIB)
+
 
 $(prog) : $(obj1) $(obj2) $(obj3) $(obj4)
 	$(F77) $(L-FLAG) -o $(prog) $(obj1) $(obj2) $(obj3) $(obj4) 
 
 	mv hyposat $(DEST)/hyposat
-#	rm *.o
 
 hyposat_cross.o : hyposat_cross.f
 	$(F77) $(F-FLAG) -c hyposat_cross.f
@@ -82,6 +81,21 @@ hyposat.o : hyposat.f
 libtau_h.o : libtau_h.f
 	$(F77) $(F-FLAG) -c libtau_h.f
 
-#
 hyposat_clib.o : hyposat_clib.c
 	$(CC) $(C-FLAG) -c hyposat_clib.c
+
+.PYONY: clean
+
+clean:
+	rm -f *.o ../bin_l/hyposat
+
+PREFIX = /usr/local
+
+.PHONY: install
+install: hyposat 
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+		    cp $(DEST)/$(prog) $(DESTDIR)$(PREFIX)/bin/$(prog)
+
+.PHONY: uninstall
+uninstall:
+	rm -f $(DESTDIR)$(PREFIX)/bin/$(prog)
