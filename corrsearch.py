@@ -5,6 +5,37 @@ from pyrocko import io, trace, model
 class CorrsearchSnuffling(Snuffling):
     
     '''
+    <html>
+    <head>
+    <style type="text/css">
+        body { margin-left:10px };
+    </style>
+    </head>
+    <body>
+    <h2 align="center">Cross Correlation Pattern Matching</h2>
+    <h3 align="left">Usage</h3>
+    <p>Select master signal using extended markers. Only one master signal per
+    channel can be used.</p>
+    <p>
+    <b>Set parameters:</b><br />
+        <b>&middot; Downsample to [Hz]</b>  -  Reduce the number of samples to
+                improve speed<br />
+        <b>&middot; Highpass[Hz]/Lowpass[Hz]</b>  -  Filter traces before cross
+                correlation<br />
+        <b>&middot; Apply to full dataset</b>  -  Work on the entire data set
+                (By default, processing is limited to data shown in viewer)<br />
+        <b>&middot; Normalization</b>  -  Normalize traces before cross
+                correlation. <i>Gliding</i>: time varying normalization (using
+                moving sum); <i>Normal</i>: normalizes by product of energy of
+                both traces<br />
+        <b>&middot; Threshold</b>  -  Peak detection threshold applied to
+                correlation trace<br />
+    </p>
+    Hit <b>run</b>.<br>
+    Cross correlations of different channels are summed and added to the viewer
+    as an additional trace labeled <i>Sum Cross Correlation</i>.
+    </body>
+    </html>
     '''
 
     def setup(self):
