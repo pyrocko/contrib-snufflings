@@ -19,7 +19,7 @@ The included `setup.py` script provides a shortcut for that:
     python setup.py link [arguments]
 
 If no `arguments` are given, all available snufflings will be linked. You will
-find the new snufflings under *panels* or *run* in snuffler's menu.
+find the new snufflings under *panels* or *run* in Snuffler's menu.
 
 Update
 ------
@@ -29,7 +29,7 @@ Pull updates from the repository:
 
 Help
 ----
-Most snufflings include documentation which can be found in the `Help` menu in
+Most snufflings include documentation which can be found in the *Help* menu in
 Snuffler.
 
 Troubleshooting
