@@ -18,9 +18,8 @@ The included `setup.py` script provides a shortcut for that:
 
     python setup.py link [arguments]
 
-If no `arguments` are given, all available snufflings will be linked.
-
-You will find the new snufflings under *panels* or *run* in snuffler's menu.
+If no `arguments` are given, all available snufflings will be linked. You will
+find the new snufflings under *panels* or *run* in snuffler's menu.
 
 Update
 ------
@@ -33,8 +32,8 @@ Help
 Most snufflings include documentation which can be found in the `Help` menu in
 Snuffler.
 
-Troublshooting
---------------
+Troubleshooting
+---------------
 
 If you find yourself with broken (dangling) symlinks e.g. after
 checking out a different branch you can remove all broken symlinks directory
