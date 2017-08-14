@@ -1,11 +1,10 @@
-contrib-snufflings
-==================
+User Contributed Snufflings
+===========================
 
-This is a repository of user contributed snufflings.
+**Snufflings** are plugins for seismological trace viewer **Snuffler** which is
+part of the Python framework [Pyrocko](http://pyrocko.org).
 
-Snufflings are plugins for the
-[Snuffler](http://emolch.github.io/pyrocko/v0.3/snuffler.html) trace viewer
-which is part of [Pyrocko](http://emolch.github.io/pyrocko/).
+An overview of available snufflings is given at the end of this page.
 
 Installation
 ------------
@@ -15,11 +14,11 @@ Clone this repository and change directory:
     cd contrib-snufflings
 
 Create symbolic links pointing from this directory into `$HOME/.snufflings`.
-The `setup.py` script included in this repository provides a shortcut for that:
+The included `setup.py` script provides a shortcut for that:
 
     python setup.py link [arguments]
 
-If no `arguments` are provided, all available snufflings will be linked.
+If no `arguments` are given, all available snufflings will be linked.
 
 You will find the new snufflings under *panels* or *run* in snuffler's menu.
 
@@ -28,6 +27,18 @@ Update
 Pull updates from the repository:
 
     git pull origin master
+
+Help
+----
+Most snufflings include documentation which can be found in the `Help` menu in
+Snuffler.
+
+Troublshooting
+--------------
+
+If you find yourself with broken (dangling) symlinks e.g. after
+checking out a different branch you can remove all broken symlinks directory
+by adding `--undangle` to the link command.
 
 Contribute
 ----------
@@ -43,23 +54,20 @@ If you miss some feature in a snuffling, discover a bug or would like to
 discuss an idea for a new snuffling click on *Issues* and open up a
 *New Issue*.
 
-Troublshooting
---------------
 
-If you find yourself with broken (dangling) symlinks e.g. after
-checking out a different branch you can remove all broken symlinks directory
-by adding `--undangle` to the link command.
+-------------------------------------------------------------------------------
 
+Examples
+========
 
-Create Map in OpenStreetMap or Google Maps
-------------------------------------------
+Create maps
+-----------
 
-Plot station and event locations with OpenStreetMap or Google Maps
+Plot station and event locations with OpenStreetMap, Google Maps or GMT
 
 directory: [map](map)
 
 ![screenshot](screenshots/map.png)
-
 
 Plot PSD
 --------
@@ -82,7 +90,7 @@ file: [cc\_relocation.py](cc_relocation.py)
 Cake Phase
 ----------
 
-Add markers for synthetic arrivals
+Add markers for synthetic arrivals calculated from a layered earth model
 
 file: [cake\_phase.py](cake_phase.py)
 
@@ -100,16 +108,22 @@ file: [corrsearch.py](corrsearch.py)
 Cross correlation matrix
 ------------------------
 
-Cross correlate selected events. Results, including cross-correlation factor and time lags between maxima of the cross correlation can be stored in YAML format to ease later analysis.
+Cross correlate selected events. Results, including cross-correlation factor
+and time lags between maxima of the cross correlation can be stored in YAML
+format to ease later analysis.
 
 directory: [cc\_matrix](cc_matrix)
 
 ![screenshot](screenshots/cc_matrix.png)
 
-Export wav Files 
-----------------
+Listen to seismograms
+---------------------
 
-file: [SeiSound.py](SeiSound.py)
+Export seismograms to .wav files or listen to seismological recordings. Direct
+playback requires the PyQt4 bindings for Phonon.
+(E.g. on Debian and ubuntu available through: `apt-get install python-qt4-phonon`)
+
+file: [audio.py](audio.py)
 
 ![screenshot](screenshots/SeiSound.png)
 
@@ -125,7 +139,7 @@ file: [kiwi_seismosizer.py](kiwi_seismosizer.py)
 Time Line
 ---------
 
-Plot time vs. magnitude
+Temporal overview of catalog data.
 
 file: [time_line.py](time_line.py)
 
@@ -141,14 +155,14 @@ file: [extract_events.py](extract_events.py)
 
 ![screenshot](screenshots/extract_events.png)
 
-Export Waveforms
+Export waveforms
 ----------------
 
 Export selected/visible waveforms as MSEED, ASCII, SAC or YAFF files.
 
 file: [export_waveforms.py](export_waveforms.py)
 
-Distance Projected Waveform Plots
+Distance projected waveform plots
 ---------------------------------
 
 Applying a reduction velocity allows to 'shrink' the time domain.
@@ -167,7 +181,7 @@ file: [spectrogram.py](spectrogram.py)
 ![screenshot](screenshots/spectrogram.png)
 
 Geodetic forward modelling
-----------------------------
+--------------------------
 
 Visualize and output of a data trace for a rectangular dislocation source in an elastic halfspace.
 You will need to go to the okada dir and type make in order to compile the C-Code.
@@ -177,7 +191,7 @@ directory: [okada](okada)
 ![screenshot](screenshots/okada.png)
 
 Particle Motion
-----------------------------
+---------------
 
 Plot combinations of vertical and horizontal channels of selected stations.
 
