@@ -421,7 +421,7 @@ class Hyposat(Snuffling):
 
         if self.show_location_plot:
             cm = gmtpy.cm
-            p = MPlot(width=20*cm, height=20*cm, gmtconfig={ 'PLOT_DEGREE_FORMAT':'D' })
+            p = MPlot(width=15*cm, height=15*cm, gmtconfig={ 'PLOT_DEGREE_FORMAT':'D' })
             p.set(xspace=0.05, yspace=0.05)
             lats, lons = num.array(sta_lat_lon, dtype=num.float).T
 
@@ -441,17 +441,11 @@ class Hyposat(Snuffling):
                 p.plot([elon, elat], '-W0.5p,%s' % gmtpy.color(color))
 
 
-            fn_plot = pjoin(self.dir, 'location.pdf')
+            fn_plot = pjoin(self.dir, 'location.png')
             p.save(fn_plot)
 
-            try:
-                check_call([self.pdf_viewer, fn_plot])
-
-            except OSError as e:
-                if e.errno == 2:
-                    self.warn('could not open pdf viewer: %s' % self.pdf_viewer)
-                else:
-                    raise e
+            f = self.pixmap_frame()
+            f.load_pixmap(fn_plot)
 
     def save_last_run(self):
         if not self.dir:
