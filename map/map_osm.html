@@ -223,6 +223,15 @@
            numZoomLevels: 7,
 		});
 
+	   map.addControl(
+	       new OpenLayers.Control.MousePosition({
+	           prefix: 'Coordinates: ',
+	           separator: ' | ',
+	           numDigits: 3,
+	           emptyString: 'Mouse not over map'
+	       })
+	   );
+
       layerListeners = {
 	  	  featureclick: function(e) {
 	                var popup = new OpenLayers.Popup.FramedCloud("popup",
