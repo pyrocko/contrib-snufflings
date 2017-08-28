@@ -175,26 +175,9 @@
           map.zoomToExtent(bounds);
       }
 	  
-	  function toggle_stations(box){
-	  if (box.checked) {
-			station_markers.setVisibility(true);
-			station_markers_labels.setVisibility(true);
-	} else {
-		    station_markers.setVisibility(false);
-			station_markers_labels.setVisibility(false);
-		}
-	  }
-			
-	  function toggle_plate_boundaries(box){
-		if (box.checked)
-		    plate_boundaries.setVisibility(true);
-		else
-		    plate_boundaries.setVisibility(false);
-	  }
-			
 	  function init() {
 
-        plate_boundaries = new OpenLayers.Layer.Vector("KML", {
+        plate_boundaries = new OpenLayers.Layer.Vector("Plate Boundaries", {
             strategies: [new OpenLayers.Strategy.Fixed()],
             protocol: new OpenLayers.Protocol.HTTP({
                 url: "plates.kml",
@@ -206,11 +189,25 @@
             })
         })
 	  plate_boundaries.setVisibility(false);
+
 	  map = new OpenLayers.Map({
-			div: "map",
-			allOverlays: true,
-			layers: [new OpenLayers.Layer.OSM(), plate_boundaries],
-			});
+           div: "map",
+           allOverlays: true,
+           layers: [
+                   new OpenLayers.Layer.OSM(), 
+                   plate_boundaries,
+           ],
+           controls: [
+                new OpenLayers.Control.LayerSwitcher({roundedCornerColor: "#575757"}),
+           		new OpenLayers.Control.Permalink('permalink'),
+           		new OpenLayers.Control.Permalink('editlink', 'http://www.openstreetmap.org/edit.html'),
+           		new OpenLayers.Control.Attribution(),
+           		new OpenLayers.Control.PanZoomBar(),
+           		new OpenLayers.Control.Navigation()
+           ],
+           displayProjection:  new OpenLayers.Projection("EPSG:4326")
+
+		});
 
       layerListeners = {
   	  featureclick: function(e) {
@@ -271,28 +268,6 @@
                                 right:0px; 
                                 bottom: 0px; 
                                 top: 0px;"></div>
-<div id="controls", style="background-color: white; 
-                    opacity: 0.8; 
-                    position: absolute; 
-                    left: 0px; 
-                    right:0px; 
-                    bottom: 0px; 
-                    text-align:center; ">
-            <form action="readXml.html">
-                Stations: <input type='checkbox' 
-                                id='stationbox' 
-                                onclick="toggle_stations(this)" 
-								checked="checked"/> &nbsp;&nbsp;
-				<!--
-                Magnitude Circles: <input type='checkbox' 
-                                id='magnitudebox' 
-                                onclick="boxclick(this, 'magnitudecircle')" 
-                                /> &nbsp;&nbsp;-->
-                Plate Boundaries: <input type='checkbox' 
-                                id='platebox' 
-                                onclick="toggle_plate_boundaries(this)" 
-                                 /> &nbsp;&nbsp;
-				<!--lat lon: <span id="mouse-position"></span>-->
-</div>
+
 <div id="logger"></div>
 </body></html>
