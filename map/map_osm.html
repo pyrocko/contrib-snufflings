@@ -17,6 +17,8 @@
           alert(txt);
       }
 
+      var apiKey = "ApTJzdkyN1DdFKkRAE6QIDtzihNaf6IWJsT-nQ_2eMoO4PN__0Tzhl2-WgJtXFSp";
+
       function Station(lat, lon, nsl, icon_data){
           this.lat = lat;
           this.lon = lon;
@@ -195,34 +197,44 @@
         })
 	  plate_boundaries.setVisibility(false);
 
+	  var aerial = new OpenLayers.Layer.Bing({
+    	key: apiKey,
+    	type: "Aerial",
+        isBaseLayer: false,
+        opacity: 0.6
+	  });
+	  aerial.setVisibility(false);
+
 	  map = new OpenLayers.Map({
            div: "map",
            allOverlays: true,
            layers: [
                    new OpenLayers.Layer.OSM(), 
                    plate_boundaries,
+                   aerial
            ],
            controls: [
-                new OpenLayers.Control.LayerSwitcher({roundedCornerColor: "#575757"}),
+                new OpenLayers.Control.LayerSwitcher({roundedCornerColor: "#999999"}),
            		new OpenLayers.Control.Attribution(),
            		new OpenLayers.Control.PanZoomBar(),
            		new OpenLayers.Control.Navigation()
            ],
-           displayProjection:  new OpenLayers.Projection("EPSG:4326")
+           displayProjection:  new OpenLayers.Projection("EPSG:4326"),
+           numZoomLevels: 7,
 		});
 
       layerListeners = {
-  	  featureclick: function(e) {
-                var popup = new OpenLayers.Popup.FramedCloud("popup",
-                                    OpenLayers.LonLat.fromString(e.feature.geometry.toShortString()),
-                                    null,
-				    "<div style='font-size:.8em'>Event:<br>" + e.feature.attributes.description+"</div>",
-                                    null,
-                                    true
-                                );
-                                e.feature.popup = popup;
-                                map.addPopup(popup);
-  		return false;
+	  	  featureclick: function(e) {
+	                var popup = new OpenLayers.Popup.FramedCloud("popup",
+	                    OpenLayers.LonLat.fromString(e.feature.geometry.toShortString()),
+	                    null,
+	    "<div style='font-size:.8em'>Event:<br>" + e.feature.attributes.description+"</div>",
+	                    null,
+	                    true
+	                );
+	                e.feature.popup = popup;
+	                map.addPopup(popup);
+	  		return false;
   	    },
   	  };
 
