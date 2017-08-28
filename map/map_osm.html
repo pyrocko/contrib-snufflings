@@ -176,14 +176,19 @@
       }
 	  
 	  function init() {
+		var plate_boundary_style = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);	
+		    plate_boundary_style.strokeWidth = 4; 
+		    plate_boundary_style.strokeColor = "#827773";
+		    plate_boundary_style.strokeOpacity = 1;
 
         plate_boundaries = new OpenLayers.Layer.Vector("Plate Boundaries", {
             strategies: [new OpenLayers.Strategy.Fixed()],
+            style: plate_boundary_style,
             protocol: new OpenLayers.Protocol.HTTP({
                 url: "plates.kml",
                 format: new OpenLayers.Format.KML({
-                    extractStyles: true, 
-                    extractAttributes: true,
+                    extractStyles: false, 
+                    extractAttributes: false,
                     maxDepth: 2
                 })
             })
@@ -199,14 +204,11 @@
            ],
            controls: [
                 new OpenLayers.Control.LayerSwitcher({roundedCornerColor: "#575757"}),
-           		new OpenLayers.Control.Permalink('permalink'),
-           		new OpenLayers.Control.Permalink('editlink', 'http://www.openstreetmap.org/edit.html'),
            		new OpenLayers.Control.Attribution(),
            		new OpenLayers.Control.PanZoomBar(),
            		new OpenLayers.Control.Navigation()
            ],
            displayProjection:  new OpenLayers.Projection("EPSG:4326")
-
 		});
 
       layerListeners = {
