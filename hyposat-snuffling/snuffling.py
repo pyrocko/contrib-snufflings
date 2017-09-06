@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 from pyrocko.snuffling import Snuffling, Switch, Param, Choice
 from pyrocko.pile_viewer import EventMarker, PhaseMarker
@@ -8,6 +9,7 @@ import tempfile
 import math
 import glob
 import numpy as num
+import shutil
 
 
 deg2rad = math.pi/180.
@@ -208,8 +210,10 @@ class Hyposat(Snuffling):
         self.add_parameter(Param('Zero level shift [km]', 'zero_level_km',  0., 0., 10.))
         self.add_parameter(Param('RG group velocity', 'rg_group_velocity',  2.6, 1., 10.))
         self.add_parameter(Switch('Show location plot', 'show_location_plot', False))
+        self.add_trigger('Save', self.save_last_run)
         self.set_live_update(False)
         self.pdf_viewer = 'evince'
+        self.dir = None
 
 
     def call(self):
@@ -258,12 +262,12 @@ class Hyposat(Snuffling):
 
         hypo_in.sort()
 
-        dir = tempfile.mkdtemp(prefix='hyposat-%s-' % os.environ['USER'])
-        print
-        print '=== Running HYPOSAT ' + '=' * 80
-        print 'temp dir:', dir
+        self.dir = tempfile.mkdtemp(prefix='hyposat-%s-' % os.environ['USER'])
+        print()
+        print('=== Running HYPOSAT ' + '=' * 80)
+        print('temp dir: %s' % self.dir)
 
-        fn = pjoin(dir, 'hyposat-in')
+        fn = pjoin(self.dir, 'hyposat-in')
         f = open(fn, 'w')
         f.write('\n')
         for vals in hypo_in:
@@ -275,7 +279,7 @@ class Hyposat(Snuffling):
 
         f.close()
 
-        fn = pjoin(dir, 'stations.dat')
+        fn = pjoin(self.dir, 'stations.dat')
         f = open(fn, 'w')
         sta_lat_lon = []
         for sta in viewer.stations.values():
@@ -294,13 +298,13 @@ class Hyposat(Snuffling):
         params['crust_51'] = self.crust_51_choices[self.crust_51]
         params['rg_group_velocity'] = self.rg_group_velocity
 
-        fn = pjoin(dir, 'hyposat-parameter')
+        fn = pjoin(self.dir, 'hyposat-parameter')
         f = open(fn, 'w')
         f.write(hypo_param_tmpl % params)
         f.close()
 
         old_wd = os.getcwd()
-        os.chdir(dir)
+        os.chdir(self.dir)
 
         env = dict(os.environ)
         env['HYPOSAT_DATA'] = self.hyposat_data_dir
@@ -317,12 +321,12 @@ class Hyposat(Snuffling):
         (out, err) = p.communicate()
         os.chdir(old_wd)
 
-        fn = pjoin(dir, 'hyposat-out')
+        fn = pjoin(self.dir, 'hyposat-out')
         f = open(fn, 'r')
         hypo_out = f.read()
         f.close()
 
-        print 'HYPOSAT output:\n\n', hypo_out
+        print('HYPOSAT output:\n\n %s' % hypo_out)
         evhead = 'T0 LAT LON Z VPVS DLAT DLON DZ DT0 DVPVS DEF RMS'.split()
         phhead = 'Stat Delta Azi Phase [used] Onset time Res Baz Res Rayp Res Used'.split()
         ellipsehead = 'Epicenter error ellipse:'.split()
@@ -412,12 +416,12 @@ class Hyposat(Snuffling):
                 elif toks[0] == 'Azimuth:':
                     ellipse_azimuth = float(toks[1])
 
-        print '='*100
-        print
+        print('='*100)
+        print()
 
         if self.show_location_plot:
             cm = gmtpy.cm
-            p = MPlot(width=20*cm, height=20*cm, gmtconfig={ 'PLOT_DEGREE_FORMAT':'D' })
+            p = MPlot(width=15*cm, height=15*cm, gmtconfig={ 'PLOT_DEGREE_FORMAT':'D' })
             p.set(xspace=0.05, yspace=0.05)
             lats, lons = num.array(sta_lat_lon, dtype=num.float).T
 
@@ -437,17 +441,18 @@ class Hyposat(Snuffling):
                 p.plot([elon, elat], '-W0.5p,%s' % gmtpy.color(color))
 
 
-            fn_plot = pjoin(dir, 'location.pdf')
+            fn_plot = pjoin(self.dir, 'location.png')
             p.save(fn_plot)
 
-            try:
-                check_call([self.pdf_viewer, fn_plot])
+            f = self.pixmap_frame()
+            f.load_pixmap(fn_plot)
 
-            except OSError as e:
-                if e.errno == 2:
-                    self.warn('could not open pdf viewer: %s' % self.pdf_viewer)
-                else:
-                    raise e
+    def save_last_run(self):
+        if not self.dir:
+            self.fail('Run first')
+        outdir = self.output_filename(caption='Save directory')
+        shutil.move(self.dir, outdir)
+
 
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''

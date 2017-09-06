@@ -1,3 +1,4 @@
+from __future__ import print_function
 from pyrocko.snuffling import Param, Snuffling, Choice
 
 import numpy as num
@@ -9,20 +10,21 @@ def p2o_trace(ptrace, station):
     from obspy.core import Trace as oTrace
 
     otr = oTrace(
-            data = ptrace.get_ydata(),
+            data=ptrace.get_ydata(),
             header=dict(
-                network = ptrace.network,
-                station = ptrace.station,
-                location = ptrace.location,
-                channel = ptrace.channel,
-                delta = ptrace.deltat,
-                starttime = UTCDateTime(ptrace.tmin),
-                coordinates = dict(
-                    latitude = station.lat,
-                    longitude = station.lon,
-                    elevation = station.elevation/1000. )))
+                network=ptrace.network,
+                station=ptrace.station,
+                location=ptrace.location,
+                channel=ptrace.channel,
+                delta=ptrace.deltat,
+                starttime=UTCDateTime(ptrace.tmin),
+                coordinates=dict(
+                    latitude=station.lat,
+                    longitude=station.lon,
+                    elevation=station.elevation/1000.)))
 
     return otr
+
 
 class FK(Snuffling):
     '''
@@ -64,7 +66,7 @@ class FK(Snuffling):
     </p>
     <p>
     Further information can be gathered from
-    <a href="http://docs.obspy.org/master/tutorial/code_snippets/beamforming_fk_analysis.html">
+    <a href="http://docs.obspy.org/master/tutorial/code_snippets/beamforming_fk_analysis.html">  # noqa
     ObsPy's FK tutorial</a>.
     </p>
     </body>
@@ -81,13 +83,13 @@ class FK(Snuffling):
         self.add_parameter(Param(
             'Length of Sliding Window [s]', 'window_lenth', 1., 0.5, 10.))
         self.add_parameter(Param(
-            'Step fraction of Sliding Window [s]','win_frac', 0.05, 0., 10.))
+            'Step fraction of Sliding Window [s]', 'win_frac', 0.05, 0., 10.))
         self.add_parameter(Choice(
             'If sampling rates differ', 'downresample', 'resample',
             ['resample', 'downsample', 'downsample to "target dt"']))
         self.add_parameter(Param('target dt', 'target_dt', 0.2, 0., 10))
 
-        #self.add_parameter(Choice('Units: ','unit','[s/km]',('[s/km]','[s/deg]')))
+        # self.add_parameter(Choice('Units: ','unit','[s/km]',('[s/km]','[s/deg]')))  # noqa
         self.set_live_update(False)
 
     def call(self):
@@ -96,7 +98,7 @@ class FK(Snuffling):
             from obspy.signal import array_analysis
             from obspy.imaging.cm import obspy_sequential as cmap
         except ImportError as _import_error:
-            self.fail('ImportError:\n%s'% _import_error)
+            self.fail('ImportError:\n%s' % _import_error)
 
         from matplotlib.colorbar import ColorbarBase
         from matplotlib.colors import Normalize
@@ -153,7 +155,8 @@ class FK(Snuffling):
             win_len=self.window_lenth, win_frac=self.win_frac,
             frqlow=viewer.highpass, frqhigh=viewer.lowpass, prewhiten=0,
             semb_thres=-1.0e9, vel_thres=-1.0e9, verbose=True,
-            timestamp='mlabday', stime=UTCDateTime(tmin), etime=UTCDateTime(tmax)
+            timestamp='mlabday', stime=UTCDateTime(tmin),
+            etime=UTCDateTime(tmax)
         )
 
         try:
@@ -176,8 +179,8 @@ class FK(Snuffling):
         sbins = num.linspace(0., self.smax, N + 1)
 
         # sum rel power in bins given by abins and sbins
-        hist, baz_edges, sl_edges = num.histogram2d(baz, slow,
-                bins=[abins, sbins], weights=rel_power)
+        hist, baz_edges, sl_edges = num.histogram2d(
+            baz, slow, bins=[abins, sbins], weights=rel_power)
 
         # transform to gradient
         baz_edges = baz_edges / 180. * pi
@@ -192,10 +195,9 @@ class FK(Snuffling):
 
         # circle through backazimuth
         for i, row in enumerate(hist):
-            bars = ax.bar(left=(pi / 2 - (i + 1) * dw) * num.ones(N),
-                          height=dh * num.ones(N),
-                          width=dw, bottom=dh * num.arange(N),
-                          color=cmap(row / hist.max()))
+            ax.bar(left=(pi / 2 - (i + 1) * dw) * num.ones(N),
+                   height=dh * num.ones(N), width=dw,
+                   bottom=dh * num.arange(N), color=cmap(row / hist.max()))
 
         ax.set_xticks([pi / 2, 0, 3. / 2 * pi, pi])
         ax.set_xticklabels(['N', 'E', 'S', 'W'])
@@ -223,7 +225,9 @@ class FK(Snuffling):
         fig2.canvas.draw()
         fig.canvas.draw()
 
-        print 'Center of Array at latitude %s and longitude %s'%(center_lat, center_lon)
+        print('Center of Array at latitude %s and longitude %s' %
+              (center_lat, center_lon))
+
 
 def __snufflings__():
-    return [ FK() ]
+    return [FK()]

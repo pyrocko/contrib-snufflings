@@ -59,11 +59,12 @@ class TracePlotter(Snuffling):
         maxd = max(distances)
         mind = min(distances)
         distances = dict(zip([s.nsl() for s in stations], distances))
-        matching_traces = filter(lambda x: util.match_nslc(
-                            self.get_station_patterns(stations), x.nslc_id), traces)
+        matching_traces = [x for x in traces if util.match_nslc(
+                            self.get_station_patterns(stations), x.nslc_id)]
         if self.add_markers:
             markers = self.get_markers()
-            markers = filter(lambda m: m.tmax<=vtmax and m.tmin>=vtmin and m.selected, markers)
+            markers = [m for m in markers if  m.tmax<=vtmax and
+                       m.tmin>=vtmin and m.selected]
             markers = dict(zip([tuple(m.nslc_ids) for m in markers], markers))
 
         if self.fig is None or self.fframe.closed is True or not self._live_update:

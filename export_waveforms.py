@@ -92,7 +92,7 @@ class ExportWaveforms(Snuffling):
         if self.save_stations:
             stations = self.get_viewer().stations.values()
             fn = self.output_filename('Save Stations', 'stations.pf')
-            model.dump_stations(stations, fn)
+            model.dump_stations(list(stations), fn)
 
 
 def __snufflings__():

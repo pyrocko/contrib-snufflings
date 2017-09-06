@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from pyrocko.snuffling import Snuffling, Param, Switch, Choice
 from pyrocko.model import Station, dump_stations
 from pyrocko import orthodrome as ortho
@@ -118,7 +120,8 @@ class BeamForming(Snuffling):
         traces = list(self.chopper_selected_traces(fallback=True))
         traces = [tr for trs in traces for tr in trs ]
         visible_nslcs = [tr.nslc_id for tr in traces]
-        stations = filter(lambda s: util.match_nslcs("%s.%s.%s.*" % s.nsl(), visible_nslcs), stations)
+        stations = [x for x in stations if util.match_nslcs(
+            "%s.%s.%s.*" % x.nsl(), visible_nslcs)]
         if not self.lat_c or not self.lon_c or not self.z_c:
             self.lat_c, self.lon_c, self.z_c = self.center_lat_lon(stations)
             self.set_parameter('lat_c', self.lat_c)
@@ -182,8 +185,8 @@ class BeamForming(Snuffling):
             nslc_id = tr.nslc_id
 
             try:
-                stats = filter(lambda x: util.match_nslc(
-                    '%s.%s.%s.*' % x.nsl(), nslc_id), stations)
+                stats = [x for x in stations if util.match_nslc(
+                    '%s.%s.%s.*' % x.nsl(), nslc_id)]
 
                 stat = stats[0]
             except IndexError:
@@ -202,7 +205,7 @@ class BeamForming(Snuffling):
                 if self.diff_dt_treat=='downsample':
                     stack_trace.downsample_to(tr.deltat)
                 elif self.diff_dt_treat=='upsample':
-                    print 'something went wrong with the upsampling, previously'
+                    print('something went wrong with the upsampling, previously')
             stack_trace.add(tr)
 
             if self.add_shifted:
@@ -212,7 +215,7 @@ class BeamForming(Snuffling):
         if self.post_normalize:
             for ch, tr in self.stacked.items():
                 tr.set_ydata(tr.get_ydata()/num_stacked[ch])
-        
+
         self.cleanup()
 
         for ch, tr in self.stacked.items():
@@ -307,7 +310,7 @@ class BeamForming(Snuffling):
     def save(self):
         default_fn = 'BeamTraces_baz%s_slow%s.mseed' % (self.bazi, self.slow)
         fn = self.output_filename('Template for output files', default_fn)
-        io.save(self.stacked.values(), fn)
+        io.save((self.stacked.values()), fn)
 
     def set_center_latlon(self):
         self.lat_c, self.lon_c, self.z_c = self.center_lat_lon(self.get_stations())

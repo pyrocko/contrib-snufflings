@@ -6,6 +6,24 @@ from pyrocko.snuffling import Snuffling, load_markers, Param, NoViewerSet
 default_output_filename = '%(eventname)s_%(network)s.%(station)s.%(location)s.%(channel)s.mseed'
 
 class ExtractEvents(Snuffling):
+    '''
+    <html>
+    <head>
+    <style type="text/css">
+        body { margin-left:10px };
+    </style>
+    </head>
+    <body>
+    <h2 align="center">Extract Waveforms of Events</h2>
+    <p>
+    Select all event markers for which you want to extract waveforms. Set the
+    <b>Start time rel. to event</b> and <b>End time rel. to event</b> and hit
+    <b>Run</b>. You can modify the filename template to store
+    chopped trace segments in the opening file dialog. Click <b>Save</b>.
+    </p>
+    </body>
+    </html>
+    '''
 
     def setup(self):
         self.set_name('Extract Events')

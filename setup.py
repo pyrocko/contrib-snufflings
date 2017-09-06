@@ -1,10 +1,11 @@
-from distutils.file_util import copy_file
+from __future__ import print_function
+from builtins import next
 from distutils.core import setup, Command
 import os
 import glob
 import errno
 
-__author__ = 'marius'
+__author__ = 'pyrocko devs'
 
 pjoin = os.path.join
 
@@ -26,19 +27,22 @@ class SetupBuildCommand(Command):
 
 
 class PassSetup(SetupBuildCommand):
-    descrition = """install doesnt work. Use "python setup.py link" instead.""" 
+    descrition = """install doesnt work. Use "python setup.py link" instead."""
     user_options = []
+
     def run(self):
-        print """install doesnt work. Use "python setup.py link" instead."""
+        print("""install doesnt work. Use "python setup.py link" instead.""")
+
 
 class LinkSnufflingFiles(SetupBuildCommand):
 
     description = "Create symbolic links and subdirectory in $HOME/.snufflings"
 
-    user_options = [('force', None, 
-                            'force overwriting of existing symbolic links.'),
-                    ('choice=', None, 'Comma separated list of snufflings to link'),
-                    ('undangle', None, 'Unlink broken (dangling) symlinks in $HOME/.snufflings'), ]
+    user_options = [
+        ('force', None, 'force overwriting of existing symbolic links.'),
+        ('choice=', None, 'Comma separated list of snufflings to link'),
+        ('undangle', None,
+         'Unlink broken (dangling) symlinks in $HOME/.snufflings')]
 
     def initialize_options(self):
         self.force = False
@@ -53,14 +57,17 @@ class LinkSnufflingFiles(SetupBuildCommand):
         for fn in glob.glob(snufflings+'/*'):
             try:
                 os.stat(fn)
-            except OSError, e:
+            except OSError as e:
                 if e.errno == errno.ENOENT:
                     if not self.undangle:
-                        print 'file %s does not exist or is a broken symlink' % fn
-                        print 'broken symlinks can be removed using --undangle'
+                        print(
+                            'file %s does not exist or is a broken symlink'
+                            % fn)
+                        print(
+                            'broken symlinks can be removed using --undangle')
                     else:
                         os.unlink(fn)
-                        print 'Unlinked file:  %s'%fn
+                        print('Unlinked file:  %s' % fn)
 
         if self.choice:
             choices = self.choice.split(',')
@@ -71,7 +78,7 @@ class LinkSnufflingFiles(SetupBuildCommand):
         else:
             files = glob.glob(pjoin(cwd, '*.py'))
             subs = next(os.walk('.'))[1]
-            subs = filter(lambda x: x[0]!='.', subs)
+            subs = [x for x in subs if x[0] != '.']
             subs.remove('screenshots')
             for sub in subs:
                 files.append(pjoin(cwd, sub))
@@ -81,16 +88,17 @@ class LinkSnufflingFiles(SetupBuildCommand):
             try:
                 target = fn.replace(cwd, snufflings)
                 os.symlink(fn, target)
-            except OSError, e:
-                if e.errno==errno.EEXIST:
+            except OSError as e:
+                if e.errno == errno.EEXIST:
                     if os.path.islink(target):
                         if self.force:
                             os.remove(target)
                             os.symlink(fn, target)
                         else:
-                            print 'target exists: ', target
+                            print('target exists: ', target)
                     else:
-                        print 'target exists and is not a symbolic link: ',target
+                        print('target exists and is not a symbolic link: ',
+                              target)
 
 
 setup(name='contrib-snufflings',

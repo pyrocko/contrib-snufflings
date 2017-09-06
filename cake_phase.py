@@ -1,3 +1,4 @@
+from builtins import str
 import os
 from pyrocko.snuffling import Snuffling, Param, Switch, Choice
 from pyrocko.pile_viewer import PhaseMarker
@@ -85,8 +86,7 @@ class CakePhase(Snuffling):
                             pha.name = name
 
                     wanted.extend(phases)
-        except (cake.UnknownClassicPhase, 
-                cake.PhaseDefParseError), e:
+        except (cake.UnknownClassicPhase, cake.PhaseDefParseError) as e:
             self.fail(str(e))
 
         return wanted
@@ -103,7 +103,7 @@ class CakePhase(Snuffling):
         pile = self.get_pile()
 
         event, stations = self.get_active_event_and_stations()
-        
+
         if not stations:
             self.fail('No station information available.')
 

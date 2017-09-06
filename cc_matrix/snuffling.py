@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import sys
 import logging
 import os.path as op
@@ -126,7 +128,8 @@ class SimilaritySnuffling(Snuffling):
                                                    load_data=False))
         traces = [tr for trs in traces for tr in trs ]
         visible_nslcs = [tr.nslc_id for tr in traces]
-        stations = filter(lambda s: util.match_nslcs("%s.%s.%s.*" % s.nsl(), visible_nslcs), stations)
+        stations = [x for x in stations is util.match_nslcs(
+            "%s.%s.%s.*" % x.nsl(), visible_nslcs)]
 
         # TODO option to choose other models
         mod = cake.load_model()
@@ -149,7 +152,7 @@ class SimilaritySnuffling(Snuffling):
         if self.save_traces :
             figure_dir = self.input_directory(caption='Select directory to store images')
         for itarget, target in enumerate(targets):
-            print (itarget+1.)/float(ntargets)
+            print((itarget+1.)/float(ntargets))
             ok_filtered = []
             markers = []
             for iev, ev in enumerate(events):

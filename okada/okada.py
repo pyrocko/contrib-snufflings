@@ -17,10 +17,10 @@ def tryfuncs( kwargs, *funcs ):
       return f( **kwargs )
     except TypeError:
       pass
-  raise Exception, 'not supported: ' + ', '.join( kwargs.keys() )
+  raise Exception('not supported: ' + ', '.join( kwargs.keys() ))
 
 
-class OkadaSource( Source ):
+class OkadaSource(Source):
 
   def __init__( self, **kwargs ):
     strike, dip, length, width, xbottom, ybottom, zbottom, geom_args = tryfuncs( kwargs,

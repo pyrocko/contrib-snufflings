@@ -1,8 +1,10 @@
+from __future__ import print_function
+
 from PyQt4.QtCore import QThread, SIGNAL, QTimer
 from pyrocko.snuffling import Snuffling, Param, Choice, Switch, NoTracesSelected
 import pyrocko.trace as trace
 from pyrocko.trace import CosFader
-from scipy.io.wavfile import write
+from scipy.io.wavfile import write, read
 from scipy.signal import resample
 import numpy as num
 import tempfile
@@ -98,19 +100,18 @@ class SeiSound(Snuffling):
     <b><pre>
     sudo apt-get install python-qt4-phonon
     </pre></b>
+
     <p>
-    Due to performance reasons of the resampling, the fast forward factor is
-    rounded to one decimal place.
     </body>
     '''
 
     def setup(self):
         self.set_name('Play/Save Audio')
-        self.add_parameter(Param('Fast Forward/Rewind', 'speed_up', 1., -20., 30.))
-        self.add_parameter(Choice('fps', 'fps', '4000',
+        self.add_parameter(Param('Fast Forward/Rewind', 'speed_up', 10., -20., 30.))
+        self.add_parameter(Choice('fps', 'fps_choice', '16000',
                                   ('44100', '32000', '18000', '16000', '9000',
-                                   '4000')))
-        self.add_parameter(Param('Highpass [Hz]', 'corner_highpass', 0.1,
+                                   '4000', 'keep original')))
+        self.add_parameter(Param('Highpass [Hz]', 'corner_highpass', 0.001,
                                  0.001, 100., low_is_none=True))
 
         self.add_parameter(Param('Lowpass [Hz]', 'corner_lowpass', 100.,
@@ -123,20 +124,23 @@ class SeiSound(Snuffling):
         self.add_trigger('Stop', self.stop_play)
         self.add_trigger('Apply Main Control Filters', self.set_from_main)
         self.add_trigger('Export .wav file', self.export_wav)
+        self.add_trigger('Load .wav file', self.load_data)
 
         self.set_live_update(False)
         self._tmpdir = self.tempdir()
-        self.marker = None
         self.output = None
         self.marker_thread = None
         if not no_phonon:
             self.m_media = Phonon.MediaObject(self._panel_parent)
         self.no_phonon_warn = 'Install pyqt4 phonon!\nCan only export wav files.\nCheckout this snuffling\'s help.'
+        self.added_traces = []
 
     def my_cleanup(self):
         if self.marker_thread is not None:
             self.marker_thread.cleanup()
         self.cleanup()
+        for tr in self.added_traces:
+            self.add_trace(tr)
 
     def call(self):
         self.my_cleanup()
@@ -156,6 +160,16 @@ class SeiSound(Snuffling):
                 self.marker_thread.cleanup()
             self.play_phonon()
 
+    def load_data(self):
+        fn = self.input_filename()
+        sampling_rate, data = read(fn)
+        for i, channel in enumerate(data.T):
+            tr = trace.Trace(
+                tmin=0., ydata=channel, deltat=1./sampling_rate, station='wav%s' % i)
+            self.add_trace(tr)
+            self.added_traces.append(tr)
+        self.set_parameter('fps_choice', 'keep original')
+
     def prepare_data(self):
         trange = self.get_selected_time_range()
         self.ttotal = float(trange[1]-trange[0])
@@ -164,14 +178,15 @@ class SeiSound(Snuffling):
         for tr in self.chopper_selected_traces():
             if ntraces != 1:
                 self.fail('Can only play one selected trace')
+            self.fps = 1./tr[0].deltat
             t = tr[0].copy()
+            t.set_ydata(num.asarray(t.ydata-num.mean(t.ydata), dtype=num.float))
             nslc_ids.append(t.nslc_id)
-
-            t.taper(CosFader(xfrac=self.tfade/100.))
             if self.corner_lowpass:
                 t.lowpass(4, self.corner_lowpass)
             if self.corner_highpass:
                 t.highpass(4, self.corner_highpass)
+            t.taper(CosFader(xfrac=self.tfade/100.))
             data = t.get_ydata()
             ntraces += 1
 
@@ -187,7 +202,7 @@ class SeiSound(Snuffling):
         Phonon.createPath(self.m_media, output)
         self.m_media.setCurrentSource(Phonon.MediaSource(tmpfile))
         self.marker_thread.media = self.m_media
-        self.marker_thread.speed_up = speed_up=num.round(self.speed_up, 1) 
+        self.marker_thread.speed_up = int(num.round(self.speed_up))
         self.m_media.stateChanged.connect(self.marker_thread.handle_states)
         self.m_media.play()
 
@@ -199,18 +214,20 @@ class SeiSound(Snuffling):
         data = num.asarray(data, dtype=num.float)
         n = trace.nextpow2(len(data))-len(data)
         n_frac = float(n)/(n+len(data))
-        data = num.append(data, num.zeros(n))
-        fps = int(self.fps)
-        arg = int(fps*self.ttotal/num.abs(num.round(self.speed_up, 1)))
-        data = resample(data, arg)
-        nnew = len(data)
-        data = data[:-int(n_frac*nnew)]
-        if self.speed_up<0.:
-            data = data[::-1]
-        data[0]  = 0.
+        if not self.fps_choice == 'keep original':
+            fps = int(self.fps_choice)
+            arg = int(fps*self.ttotal/num.abs(num.round(self.speed_up)))
+            data = resample(data, arg)
+            nnew = len(data)
+            data = data[:-int(n_frac*nnew)]
+            if self.speed_up<0.:
+                data = data[::-1]
+            data[0]  = 0.
+            self.fps = fps
+
         self.marker_thread.t_stretch = n_frac
         scaled = num.int16(data/float(num.max(num.abs(data))) * 32767)
-        write(fn, fps, scaled)
+        write(fn, self.fps, scaled)
 
     def set_from_main(self):
         v = self.get_viewer()
@@ -226,7 +243,7 @@ class SeiSound(Snuffling):
             self.fail(self.no_phonon_warn)
         if self.m_media is None:
             self.call()
-            return 
+            return
 
         state = self.m_media.state()
         if state == Phonon.PlayingState:
@@ -238,8 +255,9 @@ class SeiSound(Snuffling):
         elif state == Phonon.StoppedState:
             self.call()
         else:
-            print 'unexpected state. cleanup....'
+            print('unexpected state. cleanup....')
             self.m_media.stop()
+
 
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
