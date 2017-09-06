@@ -122,8 +122,16 @@ class CakePhase(Snuffling):
 
             if self.use_station_depth:
                 rdepth = station.depth
+            else:
+                rdepth = 0.0
 
-            rays = model.arrivals(phases=wanted, distances=[dist*cake.m2d], zstart=depth, zstop=rdepth)
+            multi_dists = []
+            nmax = 1
+            for i in xrange(0, nmax):
+                multi_dists.append(dist*cake.m2d + 360.*i)
+                multi_dists.append((i+1)*360. - dist*cake.m2d)
+
+            rays = model.arrivals(phases=wanted, distances=multi_dists, zstart=depth, zstop=rdepth)
 
             for ray in rays:
                 time = ray.t
