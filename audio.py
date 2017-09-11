@@ -1,8 +1,7 @@
 from __future__ import print_function
 
-from PyQt5.QtCore import QThread, QTimer
-from pyrocko.snuffling import (Snuffling, Param, Choice, Switch,
-                               NoTracesSelected)
+from PyQt4.QtCore import QThread, SIGNAL, QTimer
+from pyrocko.snuffling import Snuffling, Param, Choice, Switch, NoTracesSelected
 import pyrocko.trace as trace
 from pyrocko.trace import CosFader
 from scipy.io.wavfile import write, read
@@ -12,7 +11,7 @@ import tempfile
 
 
 try:
-    from PyQt5.phonon import Phonon
+    from PyQt4.phonon import Phonon
     no_phonon = False
 except ImportError:
     no_phonon = True
@@ -28,7 +27,7 @@ class MarkerThread(QThread):
         self.speed_up = 1.
         self.timer = QTimer(self)
         self.timer.setInterval(100)
-        self.timer.timeout.connect(self.check_and_update)
+        self.connect(self.timer, SIGNAL('timeout()'), self.check_and_update)
         self.previous_state = Phonon.StoppedState
         self.t_stretch = 1.
         self.time_range = (0., 0.)
@@ -62,7 +61,7 @@ class MarkerThread(QThread):
             self.time_range = (self.marker.tmin, self.marker.tmax)
             self.viewer.add_marker(self.marker)
             self._factor = self.speed_up/(1-self.t_stretch)
-            if self.speed_up < 0.:
+            if self.speed_up<0.:
                 self._start_at = self.time_range[1]
             else:
                 self._start_at = self.time_range[0]
@@ -90,7 +89,7 @@ class SeiSound(Snuffling):
     <body>
     <p>
 
-    Mark a time range you would like to listen to with an extended markerand press 'Run'.<br>
+    Mark a time range you would like to listen to with an extended marker and press 'Run'.<br>
     Use the scroll bar to <b>fast forward</b> the recording by the chosen factor.<br>
     Click <b>Apply Main Control Filter</b> if you want to adopt the main<br>
     control filter settings or choose a different setting using the scroll bars.

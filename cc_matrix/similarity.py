@@ -1,23 +1,16 @@
 from pyrocko import trace, model
-from pyrocko.guts import Object, Int, Float, List, String
+from pyrocko.guts import *
 from pyrocko.gf import SeismosizerTrace, Target
-
 
 class Similarity(Object):
     '''CC result of one event pair at one target.'''
-    ievent = Int.T(
-        help='Event identifier')
-    jevent = Int.T(
-        help='Event identifier')
-    itarget = Int.T(
-        help='Target identifier')
+    ievent = Int.T(help='Event identifier')
+    jevent = Int.T(help='Event identifier')
+    itarget = Int.T(help='Target identifier')
     cross_correlation = Float.T()
     cross_correlation_trace = SeismosizerTrace.T(optional=True)
-    relative_amplitude = Float.T(
-        help='Relative amplitude with reference to ievent.')
-    time_lag = Float.T(
-        help='Time lag at maximum of cross correlation')
-
+    relative_amplitude = Float.T(help='Relative amplitude with reference to ievent.')
+    time_lag = Float.T(help='Time lag at maximum of cross correlation')
 
 class SimilarityMatrix(Object):
     ''' A container class to store a list of :py:class:`Similarity` instances
@@ -30,3 +23,4 @@ class SimilarityMatrix(Object):
     windowing_method = String.T()
     vmin = Float.T()
     vmax = Float.T()
+
