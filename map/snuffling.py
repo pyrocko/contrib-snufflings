@@ -6,7 +6,7 @@ import numpy as num
 from pyrocko import util, model, orthodrome as ortho
 from pyrocko import moment_tensor
 from pyrocko.gui.snuffling import Snuffling, Switch, Choice, NoViewerSet
-from pyrocko.gui import gui_util
+from pyrocko.gui import util as gui_util
 from pyrocko.plot.automap import Map
 
 from xmlMarker import XMLEventMarker, EventMarkerList, XMLStationMarker
