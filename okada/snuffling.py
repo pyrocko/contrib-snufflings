@@ -14,6 +14,8 @@ try:
 except OSError as e:
     logger.warn('''\n %s
 --> run 'make' in okada snuffling directory <--''' % e)
+except ImportError as e:
+    logger.warn(e)
 
 
 class okadaforward(Snuffling):
