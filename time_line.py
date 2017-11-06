@@ -1,5 +1,5 @@
 from pyrocko.gui.snuffling import Snuffling, Param
-from pyrocko.gui.gui_util import EventMarker
+from pyrocko.gui.util import EventMarker
 from pyrocko.orthodrome import distance_accurate50m as distance
 from pyrocko import util, model
 import matplotlib.dates as mdates
