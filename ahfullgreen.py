@@ -2,7 +2,6 @@ import numpy as num
 import math
 import os
 
-from PyQt5.QtCore import *
 from pyrocko import moment_tensor, model, trace
 from pyrocko.gui.snuffling import Snuffling, Param, Choice, Switch, EventMarker
 from pyrocko import gf

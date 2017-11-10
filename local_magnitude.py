@@ -7,7 +7,7 @@ from collections import defaultdict
 from pyrocko.gui.snuffling import Snuffling, Param, PhaseMarker, Switch, Choice, \
     EventMarker
 from pyrocko import guts, orthodrome, trace
-from pyrocko.gui.gui_util import to01
+from pyrocko.gui.util import to01
 from pyrocko.plot import graph_colors
 
 __author__ = 'Catarina Matos (cpfcmatos@gmail.com)'
