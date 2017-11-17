@@ -3,7 +3,7 @@ import re
 import copy
 import logging
 
-from pyrocko.snuffling import Snuffling, Param
+from pyrocko.gui.snuffling import Snuffling, Param
 from pyrocko import model, eventdata
 
 logger = logging.getLogger('seismosizer')

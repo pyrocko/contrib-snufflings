@@ -1,15 +1,17 @@
 from __future__ import print_function
 from builtins import range
-
-from pyrocko.snuffling import Snuffling, Param, Switch, NoViewerSet, Choice
-from pyrocko.trace import Trace
-from pyrocko.pile_viewer import Marker, EventMarker, PhaseMarker
-from pyrocko import io, trace, util, cake, crust2x2, orthodrome, model
 import numpy as num
 import logging, math
 
+from pyrocko.gui.snuffling import Snuffling, Param, Switch, NoViewerSet, Choice
+from pyrocko.gui.pile_viewer import Marker, EventMarker, PhaseMarker
+from pyrocko.trace import Trace
+from pyrocko import io, trace, util, cake, orthodrome, model
+from pyrocko.dataset import crust2x2
+
 km = 1000.
 d2r = math.pi / 180.
+
 
 class CorrelateEvents(Snuffling):
 
@@ -17,14 +19,14 @@ class CorrelateEvents(Snuffling):
         self.set_name('Cross correlation relocation')
         self.add_parameter(Param('Highpass [Hz]', 'corner_highpass', 1.0,
             0.001, 50., low_is_none=True))
-        self.add_parameter(Param('Lowpass [Hz]', 'corner_lowpass', 4.0, 
+        self.add_parameter(Param('Lowpass [Hz]', 'corner_lowpass', 4.0,
             0.001, 50., high_is_none=True))
         self.add_parameter(Param('Time window begin', 'tstart', -1.0,
             -100., 0.))
         self.add_parameter(Param('Time window end', 'tend', 3.0,
             0., 100.))
 
-        self.add_parameter(Param('Minimum correlation', 'min_corr', 0.5, 
+        self.add_parameter(Param('Minimum correlation', 'min_corr', 0.5,
             0.0, 1.0))
 
         self.add_parameter(Param('Replace master depth [km]', 'master_depth_km', None,
@@ -33,9 +35,9 @@ class CorrelateEvents(Snuffling):
         self.add_parameter(Switch('Save figure', 'save', False))
         self.add_parameter(Switch('Fix depth', 'fix_depth', False))
         self.add_parameter(Switch('Show correlation traces', 'show_correlation_traces', False))
-        self.add_parameter(Choice('Weighting', 'weighting', 'cubic', 
+        self.add_parameter(Choice('Weighting', 'weighting', 'cubic',
             ['equal', 'linear', 'quadratic']))
-        self.add_parameter(Choice('Earth model', 'model_select', 'Global', 
+        self.add_parameter(Choice('Earth model', 'model_select', 'Global',
             ['Global (ak135)', 'Local (from crust2x2)']))
 
         self.set_live_update(False)
@@ -111,7 +113,7 @@ class CorrelateEvents(Snuffling):
                 azi = orthodrome.azimuth(master, station)
 
                 arrivals = self.model.arrivals(
-                        phases=phases[phasename][0], 
+                        phases=phases[phasename][0],
                         distances=[ dist*cake.m2d ],
                         zstart = master_depth,
                         zstop = 0.0)
@@ -127,7 +129,7 @@ class CorrelateEvents(Snuffling):
                             math.cos(azi*d2r) * math.sin(takeoff*d2r) * u,
                             math.sin(azi*d2r) * math.sin(takeoff*d2r) * u,
                             math.cos(takeoff*d2r) * u ])
-        
+
         # gather picks for each event
 
         for ev in events:
@@ -149,7 +151,7 @@ class CorrelateEvents(Snuffling):
                 nsp = station.network, station.station, phasename
                 datasyn.append(tt.get(nsp,None))
                 for ev in events:
-                    if nsp in ev.picks: 
+                    if nsp in ev.picks:
                         ttobs = ev.picks[nsp] - ev.time
                     else:
                         ttobs = None
@@ -193,7 +195,7 @@ class CorrelateEvents(Snuffling):
                 iev = event_to_number[ev]
                 for istation, station in enumerate(stations):
                     nsp = station.network, station.station, phasename
-                    if nsp in tt and nsp in ev.picks: 
+                    if nsp in tt and nsp in ev.picks:
                         tarr = ev.time + tt[nsp]
                         tarr_ec = tarr + tt_corr_event[iphasename, iev]
                         tarr_ec_sc = tarr_ec + tt_corr_station[iphasename, istation]
@@ -206,7 +208,7 @@ class CorrelateEvents(Snuffling):
                 data = num.array(data, dtype=num.float).T
 
                 print('event %10s %3s %3i %15.2g %15.2g %15.2g' % (
-                        (ev.name, phasename, data.shape[1]) + 
+                        (ev.name, phasename, data.shape[1]) +
                             tuple( num.mean(num.abs(x)) for x in data )))
             else:
                 print('event %10s %3s no picks' % (ev.name, phasename))
@@ -217,7 +219,6 @@ class CorrelateEvents(Snuffling):
         for f in self.corner_highpass, self.corner_lowpass:
             if f is not None:
                 tpad = max(tpad, 1.0/f)
-
 
         pile = self.get_pile()
         waveforms = {}
@@ -245,14 +246,14 @@ class CorrelateEvents(Snuffling):
                         tmin = tarr2+self.tstart
                         tmax = tarr2+self.tend
 
-                        marker = PhaseMarker( nslcs, 
+                        marker = PhaseMarker( nslcs,
                                 tmin, tmax, 3, event=ev,
                                 phasename=phasename)
 
                         markers.append(marker)
 
                         trs = pile.all(tmin, tmax, tpad=tpad, trace_selector=
-                                lambda tr: tr.nslc_id[:2] == nsp[:2], 
+                                lambda tr: tr.nslc_id[:2] == nsp[:2],
                                 want_incomplete=False)
 
                         trok = []
@@ -265,12 +266,10 @@ class CorrelateEvents(Snuffling):
                             if self.corner_lowpass:
                                 tr.lowpass(4, self.corner_lowpass)
 
-
-
                             tr.chop(tmin, tmax)
                             tr.set_location(ev.name)
                             #tr.shift( - (tmin - master.time) )
-                            
+
                             if num.all(num.isfinite(tr.ydata)):
                                 trok.append(tr)
 
@@ -309,7 +308,7 @@ class CorrelateEvents(Snuffling):
                         if nsp in a.picks and nsp in b.picks:
                             tshifts_picked[iphase,istation,ia,ib] = \
                                     b.picks[nsp] - a.picks[nsp]
-                     
+
                         wa = waveforms[nsp+(ia,)]
                         wb = waveforms[nsp+(ib,)]
 
@@ -328,9 +327,9 @@ class CorrelateEvents(Snuffling):
 
                             tcc = trace.correlate(ta,tb, mode='full', normalization='normal',
                                     use_fft=True)
-                            
+
                             tccs.append(tcc)
-                        
+
                         if not tccs:
                             continue
 
@@ -443,7 +442,7 @@ class CorrelateEvents(Snuffling):
         if self.fix_depth:
             for ievent in range(nevents):
                 row = num.zeros(nevents*4)
-                row[ievent*4+2] = 1.0 
+                row[ievent*4+2] = 1.0
                 rows.append(row)
                 data.append(0.0)
 
@@ -490,7 +489,7 @@ class CorrelateEvents(Snuffling):
 
         north = x[0::4]
         east = x[1::4]
-        down = x[2::4] 
+        down = x[2::4]
         etime = x[3::4] + tmean
 
         def plot_range(x):
@@ -564,7 +563,6 @@ class CorrelateEvents(Snuffling):
 
         if not self.fix_depth:
 
-
             p = fig.add_subplot(2,2,2, sharey=p0, aspect=1.0)
             p.set_xlabel(d+'Depth [km]')
             p.set_ylabel(d+'North [km]')
@@ -572,7 +570,6 @@ class CorrelateEvents(Snuffling):
             p.plot(down/km, north/km, '+', color=color_sym)
             for i,ev in enumerate(events):
                 p.text(down[i]/km, north[i]/km, ev.name, clip_on=True)
-
 
             p1 = p
 
@@ -594,15 +591,13 @@ class CorrelateEvents(Snuffling):
         if not self.fix_depth:
             p1.set_xlim(mi_down/km, ma_down/km)
             p2.set_ylim(mi_down/km, ma_down/km)
-            
+
         if self.save:
             fig.savefig(self.output_filename(dir='locations.pdf'))
 
         fig.canvas.draw()
 
 
-
-
 def __snufflings__():
-    return [ CorrelateEvents() ]
+    return [CorrelateEvents()]
 

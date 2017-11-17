@@ -1,19 +1,21 @@
 import numpy
 from matplotlib import pylab as plt
 
-from pyrocko.snuffling import Snuffling, Param
+from pyrocko.gui.snuffling import Snuffling, Param
 from pyrocko import io
 from pyrocko import util
 from pyrocko import trace
 
 import logging
-logger = logging.getLogger('pyrocko.snuffling.okada')
+logger = logging.getLogger('pyrocko.gui.snuffling.okada')
 
 try:
     import okada
 except OSError as e:
     logger.warn('''\n %s
 --> run 'make' in okada snuffling directory <--''' % e)
+except ImportError as e:
+    logger.warn(e)
 
 
 class okadaforward(Snuffling):

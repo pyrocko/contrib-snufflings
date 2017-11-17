@@ -1,7 +1,11 @@
 import numpy, sys, os, ctypes, platform
 from source import Source
 
-libokada_file = 'libokada.' + { 'Linux': 'so'}[platform.system()]
+try:
+    libokada_file = 'libokada.' + { 'Linux': 'so'}[platform.system()]
+except KeyError:
+    raise ImportError('Okada Snuffling not available for architecture: %s' % platform.system())
+
 libokada_path = os.path.join( os.path.dirname(__file__), libokada_file )
 libokada = ctypes.cdll.LoadLibrary( libokada_path )
 

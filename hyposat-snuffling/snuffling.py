@@ -1,9 +1,5 @@
 from __future__ import print_function
 
-from pyrocko.snuffling import Snuffling, Switch, Param, Choice
-from pyrocko.pile_viewer import EventMarker, PhaseMarker
-from pyrocko import util, model, orthodrome, gmtpy
-from subprocess import Popen, PIPE, check_call
 import os
 import tempfile
 import math
@@ -11,6 +7,11 @@ import glob
 import numpy as num
 import shutil
 
+from pyrocko.gui.snuffling import Snuffling, Switch, Param, Choice
+from pyrocko.gui.pile_viewer import EventMarker, PhaseMarker
+from pyrocko import util, model, orthodrome
+from pyrocko.plot import gmtpy
+from subprocess import Popen, PIPE, check_call
 
 deg2rad = math.pi/180.
 pjoin = os.path.join
@@ -178,7 +179,7 @@ class Hyposat(Snuffling):
     '''
     def setup(self):
 
-        self.hyposat_data_dir = self._path
+        self.hyposat_data_dir = pjoin(self._path, 'hyposat/data')
 
         locreg_models = [os.path.basename(x) for x in glob.glob(
             pjoin(self.hyposat_data_dir, 'model_*.dat'))]
@@ -202,19 +203,29 @@ class Hyposat(Snuffling):
                    tuple(locreg_models)))
         self.add_parameter(
             Choice('Use CRUST 5.1', 'crust_51', 'Off', crust_51_keys))
-        self.add_parameter(Param('P std. deviation [s]', 'p_stddev', 0.1, 0.001, 9.9))
-        self.add_parameter(Param('S std. deviation [s]', 's_stddev', 0.2, 0.001, 9.9))
-        self.add_parameter(Param('P-wave velocity to correct elevation', 'vp_to_correct_elevation', 3.8, 0., 10.))
-        self.add_parameter(Param('S-wave velocity to correct elevation', 'vs_to_correct_elevation', 2.1, 0., 10.))
-        self.add_parameter(Param('Starting source depth [km]', 'starting_source_depth_km', 10., 0., 600.))
-        self.add_parameter(Param('Zero level shift [km]', 'zero_level_km',  0., 0., 10.))
-        self.add_parameter(Param('RG group velocity', 'rg_group_velocity',  2.6, 1., 10.))
-        self.add_parameter(Switch('Show location plot', 'show_location_plot', False))
         self.add_trigger('Save', self.save_last_run)
+        self.add_parameter(
+            Param('P std. deviation [s]', 'p_stddev', 0.1, 0.001, 9.9))
+        self.add_parameter(
+            Param('S std. deviation [s]', 's_stddev', 0.2, 0.001, 9.9))
+        self.add_parameter(
+            Param('P-wave velocity to correct elevation',
+                  'vp_to_correct_elevation', 3.8, 0., 10.))
+        self.add_parameter(
+            Param('S-wave velocity to correct elevation',
+                  'vs_to_correct_elevation', 2.1, 0., 10.))
+        self.add_parameter(
+            Param('Starting source depth [km]', 'starting_source_depth_km',
+                  10., 0., 600.))
+        self.add_parameter(
+            Param('Zero level shift [km]', 'zero_level_km',  0., 0., 10.))
+        self.add_parameter(
+            Param('RG group velocity', 'rg_group_velocity',  2.6, 1., 10.))
+        self.add_parameter(
+            Switch('Show location plot', 'show_location_plot', False))
         self.set_live_update(False)
         self.pdf_viewer = 'evince'
         self.dir = None
-
 
     def call(self):
         '''Main work routine of the snuffling.'''
@@ -228,7 +239,7 @@ class Hyposat(Snuffling):
 
         event = viewer.get_active_event()
 
-        if len( viewer.stations) == 0:
+        if len(viewer.stations) == 0:
             self.fail('No station information available.')
 
         station_phase_to_nslc = {}
@@ -258,7 +269,9 @@ class Hyposat(Snuffling):
                     elif phasename == 'S':
                         t_stddev = self.s_stddev
 
-                    hypo_in.append((station, phasename, date_str, t_stddev, backazi, backazi_stddev, slowness, slowness_stddev, flags, period, amplitude))
+                    hypo_in.append((station, phasename, date_str, t_stddev,
+                                    backazi, backazi_stddev, slowness,
+                                    slowness_stddev, flags, period, amplitude))
 
         hypo_in.sort()
 
@@ -283,7 +296,10 @@ class Hyposat(Snuffling):
         f = open(fn, 'w')
         sta_lat_lon = []
         for sta in viewer.stations.values():
-            s = '%-5s%1s%s%7.1f' % ( sta.station, ' ', to_min_sec(sta.lat, sta.lon), sta.elevation - self.zero_level_km*1000.)
+            s = '%-5s%1s%s%7.1f' % (
+                sta.station, ' ', to_min_sec(sta.lat, sta.lon),
+                sta.elevation - self.zero_level_km*1000.)
+
             f.write(s+'\n')
             sta_lat_lon.append( (sta.lat, sta.lon) )
 
@@ -308,15 +324,23 @@ class Hyposat(Snuffling):
 
         env = dict(os.environ)
         env['HYPOSAT_DATA'] = self.hyposat_data_dir
+
         try:
-            p = Popen(['hyposat'], env=env, stdout=PIPE)
+            p = Popen([pjoin(self._path, 'hyposat/bin/hyposat')], env=env, stdout=PIPE)
         except OSError as e:
-            import errno
-            if e.errno == errno.ENOENT:
-                self.fail('hyposat not found')
-                return
-            else:
-                raise e
+            try:
+                # try included, compiled version:
+                abs_path = os.path.dirname(os.path.abspath(__file__))
+                executable = pjoin(abs_path, 'hyposat', 'bin_l', 'hyposat')
+                print('abspath', executable)
+                p = Popen([executable], env=env, stdout=PIPE)
+            except OSError as e:
+                import errno
+                if e.errno == errno.ENOENT:
+                    self.fail('hyposat not found')
+                    return
+                else:
+                    raise e
 
         (out, err) = p.communicate()
         os.chdir(old_wd)
@@ -418,7 +442,6 @@ class Hyposat(Snuffling):
 
         print('='*100)
         print()
-
         if self.show_location_plot:
             cm = gmtpy.cm
             p = MPlot(width=15*cm, height=15*cm, gmtconfig={ 'PLOT_DEGREE_FORMAT':'D' })
@@ -456,5 +479,5 @@ class Hyposat(Snuffling):
 
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
-    return [ Hyposat() ]
+    return [Hyposat()]
 

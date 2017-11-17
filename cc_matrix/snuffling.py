@@ -1,18 +1,18 @@
 from __future__ import print_function
 
-import sys
 import logging
 import os.path as op
 import numpy as num
-import progressbar
-
-from pyrocko import model, trace, util, orthodrome, cake, gui_util
-from pyrocko.gf import Target
-from pyrocko.snuffling import Snuffling, Choice, Param, Switch
-from similarity import SimilarityMatrix, Similarity
 import matplotlib.pyplot as plt
+
+from pyrocko import trace, util, cake
+from pyrocko.gf import Target
+from similarity import SimilarityMatrix, Similarity
+from pyrocko.gui.snuffling import Snuffling, Choice, Param, Switch
+
 util.setup_logging('cc.py')
 logger = logging.getLogger('cc-snuffling')
+
 
 def make_targets(pile, stations):
     targets = []
@@ -128,7 +128,7 @@ class SimilaritySnuffling(Snuffling):
                                                    load_data=False))
         traces = [tr for trs in traces for tr in trs ]
         visible_nslcs = [tr.nslc_id for tr in traces]
-        stations = [x for x in stations is util.match_nslcs(
+        stations = [x for x in stations if util.match_nslcs(
             "%s.%s.%s.*" % x.nsl(), visible_nslcs)]
 
         # TODO option to choose other models
@@ -148,7 +148,6 @@ class SimilaritySnuffling(Snuffling):
                                                   vmax=float(self.vmax),
                                                   vmin=float(self.vmin))
         similarities = []
-        trs2add = []
         if self.save_traces :
             figure_dir = self.input_directory(caption='Select directory to store images')
         for itarget, target in enumerate(targets):
@@ -210,7 +209,6 @@ class SimilaritySnuffling(Snuffling):
                         t_mini, v_mini = c_tr_chopped.min()
                         t_maxi, v_maxi = c_tr_chopped.max()
                         b_tr_shifted = b_tr.copy()
-                        a_tr_shifted = a_tr.copy()
 
                         if abs(v_mini) > abs(v_maxi):
                             v_cc = v_mini
@@ -284,6 +282,7 @@ class SimilaritySnuffling(Snuffling):
     def save(self):
         output_filename = self.output_filename()
         self.similarity_matrix.dump(filename=output_filename)
+
 
 def __snufflings__():
     return [SimilaritySnuffling()]

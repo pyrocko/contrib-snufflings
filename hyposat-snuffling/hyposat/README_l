@@ -1,0 +1,118 @@
+
+Contents and description of the tar-file hyposat_l.4_4b.tar
+
+bin_l/
+	hyposat                             |   hyposat-executable for LINUX (g77) 
+	hypomod                             |   hypomod-executable for LINUX (g77)
+
+data_l/                                     |   directory with several
+					    |   binary data files used by HYPOSAT LINUX version!
+
+	README                              |   some explanations
+
+	ak135.hed                           |   Model AK135 file
+	ak135.tbl                           |   Model AK135 file
+	iasp91.hed                          |   Model IASP91 file
+	iasp91.tbl                          |   Model IASP91 file
+	iasp91a.hed                         |   Model IASP91a file, as IASP91 but different inner core
+	iasp91a.tbl                         |   Model IASP91a file, as IASP91 but different inner core
+	jb.hed                              |   Model Jeffreys-Bullen file
+	jb.tbl                              |   Model Jeffreys-Bullen file
+	prem.hed                            |   Model PREM file
+	prem.tbl                            |   Model PREM file
+	sp6.hed                             |   Model SP6 file
+	sp6.tbl                             |   Model SP6 file
+
+	elcordir.tbl                        |   data file to calculate ellipticity corrections
+
+	stations.dat                        |   NEIC station coordinates as of May 2003
+
+	MB_G-R.DAT                          |   Gutenberg-Richter attenuation model
+	MB_V-C.DAT                          |   Veith-Clawson attenuation model
+
+	REG_L3.DAT                          |   Seismo-Tectonic Units, Level 3 (only parts of Europe)
+
+	CNelevatio                          |   data file for model CRUST 5.1
+	CNtype                              |   data file for model CRUST 5.1
+	CNtype_key                          |   data file for model CRUST 5.1
+
+examples_l:
+                                            |   Because of compiler and hardware differences, the
+					    |   output with the LINUX version is slightly different.
+
+	README                              |   some explanations
+
+	hyposat-in.net                      |   examples for hyposat-in files
+	hyposat-in.regional                 |
+	hyposat-in.single_array             |
+	hyposat-in.tele                     |
+	hyposat-out.net                     |   examples for the corresponding hyposat-out files
+	hyposat-out.regional                |
+	hyposat-out.single_array            |
+	hyposat-out.tele                    |
+	hyposat-parameter.net               |   examples for the corresponding hyposat-parameter files
+	hyposat-parameter.regional          |
+	hyposat-parameter.single_array      |
+	hyposat-parameter.tele              |
+
+	hyposat-parameter.mod               |   example of hyposat-parameter.tele to use with HYPOMOD
+	hypomod-out.tele                    |   example for hypomod result using the example 'tele' of HYPOSAT
+
+	loc.dat                             |   example file for a local/regional velocity model
+	stations.cor                        |   example file for station corrections
+
+man:
+
+	schweitzer_1997.pdf                 |   is a file containing the PDF version of 
+					    |   "Schweitzer, J. (1997. Hyposat - A new routine to locate 
+					    |    seismic events. In: NORSAR Semiannual Tech. Summ. 1 April 
+					    |    - 30 September 1997, NORSAR Sci. Rep. 1-97/98, Kjeller, Norway."
+
+        hyposat_man.pdf                     |   PDF file containing a manual how to use HYPOSAT and HYPOMOD
+					    |   based on: Schweitzer (2002). Program Description (PD 11.1), 
+                                            |   User manual for HYPOSAT (including HYPOMOD). 
+                                            |   in: P. Bormann (ed.) (2002). The New Manual of Observatory 
+                                            |   Practice (NMSOP). Volume II, 15 pp.
+
+src_l:                                      |   all source codes to produce your own version of
+                                            |   HYPOSAT and HYPOMOD under LINUX.
+
+        hyposat.f                           |   source and object codes for HYPOSAT and HYPOMOD for LINUX
+        hyposat.o
+        hyposat_clib.c
+        hyposat_clib.o
+        hyposat_cross.f
+        hyposat_cross.o
+        hyposat_crust.f
+        hyposat_crust.o
+        hyposat_crust_mod.f
+        hyposat_crust_mod.o
+        hyposat_file.f
+        hyposat_file.o
+        hyposat_geo.f
+        hyposat_geo.o
+        hyposat_gmi.f
+        hyposat_gmi.o
+        hyposat_lib.f
+        hyposat_lib.o
+        hyposat_loc.f
+        hyposat_loc.o
+        hyposat_mag.f
+        hyposat_mag.o
+        hyposat_name.f
+        hyposat_name.o
+        hyposat_time.f
+        hyposat_time.o
+        libtau_h.f
+        libtau_h.o
+        cgmi.h
+        magpar.h
+        ttimes.h
+        ttlim.h
+
+        hypomod.f
+        hypomod.o
+
+        Makefile                            |   Makefile for HYPOSAT
+        Makefile.hypomod                    |   Makefile for HYPOMOD
+

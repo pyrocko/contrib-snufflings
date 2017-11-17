@@ -1,6 +1,6 @@
-from pyrocko import io, io_common
+from pyrocko import io
 from pyrocko import model
-from pyrocko.snuffling import Snuffling, Choice, Switch, Param
+from pyrocko.gui.snuffling import Snuffling, Choice, Switch, Param
 
 
 class ExportWaveforms(Snuffling):
@@ -86,7 +86,7 @@ class ExportWaveforms(Snuffling):
                     format=self.format,
                     overwrite=True)
 
-            except io_common.FileSaveError as e:
+            except io.io_common.FileSaveError as e:
                 self.fail(str(e))
 
         if self.save_stations:

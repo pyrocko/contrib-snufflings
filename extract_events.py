@@ -1,6 +1,6 @@
 import sys
 from pyrocko import util, io
-from pyrocko.snuffling import Snuffling, load_markers, Param, NoViewerSet
+from pyrocko.gui.snuffling import Snuffling, load_markers, Param, NoViewerSet
 
 
 default_output_filename = '%(eventname)s_%(network)s.%(station)s.%(location)s.%(channel)s.mseed'

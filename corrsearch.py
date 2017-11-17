@@ -1,9 +1,10 @@
-from pyrocko.snuffling import Snuffling, Param, Switch, NoViewerSet, Choice
-from pyrocko.pile_viewer import Marker, EventMarker
+from pyrocko.gui.snuffling import Snuffling, Param, Switch, NoViewerSet, Choice
+from pyrocko.gui.pile_viewer import Marker, EventMarker
 from pyrocko import io, trace, model
 
+
 class CorrsearchSnuffling(Snuffling):
-    
+
     '''
     <html>
     <head>
@@ -40,7 +41,7 @@ class CorrsearchSnuffling(Snuffling):
 
     def setup(self):
         '''Customization of the snuffling.'''
-        
+
         self.set_name('Cross Correlation Search')
         self.add_parameter(Param('Downsample to [Hz]', 'downsample', None, 0.1, 200., high_is_none=True))
         self.add_parameter(Param('Highpass [Hz]', 'corner_highpass', 1., 0.001, 50.))
@@ -52,21 +53,21 @@ class CorrsearchSnuffling(Snuffling):
 
     def call(self):
         '''Main work routine of the snuffling.'''
-        
+
         self.cleanup()
-        
+
         period_highpass = 1./self.corner_highpass
         tpad = period_highpass
-        
-        try: 
+
+        try:
             viewer = self.get_viewer()
             markers = viewer.selected_markers()
             if not markers:
                 return
-            
+
             if len(markers) != 1:
                 return
-           
+
             marker = markers[0]
             master_tmin, master_tmax = marker.tmin, marker.tmax
             if master_tmin >= master_tmax:
@@ -75,7 +76,6 @@ class CorrsearchSnuffling(Snuffling):
         except NoViewerSet:
             viewer = None
             master_tmin, master_tmax = self.master_tmin, self.master_tmax
-        
 
         pile = self.get_pile()
         masters = {}
@@ -91,7 +91,7 @@ class CorrsearchSnuffling(Snuffling):
             tmin, tmax = pile.get_tmin()+tpad, pile.get_tmax()
         else:
             tmin, tmax = self.get_viewer().get_time_range()
-  
+
         tmaster = master_tmax-master_tmin
         tinc = min(20*tmaster, max(tmaster, tmax-tmin))
 
@@ -110,7 +110,7 @@ class CorrsearchSnuffling(Snuffling):
                     c = trace.correlate(a,b, mode='valid', normalization=normalization)
                     c.shift(-c.tmin + b.tmin)
                     c.meta = { 'tabu' : True }
-                    
+
                     if scc is None:
                         scc = c.copy()
                         scc.wmin = b.wmin
@@ -121,7 +121,7 @@ class CorrsearchSnuffling(Snuffling):
                     else:
                         scc.add(c)
                         sccn += 1
-            
+
             if scc is not None:
                 scc.ydata /= sccn
                 scc.chop(scc.wmin, scc.wmax)
@@ -130,21 +130,22 @@ class CorrsearchSnuffling(Snuffling):
                 for t, a in zip(*scc.peaks(self.threshold, tsearch=2./self.corner_highpass)):
                     m = EventMarker(model.Event(time=t, lat=0., lon=0., name='Event(%.2g)' % a))
                     markers.append(m)
-                    
+
                 if viewer:
                     self.add_traces([scc])
                     self.add_markers(markers)
                 else:
                     io.save([scc], self.out_path, format='from_extension')
-                 
-                
+
+
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
-    
-    return [ CorrsearchSnuffling() ]
+
+    return [CorrsearchSnuffling()]
+
 
 if __name__ == '__main__':
-    
+
     snuf = CorrsearchSnuffling()
     snuf.setup()
     snuf.apply_to_all = True
@@ -154,4 +155,3 @@ if __name__ == '__main__':
     snuf.master_tmin, snuf.master_tmax = m.tmin, m.tmax
     snuf.out_path = 'corr/%(tmin)s.yaff'
     snuf.call()
-

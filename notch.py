@@ -1,7 +1,7 @@
 from pyrocko import trace
 import math
 import numpy as num
-from pyrocko.snuffling import Param, Snuffling, Switch
+from pyrocko.gui.snuffling import Param, Snuffling, Switch
 import scipy.signal as S
 import scipy.stats as SS
 

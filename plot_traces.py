@@ -1,5 +1,5 @@
 import numpy as num
-from pyrocko.snuffling import Snuffling, Param, Choice, Switch
+from pyrocko.gui.snuffling import Snuffling, Param, Choice, Switch
 from pyrocko import orthodrome as ortho
 from pyrocko import util
 

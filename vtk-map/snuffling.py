@@ -1,6 +1,6 @@
 import numpy as num
 
-from pyrocko.snuffling import Snuffling, Param, Switch
+from pyrocko.gui.snuffling import Snuffling, Param, Switch
 from pyrocko import orthodrome as ortho
 
 

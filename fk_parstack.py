@@ -6,7 +6,7 @@ import numpy as num
 import time
 from matplotlib.animation import FuncAnimation
 
-from pyrocko.snuffling import Param, Snuffling, Choice, Switch
+from pyrocko.gui.snuffling import Param, Snuffling, Choice, Switch
 from scipy.signal import fftconvolve, lfilter, hilbert
 from scipy.interpolate import UnivariateSpline
 from pyrocko import orthodrome as ortho
@@ -17,7 +17,7 @@ from pyrocko import model
 import logging
 
 
-logger = logging.getLogger('pyrocko.snufflings.fk_parstack.py')
+logger = logging.getLogger('pyrocko.gui.snufflings.fk_parstack.py')
 d2r = num.pi/180.
 km = 1000.
 

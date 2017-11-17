@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from pyrocko.snuffling import Snuffling, Param, Switch, Choice
+from pyrocko.gui.snuffling import Snuffling, Param, Switch, Choice
 from pyrocko.model import Station, dump_stations
 from pyrocko import orthodrome as ortho
 from pyrocko import util, io, trace
@@ -9,7 +9,7 @@ from matplotlib.colorbar import ColorbarBase
 from matplotlib.colors import Normalize
 from collections import defaultdict
 from matplotlib import cm
-from PyQt4.QtCore import SIGNAL
+
 
 r_earth = 6371000.785
 torad = num.pi/180.
@@ -87,8 +87,8 @@ class BeamForming(Snuffling):
     def panel_visibility_changed(self, bool):
         if bool:
             viewer = self.get_viewer()
-            viewer.connect(self._param_controls['unit'], SIGNAL('choosen(PyQt_PyObject,PyQt_PyObject)'),
-                         self.set_slowness_ranges)
+            self._param_controls['unit'].choosen.connect(
+                self.set_slowness_ranges)
 
     def set_slowness_ranges(self, ident, state):
         if state == 's/km':

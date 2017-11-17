@@ -4,10 +4,10 @@ import os
 import copy
 import numpy as num
 from collections import defaultdict
-from pyrocko.snuffling import Snuffling, Param, PhaseMarker, Switch, Choice, \
+from pyrocko.gui.snuffling import Snuffling, Param, PhaseMarker, Switch, Choice, \
     EventMarker
 from pyrocko import guts, orthodrome, trace
-from pyrocko.gui_util import to01
+from pyrocko.gui.util import to01
 from pyrocko.plot import graph_colors
 
 __author__ = 'Catarina Matos (cpfcmatos@gmail.com)'
@@ -186,6 +186,8 @@ class LocalMagnitudeSnuffling(Snuffling):
                       'selected" time window setting')
 
         stations_dict = dict((s.nsl(), s) for s in self.get_stations())
+        if len(stations_dict) == 0:
+            self.fail('no station information found')
 
         markers = []
         local_magnitudes = []
@@ -224,6 +226,7 @@ class LocalMagnitudeSnuffling(Snuffling):
                     station = stations_dict[nslc[:3]]
                 except KeyError as e:
                     print(e)
+                    continue
 
                 if self.needs_restitution:
                     resp = self.get_response(nslc)
@@ -284,7 +287,7 @@ class LocalMagnitudeSnuffling(Snuffling):
             for k in mags:
                 mags[k] = max(mags[k])
 
-            local_magnitude = round(num.median(mags.values()), 1)
+            local_magnitude = round(num.median(list(mags.values())), 1)
 
             if self.show_plot:
                 data = []
@@ -301,7 +304,7 @@ class LocalMagnitudeSnuffling(Snuffling):
                     axes.text(x, y, '.'.join(label))
 
                 axes.axhline(local_magnitude, color=to01(graph_colors[0]))
-                mag_std = num.std(mags.values())
+                mag_std = num.std(list(mags.values()))
 
                 msg = 'local magnitude: %s, std: %s' % \
                     (round(local_magnitude, 1),

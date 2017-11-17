@@ -2,9 +2,8 @@ import numpy as num
 import math
 import os
 
-from PyQt4.QtCore import *
 from pyrocko import moment_tensor, model, trace
-from pyrocko.snuffling import Snuffling, Param, Choice, Switch, EventMarker
+from pyrocko.gui.snuffling import Snuffling, Param, Choice, Switch, EventMarker
 from pyrocko import gf
 from pyrocko.ahfullgreen import add_seismogram, Gauss, Impulse
 

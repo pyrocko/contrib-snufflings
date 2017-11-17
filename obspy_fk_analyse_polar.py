@@ -1,5 +1,5 @@
 from __future__ import print_function
-from pyrocko.snuffling import Param, Snuffling, Choice
+from pyrocko.gui.snuffling import Param, Snuffling, Choice
 
 import numpy as num
 
