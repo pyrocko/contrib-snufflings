@@ -94,7 +94,9 @@ class LinkSnufflingFiles(SetupBuildCommand):
         for roots, dirs, _files in os.walk(root_dir, topdown=True):
             dirs[:] = [d for d in dirs if d not in self.excluded_dirs]
 
-            if 'Makefile' in _files:
+            # okada temporarily disabled: causes segfaults on ubuntu 14.04 when
+            # snuffler is closed.
+            if 'Makefile' in _files and not 'okada.py' in _files:
                 print('\nbuilding %s' % roots)
                 try:
                     subprocess.check_call(['make', '-C', roots])
