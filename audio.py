@@ -1,14 +1,15 @@
 from __future__ import print_function
 
-from PyQt5.QtCore import QThread, QTimer
-from pyrocko.snuffling import (Snuffling, Param, Choice, Switch,
-                               NoTracesSelected)
-import pyrocko.trace as trace
-from pyrocko.trace import CosFader
 from scipy.io.wavfile import write, read
 from scipy.signal import resample
 import numpy as num
 import tempfile
+
+from pyrocko.gui.qt_compat import qc
+from pyrocko.snuffling import (Snuffling, Param, Choice, Switch,
+                               NoTracesSelected)
+import pyrocko.trace as trace
+from pyrocko.trace import CosFader
 
 
 try:
@@ -18,15 +19,15 @@ except ImportError:
     no_phonon = True
 
 
-class MarkerThread(QThread):
+class MarkerThread(qc.QThread):
     def __init__(self, *args, **kwargs):
         self.viewer = kwargs.pop('viewer', None)
         self.follow = kwargs.pop('follow', False)
-        QThread.__init__(self)
+        qc.QThread.__init__(self)
         self.marker = None
         self.media = None
         self.speed_up = 1.
-        self.timer = QTimer(self)
+        self.timer = qc.QTimer(self)
         self.timer.setInterval(100)
         self.timer.timeout.connect(self.check_and_update)
         self.previous_state = Phonon.StoppedState
@@ -226,7 +227,6 @@ class SeiSound(Snuffling):
             data[0]  = 0.
             self.fps = fps
 
-        self.marker_thread.t_stretch = n_frac
         scaled = num.int16(data/float(num.max(num.abs(data))) * 32767)
         write(fn, self.fps, scaled)
 
