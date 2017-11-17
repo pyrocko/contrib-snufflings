@@ -1,5 +1,6 @@
 from __future__ import print_function
 from builtins import next
+import shutil
 from distutils.core import setup, Command
 import os
 import glob
@@ -59,13 +60,12 @@ class LinkSnufflingFiles(SetupBuildCommand):
 
     user_options = [
         ('force', None, 'force overwriting of existing symbolic links.'),
-        ('choice=', None, 'Comma separated list of snufflings to link'),
-        ('undangle', None,
-         'Unlink broken (dangling) symlinks in $HOME/.snufflings')]
+        ('choice=', None, 'Comma separated list of snufflings to link')
+    ]
 
     def initialize_options(self):
         self.force = False
-        self.undangle = False
+        self.undangle = True
         self.choice = []
         self.excluded_dirs = ['.git', 'screenshots']
 
@@ -104,6 +104,10 @@ class LinkSnufflingFiles(SetupBuildCommand):
     def run(self):
         cwd = os.getcwd()
         snufflings = pjoin(os.getenv('HOME'), '.snufflings')
+
+        cache = pjoin(snufflings, '__pycache__')
+        if os.path.exists(cache):
+            shutil.rmtree(cache)
 
         # look for dangling symlinks inside .snufflings:
         check_broken_links(glob.glob(snufflings+'/*'), self.undangle)
