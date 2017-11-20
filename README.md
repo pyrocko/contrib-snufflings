@@ -32,13 +32,6 @@ Help
 Most snufflings include documentation which can be found in the *Help* menu in
 Snuffler.
 
-Troubleshooting
----------------
-
-If you find yourself with broken (dangling) symlinks e.g. after
-checking out a different branch you can remove all broken symlinks directory
-by adding `--undangle` to the link command.
-
 Contribute
 ----------
 After cloning this repository, add your own snufflings and send a pull request.
