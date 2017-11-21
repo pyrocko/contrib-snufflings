@@ -117,7 +117,7 @@ class Spectrogram(Snuffling):
                 a = num.abs(a)**2
                 a *= tr.deltat * 2. / (df*num.sum(win**2))
                 a[0] /= 2.
-                a[a.size/2] /= 2.
+                a[a.size//2] /= 2.
 
                 if nslc not in by_nslc:
                     by_nslc[nslc] = []
