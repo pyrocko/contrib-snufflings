@@ -52,15 +52,6 @@ discuss an idea for a new snuffling click on *Issues* and open up a
 Examples
 ========
 
-Create maps
------------
-
-Plot station and event locations with OpenStreetMap, Google Maps or GMT
-
-directory: [map](map)
-
-![screenshot](screenshots/map.png)
-
 Plot PSD
 --------
 
@@ -78,15 +69,6 @@ Relocate events by cross correlating waveforms
 file: [cc\_relocation.py](cc_relocation.py)
 
 ![screenshot](screenshots/cc_relocation.png)
-
-Cake Phase
-----------
-
-Add markers for synthetic arrivals calculated from a layered earth model
-
-file: [cake\_phase.py](cake_phase.py)
-
-![screenshot](screenshots/cake_phase.png)
 
 Cross correlation search
 ------------------------
@@ -118,15 +100,6 @@ playback requires the PyQt4 bindings for Phonon.
 file: [audio.py](audio.py)
 
 ![screenshot](screenshots/SeiSound.png)
-
-Seismosizer
------------
-
-Calculate and show synthetic seismograms. The [Kiwi Tools](http://kinherd.org/kiwitools/) package must be installed for this to work.
-
-file: [kiwi_seismosizer.py](kiwi_seismosizer.py)
-
-![screenshot](screenshots/kiwi_seismosizer.png)
 
 Time Line
 ---------
