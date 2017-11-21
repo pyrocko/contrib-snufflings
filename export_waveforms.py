@@ -45,6 +45,7 @@ class ExportWaveforms(Snuffling):
                 0.1, 86400., low_is_none=True))
 
         self.add_parameter(Switch('Save Station Meta', 'save_stations', False))
+        self.add_parameter(Switch('Apply Filters', 'apply_filter', False))
         self.set_live_update(False)
 
     def call(self):
@@ -65,6 +66,7 @@ class ExportWaveforms(Snuffling):
         out_filename = self.output_filename('Template for output files',
                                             default_output_filename)
 
+        viewer = self.get_viewer()
         for trs in self.chopper_selected_traces(fallback=True, tinc=self.tinc):
             trs2save = []
             for tr in trs:
@@ -78,6 +80,13 @@ class ExportWaveforms(Snuffling):
                     if len(tr.channel) > 3:
                         tr.set_channel(tr.channel[:3])
 
+                if viewer.lowpass:
+                    if viewer.lowpass < 0.5/tr.deltat:
+                        tr.lowpass(4, viewer.lowpass, demean=False)
+                if viewer.highpass:
+                    if viewer.highpass < 0.5/tr.deltat:
+                        tr.highpass(4, viewer.highpass, demean=False)
+
                 trs2save.append(tr)
 
             try:
@@ -90,7 +99,7 @@ class ExportWaveforms(Snuffling):
                 self.fail(str(e))
 
         if self.save_stations:
-            stations = self.get_viewer().stations.values()
+            stations = viewer.stations.values()
             fn = self.output_filename('Save Stations', 'stations.pf')
             model.dump_stations(list(stations), fn)
 
