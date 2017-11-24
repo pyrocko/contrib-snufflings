@@ -463,12 +463,14 @@ class Hyposat(Snuffling):
                 elat, elon = ellipse_lat_lon(ev.ellipse_major, ev.ellipse_minor, ev.ellipse_azimuth, ev.lat, ev.lon)
                 p.plot([elon, elat], '-W0.5p,%s' % gmtpy.color(color))
 
-
             fn_plot = pjoin(self.dir, 'location.png')
-            p.save(fn_plot)
-
-            f = self.pixmap_frame()
-            f.load_pixmap(fn_plot)
+            try:
+                p.save(fn_plot)
+                f = self.pixmap_frame()
+                f.load_pixmap(fn_plot)
+            except gmtpy.GMTInstallationProblem as e:
+                msg = "%s\nFailed to start GMT" % e
+                self.fail(msg)
 
     def save_last_run(self):
         if not self.dir:
@@ -480,4 +482,3 @@ class Hyposat(Snuffling):
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
     return [Hyposat()]
-
