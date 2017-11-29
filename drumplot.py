@@ -95,14 +95,17 @@ class DrumPlot(Snuffling):
 
         ynorm = None
         if self.scale_global:
-            ynorm = num.max(ynormalizations.values())
+            ynorm = max(ynormalizations.values())
 
         for key, lines in lines_data.items():
+            if not self.scale_global:
+                ynorm = float(ynormalizations.get(key, 1.))
+
             for (t0, x, y, shifts) in lines:
                 fig, ax = figs[key]
                 ax.plot(
                     x/60.,
-                    y/((ynorm or ynormalizations[key])/self.yscale) + shifts,
+                    y/(ynorm/self.yscale) + shifts,
                     color='black')
 
                 ax.set_title(util.tts(t0, format='%Y-%m-%d'))
