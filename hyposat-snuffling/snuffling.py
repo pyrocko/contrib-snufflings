@@ -11,7 +11,7 @@ from pyrocko.gui.snuffling import Snuffling, Switch, Param, Choice
 from pyrocko.gui.pile_viewer import EventMarker, PhaseMarker
 from pyrocko import util, model, orthodrome
 from pyrocko.plot import gmtpy
-from subprocess import Popen, PIPE, check_call
+from subprocess import Popen, PIPE
 
 deg2rad = math.pi/180.
 pjoin = os.path.join
@@ -223,6 +223,8 @@ class Hyposat(Snuffling):
             Param('RG group velocity', 'rg_group_velocity',  2.6, 1., 10.))
         self.add_parameter(
             Switch('Show location plot', 'show_location_plot', False))
+        self.add_parameter(
+            Switch('Use active markers only', 'use_active', False))
         self.set_live_update(False)
         self.pdf_viewer = 'evince'
         self.dir = None
@@ -246,34 +248,37 @@ class Hyposat(Snuffling):
 
         hypo_in = []
         for marker in markers:
-            if isinstance(marker, PhaseMarker):
-                if marker.get_event() == event:
-                    phasename = marker.get_phasename()
-                    nslcs = list(marker.nslc_ids)
-                    station = nslcs[0][1]
+            if not isinstance(marker, PhaseMarker) or self.use_active and  \
+                    marker.get_event() != event:
+                continue
+            phasename = marker.get_phasename()
+            nslcs = list(marker.nslc_ids)
+            station = nslcs[0][1]
 
-                    station_phase_to_nslc[station, phasename] = nslcs[0]
+            station_phase_to_nslc[station, phasename] = nslcs[0]
 
-                    backazi = -1.
-                    backazi_stddev = 0.0
-                    slowness = -1.
-                    slowness_stddev = 0.0
-                    period = 0.0
-                    amplitude = 0.0
-                    flags = 'T__DR_'
-                    t = marker.tmin
+            backazi = -1.
+            backazi_stddev = 0.0
+            slowness = -1.
+            slowness_stddev = 0.0
+            period = 0.0
+            amplitude = 0.0
+            flags = 'T__DR_'
+            t = marker.tmin
 
-                    date_str = util.time_to_str(t, '%Y %m %d %H %M %S.3FRAC')
-                    if phasename == 'P':
-                        t_stddev = self.p_stddev
-                    elif phasename == 'S':
-                        t_stddev = self.s_stddev
+            date_str = util.time_to_str(t, '%Y %m %d %H %M %S.3FRAC')
+            if phasename == 'P':
+                t_stddev = self.p_stddev
+            elif phasename == 'S':
+                t_stddev = self.s_stddev
 
-                    hypo_in.append((station, phasename, date_str, t_stddev,
-                                    backazi, backazi_stddev, slowness,
-                                    slowness_stddev, flags, period, amplitude))
+            hypo_in.append((station, phasename, date_str, t_stddev,
+                            backazi, backazi_stddev, slowness,
+                            slowness_stddev, flags, period, amplitude))
 
         hypo_in.sort()
+        if len(hypo_in) == 0:
+            self.fail('No valid phase markers found!')
 
         self.dir = tempfile.mkdtemp(prefix='hyposat-%s-' % os.environ['USER'])
         print()
@@ -463,12 +468,14 @@ class Hyposat(Snuffling):
                 elat, elon = ellipse_lat_lon(ev.ellipse_major, ev.ellipse_minor, ev.ellipse_azimuth, ev.lat, ev.lon)
                 p.plot([elon, elat], '-W0.5p,%s' % gmtpy.color(color))
 
-
             fn_plot = pjoin(self.dir, 'location.png')
-            p.save(fn_plot)
-
-            f = self.pixmap_frame()
-            f.load_pixmap(fn_plot)
+            try:
+                p.save(fn_plot)
+                f = self.pixmap_frame()
+                f.load_pixmap(fn_plot)
+            except gmtpy.GMTInstallationProblem as e:
+                msg = "%s\nFailed to start GMT" % e
+                self.fail(msg)
 
     def save_last_run(self):
         if not self.dir:
@@ -480,4 +487,3 @@ class Hyposat(Snuffling):
 def __snufflings__():
     '''Returns a list of snufflings to be exported by this module.'''
     return [Hyposat()]
-
