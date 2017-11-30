@@ -85,3 +85,6 @@ libtau_h.o : libtau_h.f
 #
 hyposat_clib.o : hyposat_clib.c
 	$(CC) $(C-FLAG) -c hyposat_clib.c
+
+clean:
+	rm *.o
