@@ -102,6 +102,8 @@ class LinkSnufflingFiles(SetupBuildCommand):
                     subprocess.check_call(['make', '-C', roots])
                 except subprocess.CalledProcessError:
                     print(' failed building %s' % (roots))
+                except Exception as e:
+                    print(e)
 
     def run(self):
         cwd = os.getcwd()
