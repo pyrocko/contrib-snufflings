@@ -19,9 +19,10 @@ class Picker(Snuffling):
 		self.add_parameter(Choice('Category', 'category', 'automatic', [
 			'automatic', 'manual', 'revised', 'abandoned']))
 		self.add_parameter(Choice('Polarity', 'polarity', None, [
-			None, 'positive', 'negative', 'undecidable']))
+			None, '+', '-']))
 		self.add_parameter(Param(
 			'pick adjustment [s]', 'tcorrect', 0., -5., 5.))
+		self.first = True
 
 		self.set_live_update(True)
 
@@ -33,16 +34,27 @@ class Picker(Snuffling):
 			Phase = self.phase
 
 		viewer = self.get_viewer()
+
+		# if viewer.get_selected_markers == [] and isinstance(viewer.get_selected_markers(), pyrocko.gui.marker.PhaseMarker):
+		# 	print('Error: No marker selected!')
+
 		markers = [
 			m for m in viewer.selected_markers()
 			if isinstance(m, pyrocko.gui.marker.PhaseMarker)]
 		for m in markers:
+			if self.first:
+				time = m.get_tmin()
+				self.first = False
 			m.set_phasename(self.phase)
-#			m.polarity = self.polarity
-#			print(m.polarity)
-			print(type(m))
+			m.set_polarity(self.polarity)
 			attr = m.get_attributes()
-			print(attr)
+			print(m.get_tmin())
+			# we have the problem, that tmin and tmax will be updated continously
+			# either the viewer will be updated as well or tmin and tmax are static
+			m.set(
+				m.get_nslc_ids(),
+				time + self.tcorrect,
+				time + self.tcorrect)
 
 			if self.category == 'automatic':
 				m.set_kind(0)
