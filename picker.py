@@ -1,5 +1,5 @@
 from pyrocko.gui.snuffling import Snuffling, Choice, Param
-import pyrocko.gui.marker
+from pyrocko.gui.marker import PhaseMarker
 #from pyrocko.pile_viewer import Marker
 
 
@@ -19,41 +19,26 @@ class Picker(Snuffling):
 		self.add_parameter(Choice('Category', 'category', 'automatic', [
 			'automatic', 'manual', 'revised', 'abandoned']))
 		self.add_parameter(Choice('Polarity', 'polarity', None, [
-			None, '+', '-']))
-		self.add_parameter(Param(
-			'pick adjustment [s]', 'tcorrect', 0., -5., 5.))
+			None, 'positive', 'negative', 'undecidable']))
 
 		self.set_live_update(True)
 
 	def call(self):
 		'''Main work routine of the snuffling.'''
 
-		self.cleanup()
-		if self.phase is not None:
-			Phase = self.phase
-
 		viewer = self.get_viewer()
 
 		if viewer.selected_markers() == []:
-			print('Error: No marker selected!')
-		elif isinstance(viewer.selected_markers()[0], pyrocko.gui.marker.PhaseMarker) == False:
-			print('Error: Selected marker is no phase marker!')
+			self.error('Error: No marker selected!')
+		elif isinstance(viewer.selected_markers()[0], PhaseMarker) == False:
+			self.error('Error: Selected marker is no phase marker!')
 
 		markers = [
 			m for m in viewer.selected_markers()
-			if isinstance(m, pyrocko.gui.marker.PhaseMarker)]
+			if isinstance(m, PhaseMarker)]
 		for m in markers:
 			m.set_phasename(self.phase)
 			m.set_polarity(self.polarity)
-			attr = m.get_attributes()
-
-			# we have the problem, that tmin and tmax will be updated continously
-			# either the viewer will be updated as well or tmin and tmax are static
-			m.set(
-				m.get_nslc_ids(),
-				m.get_tmin() + self.tcorrect,
-				m.get_tmin() + self.tcorrect)
-
 			if self.category == 'automatic':
 				m.set_kind(0)
 			elif self.category == 'manual':
