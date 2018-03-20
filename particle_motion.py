@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import copy
 
 from matplotlib.collections import LineCollection
-from mpl_toolkits.mplot3d import Axes3D  # noqa
 from pyrocko import util
 from pyrocko.gui.snuffling import Snuffling, Choice, Switch
 
