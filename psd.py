@@ -99,8 +99,8 @@ class PlotPSD(Snuffling):
 
         p = None
 
-        ncols = len(group_keys) / 5 + 1
-        nrows = (len(group_keys)-1) / ncols + 1
+        ncols = len(group_keys) // 5 + 1
+        nrows = (len(group_keys)-1) // ncols + 1
 
         axes = []
         for i, group_key in enumerate(group_keys):
