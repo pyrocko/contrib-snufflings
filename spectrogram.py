@@ -74,6 +74,8 @@ class Spectrogram(Snuffling):
             Choice('Color table', 'ctb_name', 'spectro',
                    ['spectro', 'rainbow']))
 
+        self.add_trigger('Save plot data', self.save_data)
+
         self.set_live_update(False)
         self._tapers = {}
 
@@ -86,9 +88,7 @@ class Spectrogram(Snuffling):
 
         return self._tapers[taper_key]
 
-    def call(self):
-        '''Main work routine of the snuffling.'''
-
+    def extract(self):
         by_nslc = {}
         tpad = self.twin * self.overlap/100. * 0.5
         tinc = self.twin - 2 * tpad
@@ -129,6 +129,13 @@ class Spectrogram(Snuffling):
         if not by_nslc:
             self.fail('No complete data windows could be exctracted for '
                       'given selection')
+
+        return by_nslc, times, tinc
+
+    def call(self):
+        '''Main work routine of the snuffling.'''
+
+        by_nslc, times, tinc = self.extract()
 
         fframe = self.figure_frame()
         fig = fframe.gcf()
@@ -256,6 +263,31 @@ class Spectrogram(Snuffling):
             fig.savefig(self.output_filename(dir='psd.pdf'))
 
         fig.canvas.draw()
+
+    def save_data(self):
+
+        by_nslc, times, tinc = self.extract()
+
+        nslcs = sorted(by_nslc.keys())
+
+        default_fn_template = \
+            'spectrogram_%(network)s.%(station)s.%(location)s.%(channel)s.txt'
+        fn_template = self.output_filename(
+            'Template for output filenames', default_fn_template)
+
+        for i, nslc in enumerate(nslcs):
+            fn = fn_template % {
+                'network': nslc[0],
+                'station': nslc[1],
+                'location': nslc[2],
+                'channel': nslc[3]}
+
+            with open(fn, 'w') as out:
+                for tmid, f, a in by_nslc[nslc]:
+                    stmid = util.time_to_str(tmid)
+                    n = f.size
+                    for i in range(n):
+                        out.write('%s %12.6e %12.6e\n' % (stmid, f[i], a[i]))
 
 
 def __snufflings__():
