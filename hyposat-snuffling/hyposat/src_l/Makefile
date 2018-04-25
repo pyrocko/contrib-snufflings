@@ -12,7 +12,7 @@
 
 
 #F77 = /usr/bin/g77 -fno-automatic -W -Wunused -O -fbounds-check
-F77 = f77 -fno-automatic 
+F77 = gfortran -fno-automatic
 
 CC  = /usr/bin/gcc
 
