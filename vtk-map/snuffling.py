@@ -1,7 +1,86 @@
 import numpy as num
+import matplotlib
+import matplotlib.pyplot as plt
 
 from pyrocko.gui.snuffling import Snuffling, Param, Switch
 from pyrocko import orthodrome as ortho
+
+try:
+    from vtk.util import numpy_support
+except ImportError as e:
+    vtk = None
+
+
+class ColorMapper():
+    def __init__(self, cmap):
+        self.cmap = plt.get_cmap(cmap)
+        self.set_range(0., 1.)
+
+    def set_range(self, min, max):
+        self.mapping = matplotlib.cm.ScalarMappable(
+            norm=matplotlib.colors.Normalize(min, max),
+            cmap=self.cmap)
+
+    def __call__(self, v):
+        return self.mapping.to_rgba(v)
+
+
+def locations_to_ned(locations, has_elevation=False, z_scale=1.):
+    npoints = len(locations)
+    lats = num.zeros(npoints)
+    lons = num.zeros(npoints)
+    depths = num.zeros(npoints)
+
+    for i_e, e in enumerate(locations):
+        lats[i_e] = float(e.lat)
+        lons[i_e] = float(e.lon)
+        if has_elevation:
+            depths[i_e] = float(e.depth) - float(e.elevation)
+        else:
+            depths[i_e] = float(e.depth)
+
+    depths *= z_scale
+    nz = num.zeros(npoints)
+    ns, es = ortho.latlon_to_ne_numpy(nz, nz, lats, lons)
+
+    return ns, es, depths
+
+
+def events_to_vtksphere_actors(events, z_scale, size=500.):
+
+    ns, es, depths = locations_to_ned(events)
+    times = [e.time for e in events]
+
+    if not times:
+        times = num.ones(ntuples)
+
+    adata = num.array((es, ns, -depths))
+    adata = adata.flatten(order='F')
+    data = numpy_support.numpy_to_vtk(
+        adata, deep=True, array_type=vtk.VTK_FLOAT)
+    data.SetNumberOfComponents(3)
+    actors = []
+    ntuples = data.GetNumberOfTuples()
+
+    cmap = plt.get_cmap
+
+    for i in range(ntuples):
+        source = vtk.vtkSphereSource()
+        source.SetCenter(*data.GetTuple3(i))
+        source.SetRadius(size)
+        source.Update()
+
+        mapper = vtk.vtkPolyDataMapper()
+        mapper.SetInputConnection(source.GetOutputPort())
+
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+
+        r, g, b, a = events[i].get_vtk_color(events[i].time)
+        actor.GetProperty().SetColor(r, g, b)
+        actors.append(actor)
+
+    return actors
 
 
 class VtkTest(Snuffling):
@@ -38,29 +117,9 @@ class VtkTest(Snuffling):
         self.add_parameter(Switch('Topography smoothing', 'smoothing', False))
         self.add_trigger('Make screenshot', self.save_image)
         self.actors = []
-        self.topo_actor = None
         self.frame = None
         self.set_live_update(False)
 
-    def locations_to_ned(self, locations, has_elevation=False):
-        npoints = len(locations)
-        lats = num.zeros(npoints)
-        lons = num.zeros(npoints)
-        depths = num.zeros(npoints)
-
-        for i_e, e in enumerate(locations):
-            lats[i_e] = float(e.lat)
-            lons[i_e] = float(e.lon)
-            if has_elevation:
-                depths[i_e] = float(e.depth) - float(e.elevation)
-            else:
-                depths[i_e] = float(e.depth)
-
-        depths *= self.z_scale
-        nz = num.zeros(npoints)
-        ns, es = ortho.latlon_to_ne_numpy(nz, nz, lats, lons)
-
-        return ns, es, depths
 
     def stations_to_vtkcone_actors(self, data, size=500.):
         actors = []
@@ -80,41 +139,10 @@ class VtkTest(Snuffling):
 
         return actors
 
-    def events_to_vtksphere_actors(self, data, times=None, size=500.):
-        actors = []
-        ntuples = data.GetNumberOfTuples()
-
-        if not times:
-            times = num.ones(ntuples)
-
-        tmin = min(times)
-        tmax = max(times)
-
-        for i in xrange(ntuples):
-            source = vtk.vtkSphereSource()
-            source.SetCenter(*data.GetTuple3(i))
-            source.SetRadius(size)
-            source.Update()
-
-            mapper = vtk.vtkPolyDataMapper()
-            mapper.SetInputConnection(source.GetOutputPort())
-
-            actor = vtk.vtkActor()
-            actor.SetMapper(mapper)
-            tscaled = (times[i]-tmin)/(tmax-tmin)
-            r = (1-tscaled)
-            g = 0.
-            b = tscaled
-            actor.GetProperty().SetColor(r, g, b)
-            actors.append(actor)
-
-        return actors
-
     def call(self):
         try:
             global vtk
             import vtk
-            from vtk.util import numpy_support
             import sys
             sys.path[0:0] = [self.module_dir()]
             from grid_topo import setup_vtk_map_actor
@@ -124,6 +152,8 @@ class VtkTest(Snuffling):
             vtk = None
 
         self.cleanup()
+        viewer = self.get_viewer()
+
         stations = []
         events = []
         cone_actors = []
@@ -139,6 +169,26 @@ class VtkTest(Snuffling):
                 markers = filter(lambda x: tmin < x.tmin < tmax,
                                  self.get_event_markers())
             events = [m.get_event() for m in markers]
+
+            active_event = viewer.get_active_event()
+            to_rgba = ColorMapper('summer')
+            times = [e.time for e in events]
+            to_rgba.set_range(min(times), max(times))
+            if active_event:
+
+
+                to_rgba = ColorMapper('gray')
+                to_rgba.set_range(min(times), max(times))
+
+            for e in events:
+                e.get_vtk_color = to_rgba
+
+            if active_event:
+                def return_red(e):
+                    return (1., 0., 0., 1.)
+
+                active_event.get_vtk_color = return_red
+                events.append(active_event)
 
         all_lats = []
         all_lons = []
@@ -163,18 +213,12 @@ class VtkTest(Snuffling):
         size = distance_max / 50.
 
         if len(events) != 0:
-            ns, es, depths = self.locations_to_ned(events)
-            times = [e.time for e in events]
-            adata = num.array((es, ns, -depths))
-            adata = adata.flatten(order='F')
-            data = numpy_support.numpy_to_vtk(
-                adata, deep=True, array_type=vtk.VTK_FLOAT)
-            data.SetNumberOfComponents(3)
-            sphere_actors = self.events_to_vtksphere_actors(data, times, size=size/2.)
+            sphere_actors = events_to_vtksphere_actors(
+                events, z_scale=self.z_scale, size=size/2.)
 
         if len(stations) != 0:
-            ns, es, depths = self.locations_to_ned(stations,
-                                                   has_elevation=True)
+            ns, es, depths = locations_to_ned(
+                stations, z_scale=self.z_scale, has_elevation=True)
             adata = num.array((es, ns, -depths)).flatten(order='F')
             data = numpy_support.numpy_to_vtk(
                 adata, deep=True, array_type=vtk.VTK_FLOAT)
@@ -183,8 +227,8 @@ class VtkTest(Snuffling):
             cone_actors = self.stations_to_vtkcone_actors(data, size=size)
 
         if self.want_topo:
-            distance_max += self.margin_radius * 1000
-            self.topo_actor = setup_vtk_map_actor(
+            distance_max += self.margin_radius * 1000.
+            topo_actor = setup_vtk_map_actor(
                 center_lat, center_lon, distance_max,
                 super_elevation=self.z_scale,
                 decimation=int(self.z_decimation or 1),
@@ -199,8 +243,8 @@ class VtkTest(Snuffling):
         for actor in sphere_actors:
             self.frame.add_actor(actor)
 
-        if self.topo_actor:
-            self.frame.add_actor(self.topo_actor)
+        if self.want_topo:
+            self.frame.add_actor(topo_actor)
         self.frame.renderer.SetBackground(0.01, 0.05, 0.1)
 
         self.frame.init()
