@@ -192,7 +192,7 @@ class TimeLine(Snuffling):
         ax3.get_yaxis().tick_right()
 
         self.fig.subplots_adjust(
-            bottom=0.1, right=0.9, top=0.95, wspace=0.02, hspace=0.02)
+            bottom=0.05, right=0.95, left=0.075, top=0.95, wspace=0.02, hspace=0.02)
         init_pos.y0 += 0.05
         ax.set_position(init_pos)
         ax_cum.set_position(init_pos)
