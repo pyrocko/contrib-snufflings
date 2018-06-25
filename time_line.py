@@ -1,5 +1,7 @@
-from pyrocko.gui.snuffling import Snuffling, Param
+from pyrocko.gui.snuffling import Snuffling, Param, Choice
 from pyrocko.gui.util import EventMarker
+from pyrocko import orthodrome
+from pyrocko import moment_tensor
 from pyrocko.orthodrome import distance_accurate50m as distance
 from pyrocko import util, model
 import matplotlib.dates as mdates
@@ -7,8 +9,19 @@ from matplotlib import cm
 import numpy as num
 from datetime import datetime
 
-cmap = cm.jet
+
 km = 1000.
+cmap = cm.RdYlBu
+cmaps = {'Red-Yellow-Blue': 'RdYlBu',
+         'Viridis': 'viridis',
+         'Magma': 'magma'}
+save_cmaps = {}
+for k, v in cmaps.items():
+    try:
+         x = getattr(cm, v)
+         save_cmaps[k] = x
+    except AttributeError:
+         continue
 
 
 class TimeLine(Snuffling):
@@ -35,7 +48,12 @@ class TimeLine(Snuffling):
         self.add_parameter(
             Param('Maximum Distance [km]:', 'maxd', 20000., 0., 20000.,
                   high_is_none=True))
+        self.add_parameter(
+            Choice('Color by', 'color_by', 'time',
+                   ['time', 'longitude', 'latitude', 'magnitude', 'depth', 'kind']))
 
+        self.add_parameter(Choice('Colormap', 'cmap_selector',
+                                  'Red-Yellow-Blue', list(save_cmaps.keys())))
         self.add_trigger('Save Figure', self.save_as)
         self.set_live_update(False)
         self.fig = None
@@ -44,6 +62,7 @@ class TimeLine(Snuffling):
     def call(self):
         '''Main work routine of the snuffling.'''
         self.cleanup()
+        cmap = save_cmaps[self.cmap_selector]
         viewer = self.get_viewer()
         tmin, tmax = self.get_selected_time_range(fallback=True)
         event_markers = filter(lambda x: x.tmin >= tmin and x.tmax <= tmax,
@@ -59,50 +78,54 @@ class TimeLine(Snuffling):
 
         if event_markers == []:
             self.fail('No events in selected area found')
-        events = [m.get_event() for m in event_markers]
 
-        self.make_time_line(events)
+        event_markers = list(event_markers)
+        self.make_time_line(event_markers, cmap=cmap)
 
-    def make_time_line(self, events):
-
+    def make_time_line(self, markers, cmap=cmap):
+        events = [m.get_event() for m in markers]
+        kinds = num.array([m.kind for m in markers])
         if self.cli_mode:
             self.fig = plt.figure()
         else:
             fframe = self.figure_frame()
             self.fig = fframe.gcf()
         ax = self.fig.add_subplot(311)
+        ax_cum = ax.twinx()
         ax1 = self.fig.add_subplot(323)
-        ax2 = self.fig.add_subplot(325)
-        ax3 = self.fig.add_subplot(324)
+        ax2 = self.fig.add_subplot(325, sharex=ax1)
+        ax3 = self.fig.add_subplot(324, sharey=ax1)
 
         num_events = len(events)
-        magnitudes = num.zeros(num_events)
-        times = num.zeros(num_events)
-        lats = num.zeros(num_events)
-        lons = num.zeros(num_events)
-        depths = num.zeros(num_events)
+        data = num.zeros((num_events, 6))
+        column_to_index = dict(zip(['magnitude', 'latitude', 'longitude', 'depth', 'time', 'kind'],
+                           range(6)))
+        c2i = column_to_index
         for i, e in enumerate(events):
             if e.magnitude:
                 mag = e.magnitude
             else:
                 mag = 0.
-            magnitudes[i] = mag
-            lats[i] = e.lat
-            lons[i] = e.lon
-            depths[i] = e.depth
-            times[i] = e.time
+            data[i, :] = mag, e.lat, e.lon, e.depth, e.time, kinds[i]
 
-        tmin = min(times)
-        tmax = max(times)
-        lon_max = lons.max()
-        lon_min = lons.min()
-        lat_max = lats.max()
-        lat_min = lats.min()
-        depths_min = depths.min()
-        depths_max = depths.max()
-        mags_min = magnitudes.min()
-        mags_max = magnitudes.max()
-        dates = map(datetime.fromtimestamp, times)
+        isorted = num.argsort(data[:, c2i['time']])
+        data = data[isorted]
+
+        def _D(key):
+            return data[:, c2i[key]]
+
+        tmin = _D('time').min()
+        tmax = _D('time').max()
+        lon_max = _D('longitude').max()
+        lon_min = _D('longitude').min()
+        lat_max = _D('latitude').max()
+        lat_min = _D('latitude').min()
+        depths_min = _D('depth').min()
+        depths_max = _D('depth').max()
+        mags_min = _D('magnitude').min()
+        mags_max = _D('magnitude').max()
+        moments = moment_tensor.magnitude_to_moment(_D('magnitude'))
+        dates = list(map(datetime.fromtimestamp, _D('time')))
 
         fds = mdates.date2num(dates)
         tday = 3600*24
@@ -114,13 +137,11 @@ class TimeLine(Snuffling):
         else:
             hfmt = mdates.DateFormatter('%Y/%m')
 
-        ax.scatter(fds,
-                   magnitudes,
-                   s=20,
-                   c=times,
-                   vmin=tmin,
-                   vmax=tmax,
-                   cmap=cmap)
+        color_values = _D(self.color_by)
+        color_args = dict(c=color_values, vmin=color_values.min(),
+                    vmax=color_values.max(), cmap=cmap)
+
+        ax.scatter(fds, _D('magnitude'), s=20, **color_args)
 
         ax.xaxis.set_major_formatter(hfmt)
         ax.spines['top'].set_color('none')
@@ -132,41 +153,49 @@ class TimeLine(Snuffling):
         ax.set_ylabel('Magnitude')
         init_pos = ax.get_position()
 
+        ax_cum.plot(fds, num.cumsum(moments), 'grey')
+        ax_cum.xaxis.set_major_formatter(hfmt)
+        ax_cum.spines['top'].set_color('none')
+        ax_cum.spines['right'].set_color('grey')
+        ax_cum.set_ylabel('Cumulative seismic moment')
+
+        lats_min = num.array([lat_min for x in range(num_events)])
+        lons_min = num.array([lon_min for x in range(num_events)])
+
         # top left plot
-        ax1.scatter(lons, lats, s=20, c=times, vmin=tmin, vmax=tmax, cmap=cmap)
-        ax1.set_xlim((lon_min, lon_max))
-        ax1.set_ylim((lat_min, lat_max))
+        lats, lons = orthodrome.latlon_to_ne_numpy(
+            lats_min, lons_min, _D('latitude'), _D('longitude'))
+        ax1.scatter(_D('longitude'), _D('latitude'), s=20, **color_args)
+        ax1.set_aspect('equal')
         ax1.grid(True, which='both')
-        ax1.set_xticklabels([])
-        ax1.set_ylabel('Lat')
-        ax1.get_xaxis().tick_bottom()
+        ax1.set_ylabel('Northing [m]')
         ax1.get_yaxis().tick_left()
 
         # bottom left plot
-        ax2.scatter(
-            lons, depths, s=20, c=times, vmin=tmin, vmax=tmax, cmap=cmap)
-        ax2.set_xlim((lon_min, lon_max))
-        ax2.set_ylim((depths_min, depths_max))
+        ax2.scatter(_D('longitude'), _D('depth'), s=20, **color_args)
         ax2.grid(True)
-        ax2.set_xlabel('Lon')
-        ax2.set_ylabel('Depth')
+        ax2.set_xlabel('Easting [m]')
+        ax2.set_ylabel('Depth [m]')
         ax2.get_yaxis().tick_left()
+        ax2.get_xaxis().tick_bottom()
         ax2.invert_yaxis()
 
-        # top left plot
-        ax3.scatter(
-            depths, lats, s=20, c=times, vmin=tmin, vmax=tmax, cmap=cmap)
+        ax2.text(1.1, 0, 'Origin at:\nlat=%1.3f, lon=%1.3f' %
+                 (lat_min, lon_min), transform=ax2.transAxes)
+
+        # top right plot
+        ax3.scatter(_D('depth'), _D('latitude'), s=20, **color_args)
         ax3.set_xlim((depths_min, depths_max))
         ax3.grid(True)
-        ax3.set_ylim((lat_min, lat_max))
-        ax3.set_xlabel('Depth')
+        ax3.set_xlabel('Depth [m]')
         ax3.get_xaxis().tick_bottom()
         ax3.get_yaxis().tick_right()
 
         self.fig.subplots_adjust(
-            bottom=0.1, right=0.9, top=0.95, wspace=0.02, hspace=0.02)
+            bottom=0.05, right=0.95, left=0.075, top=0.95, wspace=0.02, hspace=0.02)
         init_pos.y0 += 0.05
         ax.set_position(init_pos)
+        ax_cum.set_position(init_pos)
         if self.cli_mode:
             plt.show()
         else:
