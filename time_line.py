@@ -1,4 +1,4 @@
-from pyrocko.gui.snuffling import Snuffling, Param, Choice
+from pyrocko.gui.snuffling import Snuffling, Param, Choice, Switch
 from pyrocko.gui.util import EventMarker
 from pyrocko import orthodrome
 from pyrocko import moment_tensor
@@ -51,9 +51,11 @@ class TimeLine(Snuffling):
         self.add_parameter(
             Choice('Color by', 'color_by', 'time',
                    ['time', 'longitude', 'latitude', 'magnitude', 'depth', 'kind']))
-
         self.add_parameter(Choice('Colormap', 'cmap_selector',
                                   'Red-Yellow-Blue', list(save_cmaps.keys())))
+        self.add_parameter(Choice('Coordinate system', 'coord_system',
+                                  'Lat/Lon', ['Lat/Lon', 'cartesian']))
+        self.add_parameter(Switch('Show stations', 'show_stations', False))
         self.add_trigger('Save Figure', self.save_as)
         self.set_live_update(False)
         self.fig = None
@@ -80,9 +82,10 @@ class TimeLine(Snuffling):
             self.fail('No events in selected area found')
 
         event_markers = list(event_markers)
-        self.make_time_line(event_markers, cmap=cmap)
+        stations = self.get_stations() if self.show_stations else None
+        self.make_time_line(event_markers, stations, cmap=cmap)
 
-    def make_time_line(self, markers, cmap=cmap):
+    def make_time_line(self, markers, stations=None, cmap=cmap):
         events = [m.get_event() for m in markers]
         kinds = num.array([m.kind for m in markers])
         if self.cli_mode:
@@ -107,6 +110,12 @@ class TimeLine(Snuffling):
             else:
                 mag = 0.
             data[i, :] = mag, e.lat, e.lon, e.depth, e.time, kinds[i]
+
+        s_coords = num.array([])
+        s_labels = []
+        if stations is not None:
+            s_coords = num.array([(s.lon, s.lat, s.elevation-s.depth) for s in stations])
+            s_labels = ['.'.join(s.nsl()) for s in stations]
 
         isorted = num.argsort(data[:, c2i['time']])
         data = data[isorted]
@@ -162,17 +171,34 @@ class TimeLine(Snuffling):
         lats_min = num.array([lat_min for x in range(num_events)])
         lons_min = num.array([lon_min for x in range(num_events)])
 
-        # top left plot
-        lats, lons = orthodrome.latlon_to_ne_numpy(
-            lats_min, lons_min, _D('latitude'), _D('longitude'))
-        ax1.scatter(_D('longitude'), _D('latitude'), s=20, **color_args)
+        if self.coord_system == 'cartesian':
+            lats, lons = orthodrome.latlon_to_ne_numpy(
+                lats_min, lons_min, _D('latitude'), _D('longitude'))
+
+            _x = num.empty((len(s_coords), 3))
+            for i, (slon, slat, sele) in enumerate(s_coords):
+                n, e = orthodrome.latlon_to_ne(lat_min, lon_min, slat, slon)
+                _x[i, :] = (e, n, sele)
+            s_coords = _x
+        else:
+            lats = _D('latitude')
+            lons = _D('longitude')
+
+        s_coords = s_coords.T
+
+        ax1.scatter(lons, lats, s=20, **color_args)
         ax1.set_aspect('equal')
         ax1.grid(True, which='both')
         ax1.set_ylabel('Northing [m]')
         ax1.get_yaxis().tick_left()
 
+        if len(s_coords):
+            ax1.scatter(s_coords[0], s_coords[1], marker='v', s=40, color='black')
+            for c, sl in zip(s_coords.T, s_labels):
+                ax1.text(c[0], c[1], sl, color='black')
+
         # bottom left plot
-        ax2.scatter(_D('longitude'), _D('depth'), s=20, **color_args)
+        ax2.scatter(lons, _D('depth'), s=20, **color_args)
         ax2.grid(True)
         ax2.set_xlabel('Easting [m]')
         ax2.set_ylabel('Depth [m]')
@@ -184,7 +210,7 @@ class TimeLine(Snuffling):
                  (lat_min, lon_min), transform=ax2.transAxes)
 
         # top right plot
-        ax3.scatter(_D('depth'), _D('latitude'), s=20, **color_args)
+        ax3.scatter(_D('depth'), lats, s=20, **color_args)
         ax3.set_xlim((depths_min, depths_max))
         ax3.grid(True)
         ax3.set_xlabel('Depth [m]')
