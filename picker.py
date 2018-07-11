@@ -38,7 +38,14 @@ class Picker(Snuffling):
 			if isinstance(m, PhaseMarker)]
 		for m in markers:
 			m.set_phasename(self.phase)
-			m.set_polarity(self.polarity)
+			if self.polarity == 'positive':
+				m.set_polarity(1)
+			elif self.polarity == 'negative':
+				m.set_polarity(-1)
+			elif self.polarity == 'undecidable':
+				m.set_polarity(0)
+			else:
+				m.set_polarity(self.polarity)
 			if self.category == 'automatic':
 				m.set_kind(0)
 			elif self.category == 'manual':
