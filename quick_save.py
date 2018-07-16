@@ -106,9 +106,9 @@ class QuickSave(Snuffling):
             elif self.name_as_filename:
                 self.save_path = self.root_folder + "/" + self.ae_name
             else:
-                self.save_path = self.root_folder + "picks"
+                self.save_path = self.root_folder + "/picks"
         else:
-            self.save_path = self.root_folder + "picks"
+            self.save_path = self.root_folder + "/picks"
         
         Marker.save_markers(self.selected_markers, self.save_path)
     
