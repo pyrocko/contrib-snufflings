@@ -93,7 +93,7 @@ class QuickSave(Snuffling):
             self.ae_name = self.active_event.name
 
         elif not self.save_asc_markers and self.save_sel_markers:
-            self.selected_markers = self.get_selected_markers
+            self.selected_markers = self.get_selected_markers()
 
         else:
             self.selected_markers = self.get_markers()
@@ -123,35 +123,31 @@ class QuickSave(Snuffling):
         Marker.save_markers(self.selected_markers, self.save_path)
     
     def save_velest(self):
-        if self.save_asc_markers and not self.save_sel_markers:
-            start_time = datetime.datetime(1970, 1, 1)
-            event_time = self.active_event.time
-            event_date = start_time.utcfromtimestamp(event_time)
+        start_time = datetime.datetime(1970, 1, 1)
+        event_time = self.active_event.time
+        event_date = start_time.utcfromtimestamp(event_time)
+        event_year = int(str(event_date.year)[2:])
+        event_month = event_date.month
+        event_day = event_date.day
+        event_hour = event_date.hour
+        event_min = event_date.minute
+        event_sec = event_date.second + (
+            round(event_date.microsecond / 10**6, 2))
+        event_lat = round(self.active_event.lat, 4)
+        event_lon = round(self.active_event.lon, 4)
+        event_depth = round(self.active_event.depth / 10**3, 2)
+        event_mag = round(self.active_event.magnitude, 2)
 
-            event_year = int(str(event_date.year)[2:])
-            event_month = event_date.month
-            event_day = event_date.day
-            event_hour = event_date.hour
-            event_min = event_date.minute
-            event_sec = event_date.second + (
-                round(event_date.microsecond / 10**6, 2))
-            event_lat = round(self.active_event.lat, 4)
-            event_lon = round(self.active_event.lon, 4)
-            event_depth = round(self.active_event.depth / 10**3, 2)
-            event_mag = round(self.active_event.magnitude, 2)
-
-            if event_lat >= 0:
-                event_NS = "N"
-            else:
-                event_NS = "S"
-
-            if event_lon >= 0:
-                event_EW = "E"
-            else:
-                event_EW = "W"
+        if event_lat >= 0:
+            event_NS = "N"
         else:
-            pass
-        
+            event_NS = "S"
+
+        if event_lon >= 0:
+            event_EW = "E"
+        else:
+            event_EW = "W"
+
         event_line = "{:02d}{:02d}{:02d} {:02d}{:02d} {:05.2f} {:7.4f}{} \
 {:8.4f}{}{:8.2f}{:7.2f}     99  0.0 0.00  1.0  1.0 \n".format(
             event_year, event_month, event_day, event_hour, event_min,
@@ -216,6 +212,7 @@ class QuickSave(Snuffling):
 
         if self.velest_format:
             self.save_asc_markers = True
+            self.save_sel_markers = False
             self.parse_markers()
             self.save_velest()
             print('Velest format saved to: {}.'.format(self.save_path_velest))
@@ -225,5 +222,5 @@ class QuickSave(Snuffling):
 def __snufflings__():
     """Returns a list of snufflings to be exported by this module."""
 
-    return[QuickSave()]
+    return[ QuickSave() ]
 
