@@ -11,14 +11,6 @@ USER_DEF_ROOT_FOLDER = \
 os.path.expanduser('~')
 
 
-def folder_check(save_path):
-    try:
-        os.makedirs(save_path)
-    except OSError:
-        if not os.path.isdir(save_path):
-            raise
-
-
 class QuickSave(Snuffling):
 
     """
@@ -80,10 +72,41 @@ class QuickSave(Snuffling):
         self.setup_gui(reloaded=True)
         self.set_live_update(False)
     
-    def parse_markers(self):
-        self.cleanup()
+    def folder_check(self, save_path):
+        try:
+            os.makedirs(save_path)
+        except OSError:
+            if not os.path.isdir(save_path):
+                raise
+    
+    def check_params(self):
+        if self.save_asc_markers and self.save_sel_markers:
+            self.error(' Select either "Save only selected markers" or \
+"Save only markers associated to the active event" option.')
+            self.checked = False
+
+        elif not self.save_asc_markers and self.name_to_path:
+            self.save_asc_markers = True
+            self.save_sel_markers = False
+            self.checked = True
+
+        elif not self.save_asc_markers and self.name_as_filename:
+            self.save_asc_markers = True
+            self.save_sel_markers = False
+            self.checked = True
+
+        elif not self.save_asc_markers and self.velest_format:
+            self.save_asc_markers = True
+            self.save_sel_markers = False
+            self.checked = True
+
+        else:
+            self.checked = True
         
-        if self.save_asc_markers and not self.save_sel_markers:
+        self.reset_gui(reloaded=True)
+    
+    def parse_markers(self):
+        if self.save_asc_markers:
             active_event_marker, asc_phase_markers = \
                 self.get_active_event_and_phase_markers()
             self.phase_markers = asc_phase_markers[:]
@@ -92,35 +115,30 @@ class QuickSave(Snuffling):
             self.active_event = active_event_marker.get_event()
             self.ae_name = self.active_event.name
 
-        elif not self.save_asc_markers and self.save_sel_markers:
+        elif self.save_sel_markers:
             self.selected_markers = self.get_selected_markers()
 
         else:
             self.selected_markers = self.get_markers()
 
     def save_markers(self):
-        if self.save_asc_markers and not self.save_sel_markers:
+        if self.name_to_path and self.name_as_filename:
+            save_path = self.root_folder + "/" + self.ae_name
+            self.folder_check(save_path)
+            self.save_path = save_path + "/" + self.ae_name
 
-            if self.name_to_path and self.name_as_filename:
-                save_path = self.root_folder + "/" + self.ae_name
-                folder_check(save_path)
-                self.save_path = save_path + "/" + self.ae_name
+        elif self.name_to_path:
+            save_path = self.root_folder + "/" + self.ae_name
+            self.folder_check(save_path)
+            self.save_path = save_path + "/picks"
 
-            elif self.name_to_path:
-                save_path = self.root_folder + "/" + self.ae_name
-                folder_check(save_path)
-                self.save_path = save_path + "/picks"
-
-            elif self.name_as_filename:
-                self.save_path = self.root_folder + "/" + self.ae_name
-
-            else:
-                self.save_path = self.root_folder + "/picks"
+        elif self.name_as_filename:
+            self.save_path = self.root_folder + "/" + self.ae_name
 
         else:
             self.save_path = self.root_folder + "/picks"
         
-        Marker.save_markers(self.selected_markers, self.save_path)
+        Marker.save_markers(self.selected_markers, self.save_path + '.txt')
     
     def save_velest(self):
         start_time = datetime.datetime(1970, 1, 1)
@@ -155,7 +173,7 @@ class QuickSave(Snuffling):
             event_mag 
             )
 
-        self.save_path_velest = self.save_path + "_velest"
+        self.save_path_velest = self.save_path + "_velest.txt"
 
         if self.name_to_path or self.name_as_filename:
             velest_file = open(self.save_path_velest, 'w')
@@ -199,28 +217,48 @@ class QuickSave(Snuffling):
                 phase_block = "{:4s}{}{}{:06.2f}".format(phase_station,
                     phase_name, phase_unc_class, phase_rtime)
                 
-
             velest_file.write(phase_block)
 
         velest_file.write('\n')
         velest_file.close()
     
     def call(self):
-        self.parse_markers()
-        self.save_markers()
-        print('Markers saved to: {}.'.format(self.save_path))
-
-        if self.velest_format:
-            self.save_asc_markers = True
-            self.save_sel_markers = False
+        self.check_params()
+        
+        if self.checked:
             self.parse_markers()
-            self.save_velest()
-            print('Velest format saved to: {}.'.format(self.save_path_velest))
+            self.save_markers()
+            print('Markers saved to: {}.'.format(self.save_path + '.txt'))
+            self.show_message('Success', ' Markers saved to: {}.'.format(
+                self.save_path + '.txt'
+                ))
+
+            if self.velest_format:
+                self.save_velest()
+                print('Velest format saved to: {}.'.format(
+                    self.save_path_velest
+                    ))
+                self.show_message(
+                    'Success', ' Velest format saved to: {}.'.format(
+                    self.save_path_velest
+                    ))
+            else:
+                pass
+
         else:
-            pass
+            self.save_sel_markers = False
+            self.save_asc_markers = False
+            self.name_to_path = False
+            self.name_as_filename = False
+            self.velest_format = False
+            self.reset_gui(reloaded=True)
+            self.warn(
+                ' Please select appropriate parameters. All markers are \
+saved in case none is selected.\n\n\t\tSelection cleared.'
+                )
 
 def __snufflings__():
     """Returns a list of snufflings to be exported by this module."""
 
-    return[ QuickSave() ]
+    return[QuickSave()]
 
