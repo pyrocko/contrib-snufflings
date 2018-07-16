@@ -1,6 +1,5 @@
 #-*- coding: utf-8 -*-
 
-import getpass
 import os
 
 from pyrocko.snuffling import Choice, Snuffling, Switch
@@ -8,8 +7,9 @@ from pyrocko.pile_viewer import Marker
 
 # TO-DO - save to VELEST format.
 
-user_def_root_folder = \
-'/user/defined/root/folder'
+# Defaults to user's home folder.
+USER_DEF_ROOT_FOLDER = \
+os.path.expanduser('~')
 
 class QuickSave(Snuffling):
 
@@ -23,8 +23,8 @@ class QuickSave(Snuffling):
     menu, desired <b>options</b> and press <b>Run</b>. Path to marker file is
     printed to the terminal.<br>
     User defined path is selected by default and can be modified in the source
-    file. It is given as a string under <i>user_def_root_folder</i> variable
-    (line 11). 
+    file. It is given as a string under <i>USER_DEF_ROOT_FOLDER</i> variable
+    (line 11). Its default value points to user's home folder.
     </p>
     <p>
     Options:</br>
@@ -48,12 +48,12 @@ class QuickSave(Snuffling):
     def setup(self):
         self.set_name('Quick Save')
 
-        username = getpass.getuser()
+        home_folder = os.path.expanduser('~')
 
         self.add_parameter(Choice('Root folder', 'root_folder',
-            user_def_root_folder, [user_def_root_folder,
-            '/home/' + username + '/Desktop',
-            '/home/' + username + '/Documents'
+            USER_DEF_ROOT_FOLDER, [USER_DEF_ROOT_FOLDER,
+            home_folder + '/Desktop',
+            home_folder + '/Documents'
             ]))
 
         self.add_parameter(Switch(
