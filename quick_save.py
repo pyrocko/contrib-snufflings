@@ -124,3 +124,4 @@ def __snufflings__():
     """Returns a list of snufflings to be exported by this module."""
 
     return[QuickSave()]
+
