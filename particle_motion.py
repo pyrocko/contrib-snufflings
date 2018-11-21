@@ -58,10 +58,10 @@ class ParticleMotion(Snuffling):
                         tr.lowpass(4, viewer.lowpass)
                     time = tr.get_xdata()
                     net, sta, loc, cha = tr.nslc_id
-                    if 'E' in cha or '1' in cha:
+                    if 'X' in cha or 'E' in cha or '1' in cha:
                         x = tr.ydata
                         xlabel = cha
-                    elif 'N' in cha or '2' in cha:
+                    elif 'Y' in cha or 'N' in cha or '2' in cha:
                         y = tr.ydata
                         ylabel = cha
                     elif 'Z' in cha or '0' in cha:
@@ -94,8 +94,6 @@ class ParticleMotion(Snuffling):
                     except ValueError as e:
                         logger.error('nsl id: %s | %s' % (nsl_id, e))
                     ax.plot(xi, yi, c='grey', alpha=0.4)
-                    ax.set_xlim(num.min(xi), num.max(xi))
-                    ax.set_ylim(num.min(yi), num.max(yi))
                     ax.set_aspect('equal')
                 ax.set_xlabel(xilabel)
                 ax.set_ylabel(yilabel)
