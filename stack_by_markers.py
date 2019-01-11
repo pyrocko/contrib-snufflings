@@ -25,7 +25,7 @@ class MarkerStack(Snuffling):
         self.add_parameter(Param(
             'Tmin padding', 'tmin_pad', 1., 0., 100.))
         self.add_parameter(Param(
-            'Tmax padding', 'tmax_pad', 1., 0., 100.))
+            'Tmax padding', 'tmax_pad', 1., 0., 600.))
         self.add_parameter(Switch('Normalize', 'normalize', False))
         self.add_parameter(Switch('Debug', 'debug', False))
 
