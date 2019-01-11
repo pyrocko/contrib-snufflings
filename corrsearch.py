@@ -22,8 +22,6 @@ class CorrsearchSnuffling(Snuffling):
     <b>Set parameters:</b><br />
         <b>&middot; Downsample to [Hz]</b>  -  Reduce the number of samples to
                 improve speed<br />
-        <b>&middot; Highpass[Hz]/Lowpass[Hz]</b>  -  Filter traces before cross
-                correlation<br />
         <b>&middot; Apply to full dataset</b>  -  Work on the entire data set
                 (By default, processing is limited to data shown in viewer)
                 <br />
@@ -35,8 +33,6 @@ class CorrsearchSnuffling(Snuffling):
                 correlation trace<br />
     </p>
     Hit <b>run</b>.<br>
-    Cross correlations of different channels are summed and added to the viewer
-    as an additional trace labeled <i>Sum Cross Correlation</i>.
     </body>
     </html>
     '''
@@ -49,15 +45,7 @@ class CorrsearchSnuffling(Snuffling):
             Param('Downsample to [Hz]', 'downsample',
             None, 0.1, 200., high_is_none=True))
         
-        self.add_parameter(
-            Param('Highpass [Hz]', 'corner_highpass',
-            None, 0.001, 50., low_is_none=True))
-        
-        self.add_parameter(
-            Param('Lowpass [Hz]', 'corner_lowpass',
-            None, 0.001, 50., high_is_none=True))
-        
-        self.add_parameter(Param('t search', 'tsearch', 1., 0.1, 10.))
+        self.add_parameter(Param('t search', 'tsearch', 1., 0.1, 100.))
         self.add_parameter(Switch('Apply to full dataset', 'apply_to_all', False))
         self.add_parameter(Choice('Normalization', 'normalization', 'Off',
             ('Off', 'Normal', 'Gliding')))
@@ -66,17 +54,13 @@ class CorrsearchSnuffling(Snuffling):
         self.set_live_update(False)
 
     def call(self):
-        '''Main work routine of the snuffling.'''
-
         self.cleanup()
-
-        if self.corner_highpass:
-            tpad = 1./self.corner_highpass
-        else:
-            tpad = 0.
 
         try:
             viewer = self.get_viewer()
+            lowpass = viewer.lowpass
+            highpass = viewer.highpass
+
             markers = viewer.selected_markers()
             if not markers:
                 return
@@ -92,6 +76,10 @@ class CorrsearchSnuffling(Snuffling):
         except NoViewerSet:
             viewer = None
             master_tmin, master_tmax = self.master_tmin, self.master_tmax
+        
+        tpad = 0.
+        if highpass:
+            tpad = 1. / highpass
 
         pile = self.get_pile()
         masters = {}
@@ -100,11 +88,11 @@ class CorrsearchSnuffling(Snuffling):
             if self.downsample:
                 _tr.downsample_to(1./self.downsample)
 
-            if self.corner_highpass:
-                _tr.highpass(4, self.corner_highpass)
+            if highpass:
+                _tr.highpass(4, highpass)
 
-            if self.corner_lowpass:
-                _tr.lowpass(4, self.corner_lowpass)
+            if lowpass:
+                _tr.lowpass(4, lowpass)
 
         for tr in pile.all(tmin=master_tmin, tmax=master_tmax, tpad=tpad):
             for m in markers:
