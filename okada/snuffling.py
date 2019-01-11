@@ -28,7 +28,7 @@ class okadaforward(Snuffling):
     </style>
     </head>
     <body>
-    <h1 align="center">Plot rect. dislocation forward modelling /h1>
+    <h1 align="center">Plot rect. dislocation forward modelling </h1>
     <p>
     Plot a rectangular dislocation source in a elastic half-space.<br>
     Plots in a seperate window.
