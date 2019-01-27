@@ -45,7 +45,9 @@ class CumEvent(Snuffling):
         event_markers = [x for x in viewer.markers if x.tmin >= tmin and
                          x.tmax <= tmax]
 
-        event_markers = [x for x in event_markers if isinstance(x, EventMarker)]
+        event_markers = [
+            x for x in event_markers if isinstance(x, EventMarker)]
+
         if self.maxd:
             event_markers = [x for x in event_markers if
                              distance(self, x._event) <= self.maxd*1000.]
@@ -65,30 +67,35 @@ class CumEvent(Snuffling):
             fframe = self.figure_frame()
             self.fig = fframe.gcf()
 
-        gs = gridspec.GridSpec(2, 1)
-        gs.update(hspace=0.005, top=0.95)
-        gs1 = gridspec.GridSpec(2, 1)
-        gs1.update(bottom=0.06, hspace=0.01)
+        gs = gridspec.GridSpec(
+            2, 1, figure=self.fig, hspace=0.005, top=0.95)
+
+        gs1 = gridspec.GridSpec(
+            2, 2, figure=self.fig)
 
         ax = self.fig.add_subplot(gs[0])
         ax1 = ax.twinx()
         ax2 = self.fig.add_subplot(gs1[-1])
+        ax3 = self.fig.add_subplot(gs1[-2])
+
         events.sort(key=lambda x: x.time)
+
         magnitudes = []
-        cum_events = num.cumsum(num.ones(len(events)))
-
-        for e in events:
+        i_has_magnitude = []
+        for i, e in enumerate(events):
             if e.moment_tensor is not None:
-                magnitudes.append(e.moment_tensor.magnitude)
+                magnitude = e.moment_tensor.magnitude
             else:
-                magnitudes.append(e.magnitude)
-            if magnitudes[-1] is None:
-                magnitudes.pop()
-                magnitudes.append(0.)
+                magnitude = e.magnitude
 
-        magnitudes = moment_tensor.magnitude_to_moment(num.array(magnitudes))
-        cum_events_magnitude = num.cumsum(magnitudes)
-        times = num.array([e.time for e in events])
+            if magnitude is not None:
+                magnitudes.append(magnitude)
+                i_has_magnitude.append(i)
+
+        cum_events = num.cumsum(num.ones(len(i_has_magnitude)))
+        moments = moment_tensor.magnitude_to_moment(num.array(magnitudes))
+        cum_events_magnitude = num.cumsum(moments)
+        times = num.array([events[i].time for i in i_has_magnitude])
         timeslabels = [datetime.datetime(1970, 1, 1) +
                        datetime.timedelta(seconds=t) for t in times]
 
@@ -122,6 +129,10 @@ class CumEvent(Snuffling):
         ax2.hist(binned/normalization, bins=nbins, color='grey')
         ax2.set_ylabel('Number of events')
         ax2.set_xlim((0, nbins))
+
+        ax3.hist(magnitudes, bins=21, histtype='stepfilled')
+        ax3.set_xlabel('Magnitude')
+        ax3.set_ylabel('Number of events')
 
         if self.cli_mode:
             plt.show()
