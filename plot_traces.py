@@ -4,6 +4,10 @@ from pyrocko import orthodrome as ortho
 from pyrocko import util
 
 
+def station_key(tr):
+    return (tr.network, tr.station, tr.location)
+
+
 class TracePlotter(Snuffling):
     '''
     <html>
@@ -20,17 +24,22 @@ class TracePlotter(Snuffling):
     distance to the activated event.
     If <b>Auto-Run</b> is activated the figure is updated automatically when
     modifying a value on the panel.<br>
-    When <b>saving a figure</b>, accepted file endings are 'eps', 'png', 'jpeg',
+    When <b>saving a figure</b> accepted file endings are 'eps', 'png', 'jpeg',
     'pdf', and 'svg'.
     </body>
     </html>
     '''
     def setup(self):
         self.set_name("Plot Waveforms")
-        self.add_parameter(Switch('Include Selected Markers', 'add_markers',  False))
+        self.add_parameter(
+            Switch('Include Selected Markers', 'add_markers',  False))
+
         self.add_parameter(Switch('Fill positive', 'fill_between',  False))
-        self.add_parameter(Param(
-            'Reduction Velocity [km/s]', 't_red', 20., 1., 20., high_is_none=True))
+        self.add_parameter(
+            Param(
+                'Reduction Velocity [km/s]',
+                't_red', 20., 1., 20., high_is_none=True))
+
         self.add_parameter(Param(
             'Amplitude Gain', 'yscale', 1., 0.1, 100.))
         self.add_parameter(Choice(
@@ -47,14 +56,21 @@ class TracePlotter(Snuffling):
 
         vtmin, vtmax = viewer.get_time_range()
         pile = self.get_pile()
-        traces = list(pile.chopper(tmin=vtmin, tmax=vtmax, trace_selector=viewer.trace_selector))
-        event, _ = self.get_active_event_and_stations()
+        traces = [
+            tr for tr in pile.chopper(
+                tmin=vtmin, tmax=vtmax, trace_selector=viewer.trace_selector)]
+
+        event, stations = self.get_active_event_and_stations()
         traces = [tr for trs in traces for tr in trs]
-        stations = []
-        for tr in traces:
-            if tr.nslc_id[:2] in viewer.stations.keys():
-                stations.append(viewer.get_station(viewer.station_key(tr)))
-        distances = [ortho.distance_accurate50m(event, s) for s in stations]
+
+        stations_by_nsl = {s.nsl(): s for s in self.get_stations()}
+        stations = [
+            stations_by_nsl.get(station_key(tr), None) for tr in traces]
+
+        distances = [
+            ortho.distance_accurate50m(event, s) for s in stations if
+            s is not None]
+
         distances = [d/1000. for d in distances]
         maxd = max(distances)
         mind = min(distances)
@@ -63,11 +79,13 @@ class TracePlotter(Snuffling):
                             self.get_station_patterns(stations), x.nslc_id)]
         if self.add_markers:
             markers = self.get_markers()
-            markers = [m for m in markers if  m.tmax<=vtmax and
-                       m.tmin>=vtmin and m.selected]
+            markers = [
+                m for m in markers if m.tmax <= vtmax and
+                m.tmin >= vtmin and m.selected]
+
             markers = dict(zip([tuple(m.nslc_ids) for m in markers], markers))
 
-        if self.fig is None or self.fframe.closed is True or not self._live_update:
+        if self.fig is None or self.fframe.closed or not self._live_update:
             self.fframe = self.pylab(get='figure_frame')
             self.fig = self.fframe.gcf()
 
@@ -82,8 +100,10 @@ class TracePlotter(Snuffling):
         texts = []
         manual_scale = 0.1 * (maxd-mind)*self.yscale
 
-        if self.ampl_scaler=='total min/max':
-            max_trace = max(matching_traces, key=lambda x: max(abs(x.get_ydata())))
+        if self.ampl_scaler == 'total min/max':
+            max_trace = max(
+                matching_traces, key=lambda x: max(abs(x.get_ydata())))
+
             tr_maxy = max(abs(max_trace.get_ydata()))
             ampl_scale = float(tr_maxy)
 
@@ -110,13 +130,20 @@ class TracePlotter(Snuffling):
                 ampl_scale = float(num.std(tr_ydata))
             ydata = (tr_ydata/ampl_scale * manual_scale) + y_pos
             ax.plot(xdata, ydata, c='black', linewidth=0.2)
+
             if self.fill_between:
-                ax.fill_between(xdata, y_pos, ydata, where=ydata>y_pos, color='black', alpha=0.5)
-            texts.append(ax.text(xmax, y_pos, '%s.%s.%s.%s' % tr.nslc_id,
-                horizontalalignment='right', fontsize=6.))
+                ax.fill_between(
+                    xdata, y_pos, ydata, where=ydata > y_pos, color='black',
+                    alpha=0.5)
+
+            texts.append(
+                ax.text(
+                    xmax, y_pos, '%s.%s.%s.%s' % tr.nslc_id,
+                    horizontalalignment='right', fontsize=6.))
+
             if self.add_markers:
                 for ids, m in markers.items():
-                    if m.match_nslc(tr.nslc_id) or ids==():
+                    if m.match_nslc(tr.nslc_id) or ids == ():
                         c = m.select_color(m.color_b)
                         c = [ci/255. for ci in c]
                         t = m.tmin
@@ -131,10 +158,13 @@ class TracePlotter(Snuffling):
                                 fontsize=6,
                                 verticalalignment='top',
                                 horizontalalignment='right')
+
         for txt in texts:
             txt.set_x(xmax)
+
         vred_str = '= '+str(round(self.t_red, 2)) + 'km/s' if self.t_red \
-                else 'off'
+            else 'off'
+
         ax.text(0.5, 0.01, 'time window: %s - %s  |   Reduction velocity %s' %
                 (util.tts(vtmin), util.tts(vtmax), vred_str),
                 verticalalignment='bottom', horizontalalignment='center',
@@ -151,12 +181,15 @@ class TracePlotter(Snuffling):
         self.fig.savefig(fn, pad_inches=0.1, bbox_inches='tight', dpi=320)
 
     def set_center_latlon(self):
-        self.lat_c, self.lon_c, self.z_c = self.center_lat_lon(self.get_stations())
+        self.lat_c, self.lon_c, self.z_c = self.center_lat_lon(
+                self.get_stations())
+
         self.set_parameter('lat_c', self.lat_c)
         self.set_parameter('lon_c', self.lon_c)
 
     def get_station_patterns(self, stations):
         return ['%s.%s.%s.*' % s.nsl() for s in stations]
+
 
 def __snufflings__():
     return [TracePlotter()]
