@@ -63,18 +63,14 @@ class TracePlotter(Snuffling):
         event, stations = self.get_active_event_and_stations()
         traces = [tr for trs in traces for tr in trs]
 
-        stations_by_nsl = {s.nsl(): s for s in self.get_stations()}
-        stations = [
-            stations_by_nsl.get(station_key(tr), None) for tr in traces]
+        trace_nsls = {station_key(tr) for tr in traces}
+        stations = [s for s in self.get_stations() if
+                    s.nsl() in trace_nsls]
 
         distances = [
-            ortho.distance_accurate50m(event, s) for s in stations if
-            s is not None]
-
-        distances = [d/1000. for d in distances]
-        maxd = max(distances)
-        mind = min(distances)
+            ortho.distance_accurate50m(event, s)/1000. for s in stations]
         distances = dict(zip([s.nsl() for s in stations], distances))
+
         matching_traces = [x for x in traces if util.match_nslc(
                             self.get_station_patterns(stations), x.nslc_id)]
         if self.add_markers:
@@ -91,6 +87,9 @@ class TracePlotter(Snuffling):
 
         if self._live_update:
             self.fig.clf()
+
+        maxd = max(distances.values())
+        mind = min(distances.values())
 
         ymin = mind-0.06*(maxd-mind)
         ymax = maxd+0.06*(maxd-mind)
