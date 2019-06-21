@@ -6,7 +6,7 @@ class StationBook(Snuffling):
         self.set_name("Station Book")
         self.attributes = [
             'network', 'station', 'location', 'lat', 'lon', 'elevation',
-            'depth']
+            'depth', 'name']
         self.add_parameter(
             Choice('Sort by', 'sort_by', 'network', self.attributes))
 
