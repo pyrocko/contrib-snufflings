@@ -96,7 +96,7 @@ class LinkSnufflingFiles(SetupBuildCommand):
 
             # okada temporarily disabled: causes segfaults on ubuntu 14.04 when
             # snuffler is closed.
-            if 'Makefile' in _files and not 'okada.py' in _files:
+            if 'Makefile' in _files and 'okada.py' not in _files:
                 print('\nbuilding %s' % roots)
                 try:
                     subprocess.check_call(['make', '-C', roots])
@@ -121,6 +121,7 @@ class LinkSnufflingFiles(SetupBuildCommand):
             try:
                 target = fn.replace(cwd, snufflings)
                 os.symlink(fn, target)
+                print('created symbolic link: %s' % (target))
             except OSError as e:
                 if e.errno == errno.EEXIST:
                     if os.path.islink(target):
