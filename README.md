@@ -1,165 +1,38 @@
-User Contributed Snufflings
-===========================
+# Announcement: The contrib-snufflings repository is leaving GitHub
 
-**Snufflings** are plugins for seismological trace viewer **Snuffler** which is
-part of the Python framework [Pyrocko](http://pyrocko.org).
+*Potsdam, 2019-08-05*
 
-An overview of available snufflings is given at the end of this page.
+Since last week, [GitHub is restricting access to their services based on
+user nationality and residence](https://help.github.com/en/articles/github-and-trade-controls>) ([see
+also](https://techcrunch.com/2019/07/29/github-ban-sanctioned-countries)).
+Such restrictions are incompatible with scientific standards in
+international research communities like seismology.
 
-Installation
-------------
-Clone this repository and change directory:
+The contrib-snufflings software package is used by researchers worldwide. As researchers, we are obligated to retain open
+access to all. To achieve this, we are now migrating our code repositories
+away from GitHub to a new safe home. The new home of the contrib-snufflings repository
+is at [git.pyrocko.org](https://git.pyrocko.org/pyrocko/contrib-snufflings/), open now.
 
-    git clone https://github.com/pyrocko/contrib-snufflings.git
-    cd contrib-snufflings
+To ensure a smooth
+transition, we will keep a read-only version of the contrib-snufflings repository
+at GitHub until 2019-10-01, when it will be deleted.
 
-Create symbolic links pointing from this directory into `$HOME/.snufflings`.
-The included `setup.py` script provides a shortcut for that:
+To update the upstream url of a cloned contrib-snufflings repository, run
 
-    python setup.py link [arguments]
+```
+git remote set-url origin https://git.pyrocko.org/pyrocko/contrib-snufflings.git
+```
 
-If no `arguments` are given, all available snufflings will be linked. You will
-find the new snufflings under *panels* or *run* in Snuffler's menu.
+in the cloned directory.
 
-Update
-------
-Pull updates from the repository:
+To obtain a fresh clone, run
 
-    git pull origin master
+```
+git clone https://git.pyrocko.org/pyrocko/contrib-snufflings.git contrib-snufflings
+```
 
-Help
-----
-Most snufflings include documentation which can be found in the *Help* menu in
-Snuffler.
+Thanks to the worldwide seismology community for all the support and help.
 
-Contribute
-----------
-After cloning this repository, add your own snufflings and send a pull request.
+Best regards
 
-We recommend to add a doc string at the top of each snuffling right
-beneath the snuffling's class name. This text will be shown when pressing the
-*Help* button on the snuffling's panel. It should give an overview of the
-functionalities. Wrapping this text in html code can be used to pretty up the
-documentation.
-
-If you miss some feature in a snuffling, discover a bug or would like to
-discuss an idea for a new snuffling click on *Issues* and open up a
-*New Issue*.
-
-
--------------------------------------------------------------------------------
-
-Examples
-========
-
-Plot PSD
---------
-
-Plot power spectral densities
-
-file: [psd.py](psd.py)
-
-![screenshot](screenshots/psd.png)
-
-Cross correlation relocation
-----------------------------
-
-Relocate events by cross correlating waveforms
-
-file: [cc\_relocation.py](cc_relocation.py)
-
-![screenshot](screenshots/cc_relocation.png)
-
-Cross correlation search
-------------------------
-
-Find repeating events
-
-file: [corrsearch.py](corrsearch.py)
-
-![screenshot](screenshots/corrsearch.png)
-
-Cross correlation matrix
-------------------------
-
-Cross correlate selected events. Results, including cross-correlation factor
-and time lags between maxima of the cross correlation can be stored in YAML
-format to ease later analysis.
-
-directory: [cc\_matrix](cc_matrix)
-
-![screenshot](screenshots/cc_matrix.png)
-
-Listen to seismograms
----------------------
-
-Export seismograms to .wav files or listen to seismological recordings. Direct
-playback requires the PyQt4 bindings for Phonon.
-(E.g. on Debian and ubuntu available through: `apt-get install python-qt4-phonon`)
-
-file: [audio.py](audio.py)
-
-![screenshot](screenshots/SeiSound.png)
-
-Time Line
----------
-
-Temporal overview of catalog data.
-
-file: [time_line.py](time_line.py)
-
-![screenshot](screenshots/timeline.png)
-
-Extract Events
---------------
-
-Save waveforms for time windows around selected events as MSEED. This is a
-hybrid Snuffling which can be run from the command-line as well.
-
-file: [extract_events.py](extract_events.py)
-
-![screenshot](screenshots/extract_events.png)
-
-Export waveforms
-----------------
-
-Export selected/visible waveforms as MSEED, ASCII, SAC or YAFF files.
-
-file: [export_waveforms.py](export_waveforms.py)
-
-Distance projected waveform plots
----------------------------------
-
-Applying a reduction velocity allows to 'shrink' the time domain.
-Figures can be exported in various image file formats like .png or .pdf.
-In order to improve the visual perception of small wiggles, positive amplitudes can be plotted in filled mode.
-
-file: [plot_traces.py](plot_traces.py)
-
-![screenshot](screenshots/plot_traces.png)
-
-Spectrogram
------------
-
-file: [spectrogram.py](spectrogram.py)
-
-![screenshot](screenshots/spectrogram.png)
-
-Geodetic forward modelling
---------------------------
-
-Visualize and output of a data trace for a rectangular dislocation source in an elastic halfspace.
-You will need to go to the okada dir and type make in order to compile the C-Code.
-
-directory: [okada](okada)
-
-![screenshot](screenshots/okada.png)
-
-Particle Motion
----------------
-
-Plot combinations of vertical and horizontal channels of selected stations.
-
-file: [particle_motion.py](particle_motion.py)
-
-![screenshot](screenshots/particle_motion.png)
+*The contrib-snufflings Developers*
