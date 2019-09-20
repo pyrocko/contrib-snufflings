@@ -33,7 +33,7 @@ class ParticleMotion(Snuffling):
         self.cleanup()
         viewer = self.get_viewer()
         nslc_ids = self.get_viewer().pile.nslc_ids
-
+        pile = self.get_viewer().pile
         nsl_ids = set([nslc_id[:3] for nslc_id in nslc_ids])
         figs = []
         for nsl_id in nsl_ids:
