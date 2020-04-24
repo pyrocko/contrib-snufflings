@@ -33,7 +33,7 @@ class ParticleMotion(Snuffling):
         self.cleanup()
         viewer = self.get_viewer()
         nslc_ids = self.get_viewer().pile.nslc_ids
-
+        pile = self.get_viewer().pile
         nsl_ids = set([nslc_id[:3] for nslc_id in nslc_ids])
         figs = []
         for nsl_id in nsl_ids:
@@ -58,13 +58,13 @@ class ParticleMotion(Snuffling):
                         tr.lowpass(4, viewer.lowpass)
                     time = tr.get_xdata()
                     net, sta, loc, cha = tr.nslc_id
-                    if 'X' in cha or 'E' in cha or '1' in cha:
+                    if (cha[2]=='X') or (cha[2]=='E') or (cha[2]=='1'):
                         x = tr.ydata
                         xlabel = cha
-                    elif 'Y' in cha or 'N' in cha or '2' in cha:
+                    elif (cha[2]=='Y') or (cha[2]=='N') or (cha[2]=='2'):
                         y = tr.ydata
                         ylabel = cha
-                    elif 'Z' in cha or '0' in cha:
+                    elif (cha[2]=='Z') or (cha[2]=='0'):
                         z = tr.ydata
                         zlabel = cha
                     else:
