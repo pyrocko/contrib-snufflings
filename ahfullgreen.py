@@ -5,7 +5,8 @@ import os
 from pyrocko import moment_tensor, model, trace
 from pyrocko.gui.snuffling import Snuffling, Param, Choice, Switch, EventMarker
 from pyrocko import gf
-from pyrocko.ahfullgreen import add_seismogram, Gauss, Impulse
+from pyrocko.ahfullgreen import \
+    add_seismogram, AhfullgreenSTFGauss, AhfullgreenSTFImpulse
 
 km = 1000.
 
@@ -55,9 +56,9 @@ class Ahfullgreen(Snuffling):
         f = (0., 0., 0.)
         deltat = 1./self.fsampling
         if self.stf == 'Gauss':
-            stf = Gauss(self.tau)
+            stf = AhfullgreenSTFGauss(tau=self.tau)
         elif self.stf == 'Impulse':
-            stf = Impulse()
+            stf = AhfullgreenSTFImpulse()
 
         viewer = self.get_viewer()
         event = viewer.get_active_event()
