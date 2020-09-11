@@ -1,6 +1,12 @@
+import os.path as op
+import logging
+import math
 from pyrocko import io
 from pyrocko import model
 from pyrocko.gui.snuffling import Snuffling, Choice, Switch, Param
+
+
+logger = logging.getLogger('export')
 
 
 class ExportWaveforms(Snuffling):
@@ -45,7 +51,7 @@ class ExportWaveforms(Snuffling):
                 0.1, 86400., low_is_none=True))
 
         self.add_parameter(Switch('Save Station Meta', 'save_stations', False))
-        self.add_parameter(Switch('Apply Filters', 'apply_filter', False))
+        self.add_parameter(Switch('Apply Filters/Rotation', 'apply_filter', False))
         self.set_live_update(False)
 
     def call(self):
@@ -68,7 +74,7 @@ class ExportWaveforms(Snuffling):
 
         viewer = self.get_viewer()
         for trs in self.chopper_selected_traces(fallback=True, tinc=self.tinc):
-            trs2save = []
+            traces_save = []
             for tr in trs:
                 if self.format == 'mseed':
                     if len(tr.network) > 2:
@@ -80,28 +86,60 @@ class ExportWaveforms(Snuffling):
                     if len(tr.channel) > 3:
                         tr.set_channel(tr.channel[:3])
 
-                if viewer.lowpass:
-                    if viewer.lowpass < 0.5/tr.deltat:
-                        tr.lowpass(4, viewer.lowpass, demean=False)
-                if viewer.highpass:
-                    if viewer.highpass < 0.5/tr.deltat:
-                        tr.highpass(4, viewer.highpass, demean=False)
+                if self.apply_filter:
+                    if viewer.lowpass is not None and \
+                            viewer.highpass is not None:
+                        tr.bandpass(2, viewer.highpass, viewer.lowpass)
 
-                trs2save.append(tr)
+                    elif viewer.lowpass is not None:
+                        if viewer.lowpass < 0.5/tr.deltat:
+                            tr.lowpass(4, viewer.lowpass, demean=False)
 
-            try:
-                io.save(
-                    trs2save, out_filename,
-                    format=self.format,
-                    overwrite=True)
+                    elif viewer.highpass is not None:
+                        if viewer.highpass < 0.5/tr.deltat:
+                            tr.highpass(4, viewer.highpass, demean=False)
 
-            except io.io_common.FileSaveError as e:
-                self.fail(str(e))
+
+                traces_save.append(tr)
+
+        if viewer.rotate != 0.0 and self.apply_filter:
+            phi = viewer.rotate/180.*math.pi
+            cphi = math.cos(phi)
+            sphi = math.sin(phi)
+            for a in traces_save:
+                for b in traces_save:
+                    if (a.network == b.network
+                            and a.station == b.station
+                            and a.location == b.location
+                            and ((a.channel.lower().endswith('n')
+                                 and b.channel.lower().endswith('e'))
+                                 or (a.channel.endswith('1')
+                                     and b.channel.endswith('2')))
+                            and abs(a.deltat-b.deltat) < a.deltat*0.001
+                            and abs(a.tmin-b.tmin) < a.deltat*0.01 and
+                            a.get_ydata().size == b.get_ydata().size):
+
+                        aydata = a.get_ydata()*cphi+b.get_ydata()*sphi
+                        bydata = -a.get_ydata()*sphi+b.get_ydata()*cphi
+                        a.set_ydata(aydata)
+                        b.set_ydata(bydata)
+
+        try:
+            io.save(
+                traces_save, out_filename,
+                format=self.format,
+                overwrite=True)
+
+        except io.io_common.FileSaveError as e:
+            self.fail(str(e))
+
+        logger.info('saved waveforms to %s', out_filename)
 
         if self.save_stations:
             stations = viewer.stations.values()
             fn = self.output_filename('Save Stations', 'stations.pf')
             model.dump_stations(list(stations), fn)
+            logger.info('saved stations to %s', fn)
 
 
 def __snufflings__():
