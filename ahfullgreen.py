@@ -5,8 +5,15 @@ import os
 from pyrocko import moment_tensor, model, trace
 from pyrocko.gui.snuffling import Snuffling, Param, Choice, Switch, EventMarker
 from pyrocko import gf
-from pyrocko.ahfullgreen import \
-    add_seismogram, AhfullgreenSTFGauss, AhfullgreenSTFImpulse
+
+try:
+    from pyrocko.ahfullgreen import \
+        add_seismogram, AhfullgreenSTFGauss, AhfullgreenSTFImpulse
+except ImportError:
+    from pyrocko.ahfullgreen import (
+        add_seismogram,
+        Gauss as AhfullgreenSTFGauss,
+        Impulse as AhfullgreenSTFImpulse)
 
 km = 1000.
 
