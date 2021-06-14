@@ -13,10 +13,9 @@ from pyrocko.trace import CosFader
 
 
 try:
-    from PyQt5.phonon import Phonon
-    no_phonon = False
+    from PyQt5.QtMultimedia import QMediaPlayer as Player, QMediaContent
 except ImportError:
-    no_phonon = True
+    Player = None
 
 
 class MarkerThread(qc.QThread):
@@ -30,23 +29,19 @@ class MarkerThread(qc.QThread):
         self.timer = qc.QTimer(self)
         self.timer.setInterval(100)
         self.timer.timeout.connect(self.check_and_update)
-        self.previous_state = Phonon.StoppedState
-        self.t_stretch = 1.
+        self.previous_state = Player.StoppedState
         self.time_range = (0., 0.)
 
     def handle_states(self, state):
-        if state == Phonon.PausedState:
+        if state == Player.PausedState:
             self.timer.stop()
 
-        if state == Phonon.PlayingState:
+        if state == Player.PlayingState:
             if self.timer.isActive() is False:
                 self.timer.start()
             self.check_and_update()
 
-        if state == Phonon.LoadingState:
-            pass
-
-        if state == Phonon.StoppedState:
+        if state == Player.StoppedState:
             self.cleanup()
 
         self.previous_state = state
@@ -62,13 +57,14 @@ class MarkerThread(qc.QThread):
             self.marker = self.viewer.selected_markers()[0].copy()
             self.time_range = (self.marker.tmin, self.marker.tmax)
             self.viewer.add_marker(self.marker)
-            self._factor = self.speed_up/(1-self.t_stretch)
+            self._factor = self.speed_up
+
             if self.speed_up < 0.:
                 self._start_at = self.time_range[1]
             else:
                 self._start_at = self.time_range[0]
 
-        tcurrent = self.media.currentTime()/1000.
+        tcurrent = self.media.position()/1000.
         now = self._start_at + tcurrent * self._factor
         self.marker.tmin = now
         self.marker.tmax = now
@@ -132,9 +128,10 @@ class SeiSound(Snuffling):
         self._tmpdir = self.tempdir()
         self.output = None
         self.marker_thread = None
-        if not no_phonon:
-            self.m_media = Phonon.MediaObject(self._panel_parent)
-        self.no_phonon_warn = 'Install pyqt4 phonon!\nCan only export wav files.\nCheckout this snuffling\'s help.'
+        if Player:
+            self.player = Player(self._panel_parent)
+
+        self.no_phonon_warn = 'Please install python3-pyqt5.qtmultimedia for direct playback.\nCan only export wav files.\nCheckout this snuffling\'s help.'
         self.added_traces = []
 
     def my_cleanup(self):
@@ -152,13 +149,13 @@ class SeiSound(Snuffling):
         except NoTracesSelected:
             self.fail('no time range selected')
 
-        if no_phonon:
+        if not Player:
             self.warn(self.no_phonon_warn)
             self.export_wav()
         else:
             self.marker_thread = MarkerThread(viewer=self.viewer, follow=self.follow)
-            if self.m_media.state() == Phonon.PlayingState:
-                self.m_media.stop()
+            if self.player.state() == Player.PlayingState:
+                self.player.stop()
                 self.marker_thread.cleanup()
             self.play_phonon()
 
@@ -199,14 +196,12 @@ class SeiSound(Snuffling):
         tmpfile = tempfile.mkstemp(dir=self._tmpdir, suffix='.wav')[1]
         #tmpfile = '/tmp/test.wav'
         self.export_wav(data=data, fn=tmpfile)
-        output = Phonon.AudioOutput(parent=self._panel_parent)
-        output.setVolume(self.volume/100)
-        Phonon.createPath(self.m_media, output)
-        self.m_media.setCurrentSource(Phonon.MediaSource(tmpfile))
-        self.marker_thread.media = self.m_media
+        self.player.setMedia(QMediaContent(qc.QUrl.fromLocalFile(tmpfile)))
+        self.player.setVolume(50)
+        self.marker_thread.media = self.player
         self.marker_thread.speed_up = int(num.round(self.speed_up))
-        self.m_media.stateChanged.connect(self.marker_thread.handle_states)
-        self.m_media.play()
+        self.player.stateChanged.connect(self.marker_thread.handle_states)
+        self.player.play()
 
     def export_wav(self, data=None, fn=None):
         if fn is None:
@@ -236,28 +231,26 @@ class SeiSound(Snuffling):
         self.set_parameter('corner_lowpass', v.lowpass)
 
     def stop_play(self):
-        if self.m_media is not None:
-            self.m_media.stop()
+        if self.player is not None:
+            self.player.stop()
 
     def pause_play(self):
-        if no_phonon:
+        if not Player:
             self.fail(self.no_phonon_warn)
-        if self.m_media is None:
+        if self.player is None:
             self.call()
             return
 
-        state = self.m_media.state()
-        if state == Phonon.PlayingState:
-            self.m_media.pause()
-        elif state == Phonon.PausedState:
-            self.m_media.play()
-        elif state == Phonon.LoadingState:
-            self.call()
-        elif state == Phonon.StoppedState:
+        state = self.player.state()
+        if state == Player.PlayingState:
+            self.player.pause()
+        elif state == Player.PausedState:
+            self.player.play()
+        elif state == Player.StoppedState:
             self.call()
         else:
             print('unexpected state. cleanup....')
-            self.m_media.stop()
+            self.player.stop()
 
 
 def __snufflings__():
