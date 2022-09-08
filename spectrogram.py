@@ -144,8 +144,8 @@ class Spectrogram(Snuffling):
 
         p = None
 
-        ncols = int(len(nslcs) / 5 + 1)
-        nrows = (len(nslcs)-1) / ncols + 1
+        ncols = int(len(nslcs) // 5 + 1)
+        nrows = (len(nslcs)-1) // ncols + 1
 
         tmin = min(times)
         tmax = max(times)
